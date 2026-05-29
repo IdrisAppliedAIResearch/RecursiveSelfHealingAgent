@@ -145,7 +145,7 @@ def _pre_run_checks(study_id: str) -> None:
     metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
     if metrics_path.exists():
         count = 0
-for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
+        for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
                 if line.strip():
                     count += 1
         if count >= 21:
@@ -156,7 +156,7 @@ for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
     episodes_count = episode_store.count(study_id)
     if metrics_path.exists() and episodes_count > 0:
         persisted_count = 0
-for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
+        for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
                 if line.strip():
                     rec = json.loads(line)
                 if rec.get("episode_persisted"):
