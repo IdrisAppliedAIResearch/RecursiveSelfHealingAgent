@@ -18,6 +18,7 @@ from protected.harness import (
 from protected.harness.edit_applier import apply_edits
 from protected.harness.edit_protocol import AgentFailure
 from protected.harness.anomaly_logger import log_anomaly
+from protected.interface import ITERATION_TIMEOUT_S
 
 from protected.scorer import score_corpus
 
@@ -183,7 +184,10 @@ def _pre_run_checks(study_id: str) -> None:
 
 async def _run_baseline(study_id: str) -> None:
     ground_truth = _load_ground_truth()
-    corpus_result = await corpus_runner.run_corpus(study_id)
+    corpus_result = await asyncio.wait_for(
+        corpus_runner.run_corpus(study_id),
+        timeout=ITERATION_TIMEOUT_S,
+    )
 
     score_result = score_corpus(corpus_result.results, ground_truth)
 
@@ -348,7 +352,17 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
     artifact_writer.snapshot_playground(iteration_n, study_id)
 
     try:
-        corpus_result = await corpus_runner.run_corpus(study_id)
+        corpus_result = await asyncio.wait_for(
+            corpus_runner.run_corpus(study_id),
+            timeout=ITERATION_TIMEOUT_S,
+        )
+    except asyncio.TimeoutError:
+        git_ops.rollback_playground()
+        log_anomaly(study_id, iteration_n, "iteration_timeout", {})
+        log_anomaly(study_id, iteration_n, "episode_discarded", {})
+        metrics["anomaly"] = True
+        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        return None
     except Exception as e:
         git_ops.rollback_playground()
         log_anomaly(
