@@ -31,7 +31,10 @@ def load_all(study_id: str) -> list[dict]:
     episodes = []
     for line in path.read_text(encoding="utf-8").strip().splitlines():
         if line.strip():
-            episodes.append(json.loads(line))
+            try:
+                episodes.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
     episodes.sort(key=lambda e: e.get("iteration_n", 0))
     return episodes
 

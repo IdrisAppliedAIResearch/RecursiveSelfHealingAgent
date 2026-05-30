@@ -43,7 +43,7 @@ def write_iteration_artifacts(
         })
 
     out_path = iters / f"iteration_{iteration_n:02d}_{ts}.json"
-    out_path.write_text(json.dumps(output_records, indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(output_records, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def snapshot_playground(iteration_n: int, study_id: str) -> None:
@@ -54,12 +54,18 @@ def snapshot_playground(iteration_n: int, study_id: str) -> None:
     src_playground = _PROJECT_ROOT / "playground"
     dst_playground = snap_dir / "playground"
     if src_playground.exists():
-        shutil.copytree(src_playground, dst_playground)
+        try:
+            shutil.copytree(src_playground, dst_playground)
+        except PermissionError:
+            pass
 
     src_prompts = _PROJECT_ROOT / "prompts"
     dst_prompts = snap_dir / "prompts"
     if src_prompts.exists():
-        shutil.copytree(src_prompts, dst_prompts)
+        try:
+            shutil.copytree(src_prompts, dst_prompts)
+        except PermissionError:
+            pass
 
 
 def append_metrics(iteration_n: int, study_id: str, metrics: dict) -> None:

@@ -60,7 +60,7 @@ def apply_edits(edits: list[Edit]) -> ApplyResult:
                     reason="file_not_found",
                     offending_path=edit.file_path,
                 )
-            content = full_path.read_text(encoding="utf-8")
+            content = full_path.read_text(encoding="utf-8", errors="replace")
             count = content.count(edit.old_string)
             if count == 0:
                 return ApplyResult(
@@ -121,7 +121,7 @@ def apply_edits(edits: list[Edit]) -> ApplyResult:
         full_path = root / edit.file_path
 
         if edit.operation == "replace_string":
-            content = full_path.read_text(encoding="utf-8")
+            content = full_path.read_text(encoding="utf-8", errors="replace")
             new_content = content.replace(edit.old_string, edit.new_string, 1)
             tmp_path = full_path.with_suffix(full_path.suffix + ".tmp")
             tmp_path.write_text(new_content, encoding="utf-8")

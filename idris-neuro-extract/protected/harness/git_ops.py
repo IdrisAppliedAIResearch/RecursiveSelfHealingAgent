@@ -44,11 +44,13 @@ def verify_no_remote_push(branch_name: str) -> None:
 
 
 def reset_partial_iteration() -> None:
-    _run_git(["reset", "--hard", "HEAD"])
+    has_commits = _run_git(["rev-parse", "HEAD"], check=False)
+    if has_commits.returncode == 0:
+        _run_git(["reset", "--hard", "HEAD"])
 
 
 def rollback_playground() -> None:
-    _run_git(["checkout", "--", "playground/", "prompts/"])
+    _run_git(["checkout", "--", "playground/", "prompts/"], check=False)
 
 
 def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:
@@ -58,7 +60,7 @@ def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:
         for f in iters_dir.glob(f"iteration_{iteration_n:02d}_*"):
             files_changed.append(str(f.relative_to(PROJECT_ROOT)))
 
-    rationale_snippet = rationale[:500] if rationale else "N/A"
+    rationale_snippet = rationale[:500].replace('\n', ' ').replace('\r', ' ') if rationale else "N/A"
     files_list = ", ".join(files_changed) if files_changed else "none"
 
     message = (
@@ -84,7 +86,10 @@ def last_committed_iteration(study_id: str) -> int:
     last_n = -1
     for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
         if line.strip():
-            record = json.loads(line)
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
             n = record.get("iteration_n", -1)
             if n > last_n:
                 last_n = n

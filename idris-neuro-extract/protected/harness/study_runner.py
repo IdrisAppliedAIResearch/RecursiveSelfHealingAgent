@@ -35,8 +35,11 @@ def _load_ground_truth() -> dict[str, list[str]]:
     gt = {}
     for line in gt_path.read_text(encoding="utf-8").strip().splitlines():
         if line.strip():
-            entry = json.loads(line)
-            gt[entry["abstract_id"]] = entry["claims"]
+            try:
+                entry = json.loads(line)
+                gt[entry["abstract_id"]] = entry["claims"]
+            except json.JSONDecodeError:
+                pass
     return gt
 
 
@@ -61,7 +64,10 @@ def _load_prior_output(study_id: str) -> tuple[list[dict], int]:
     if best_path is None:
         return [], 0
 
-    records = json.loads(best_path.read_text(encoding="utf-8"))
+    try:
+        records = json.loads(best_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return [], 0
     prior_output = []
     for rec in records:
         prior_output.append({
@@ -147,7 +153,11 @@ def _pre_run_checks(study_id: str) -> None:
         count = 0
         for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
                 if line.strip():
-                    count += 1
+                    try:
+                        json.loads(line)
+                        count += 1
+                    except json.JSONDecodeError:
+                        pass
         if count >= 21:
             raise StudyAlreadyComplete(
                 f"Study {study_id} already complete ({count} metrics entries)"
@@ -158,9 +168,12 @@ def _pre_run_checks(study_id: str) -> None:
         persisted_count = 0
         for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
                 if line.strip():
-                    rec = json.loads(line)
-                if rec.get("episode_persisted"):
-                    persisted_count += 1
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if rec.get("episode_persisted"):
+                        persisted_count += 1
         if episodes_count != persisted_count:
             raise RuntimeError(
                 f"Episode count ({episodes_count}) does not match "
@@ -187,10 +200,25 @@ async def _run_baseline(study_id: str) -> None:
     ground_truth = _load_ground_truth()
     print(f"  Corpus run starting...")
     t0 = time.time()
-    corpus_result = await asyncio.wait_for(
-        corpus_runner.run_corpus(study_id),
-        timeout=ITERATION_TIMEOUT_S,
-    )
+    try:
+        corpus_result = await asyncio.wait_for(
+            corpus_runner.run_corpus(study_id),
+            timeout=ITERATION_TIMEOUT_S,
+        )
+    except asyncio.TimeoutError:
+        print(f"  Corpus TIMEOUT after {time.time()-t0:.0f}s")
+        log_anomaly(study_id, 0, "iteration_timeout", {})
+        metrics = _make_metrics_base(0)
+        metrics["anomaly"] = True
+        artifact_writer.append_metrics(0, study_id, metrics)
+        return
+    except Exception as e:
+        print(f"  Corpus FAILED: {e}")
+        log_anomaly(study_id, 0, "scan_failure", {"error": str(e)})
+        metrics = _make_metrics_base(0)
+        metrics["anomaly"] = True
+        artifact_writer.append_metrics(0, study_id, metrics)
+        return
     elapsed = time.time() - t0
     print(f"  Corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
 

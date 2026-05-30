@@ -13,7 +13,7 @@ class ValidationResult:
 
 
 def reload_playground() -> None:
-    to_remove = [key for key in sys.modules if key.startswith("playground") or key.startswith("extractor")]
+    to_remove = [key for key in sys.modules if key.startswith("playground")]
     for key in to_remove:
         del sys.modules[key]
 
