@@ -1,6 +1,0 @@
-{"iteration_n": 1, "observation": "obs1", "hypothesis": "hyp1", "action": "act1", "expectation": "exp1"}
-{"iteration_n": 2, "observation": "obs2", "hypothesis": "hyp2", "action": "act2", "expectation": "exp2"}
-{"iteration_n": 1, "observation": "obs1", "hypothesis": "hyp1", "action": "act1", "expectation": "exp1"}
-{"iteration_n": 1, "observation": "Low precision in claims", "hypothesis": "System prompt too broad", "action": "Narrowed system prompt", "expectation": "Higher precision in next iteration"}
-{"iteration_n": 1, "observation": "obs1", "hypothesis": "hyp1", "action": "act1", "expectation": "exp1"}
-{"iteration_n": 1, "observation": "Low precision in claims", "hypothesis": "System prompt too broad", "action": "Narrowed system prompt", "expectation": "Higher precision in next iteration"}
