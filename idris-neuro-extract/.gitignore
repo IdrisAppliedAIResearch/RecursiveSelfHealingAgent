@@ -8,3 +8,4 @@ build/
 .env
 corpus/abstracts/
 evaluation/results/
+experiments/
