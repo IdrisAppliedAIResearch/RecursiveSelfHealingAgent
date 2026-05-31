@@ -26,28 +26,34 @@ class LlamaCppProvider:
         self.model = os.environ.get("LLAMA_CPP_MODEL_ID", "qwen3-27b-mtp-6bit")
         self.context_window = int(os.environ.get("LLAMA_CPP_CONTEXT_WINDOW", "262144"))
 
-    def complete(self, system_prompt: str, user_message: str) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
+    def complete(self, system_prompt: str, user_message: str, max_tokens: int | None = None) -> str:
+        kwargs = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            response_format={"type": "json_object"},
-        )
+            "response_format": {"type": "json_object"},
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
 
     def complete_with_usage(
-        self, system_prompt: str, user_message: str
+        self, system_prompt: str, user_message: str, max_tokens: int | None = None
     ) -> tuple[str, TokenUsage]:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
+        kwargs = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            response_format={"type": "json_object"},
-        )
+            "response_format": {"type": "json_object"},
+        }
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
+        response = self.client.chat.completions.create(**kwargs)
         content = response.choices[0].message.content
 
         usage_data = response.usage if response.usage else None
