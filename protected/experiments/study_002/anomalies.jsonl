@@ -28,3 +28,4 @@
 {"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11230093", "error": "'_CountingProviderProxy' object has no attribute 'complete_with_usage'"}}
 {"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14673803", "error": "'_CountingProviderProxy' object has no attribute 'complete_with_usage'"}}
 {"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12842716", "error": "'_CountingProviderProxy' object has no attribute 'complete_with_usage'"}}
+{"iteration_n": 1, "anomaly_type": "no_prior_output"}
