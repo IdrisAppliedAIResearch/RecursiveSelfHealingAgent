@@ -1,0 +1,10 @@
+{
+  "pmid": "12880818",
+  "title": "Gender and age effects in structural brain asymmetry as measured by MRI texture analysis.",
+  "authors": "Kovalev VA, Kruggel F, von Cramon DY",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Effects of gender and age on structural brain asymmetry were studied by 3D texture analysis in 380 adults. Asymmetry is detected by comparing the complex 3D gray-scale image patterns in the left and right cerebral hemispheres as revealed by anatomical T1-weighted MRI datasets. The Talairach and Tournoux parcellation system was applied to study the asymmetry on five levels: the whole cerebrum, nine coronal sections, 12 axial sections, boxes resulting from both coronal and axial subdivisions, and by a sliding spherical window of 9 mm diameter. The analysis revealed that the brain asymmetry increases in the anterior-posterior direction starting from the central region onward. Male brains were found to be more asymmetric than female. This gender-related effect is noticeable in all brain areas but is most significant in the superior temporal gyrus, Heschl's gyrus, the adjacent white matter regions in the temporal stem and the knee of the optic radiation, the thalamus, and the posterior cingulate. The brain asymmetry increases significantly with age in the inferior frontal gyrus, anterior insula, anterior cingulate, parahippocampal gyrus, retrosplenial cortex, coronal radiata, and knee region of the internal capsule. Asymmetry decreases with age in the optic radiation, precentral gyrus, and angular gyrus. The texture-based method reported here is based on extended multisort cooccurrence matrices that employ intensity, gradient, and anisotropy features in a uniform way. It is sensitive, simple to reproduce, robust, and unbiased in the sense that segmentation of brain compartments and spatial transformations are not necessary. Thus, it should be considered as another tool for digital morphometry in neuroscience.",
+  "doi": "10.1016/S1053-8119(03)00140-X",
+  "space": "TAL"
+}

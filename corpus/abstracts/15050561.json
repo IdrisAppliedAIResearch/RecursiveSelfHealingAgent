@@ -1,0 +1,10 @@
+{
+  "pmid": "15050561",
+  "title": "Awareness of muscular force during movement production: an fMRI study.",
+  "authors": "de Graaf JB, Gallea C, Pailhous J, Anton JL, Roth M, Bonnard M",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "Awareness of the muscular forces we produce during voluntary movement must be distinguished from awareness of motor outcome itself. Indeed, there is no univocal relationship between produced muscle force and movement outcome because of external forces. In the present study, we performed a functional magnetic resonance imaging study to investigate the neural bases underlying the awareness we can have of the muscular forces we put into our voluntary movements. In reference conditions, subjects made rhythmical hand movements and knew they had to reproduce, in a subsequent condition in which the resistance to the movement was increased, either their muscular forces or their kinematics. The idea behind this (well established) reproduction paradigm is that, after an explicit verbal instruction, subjects can only reproduce what they are aware off. The main contrast, that is, between the condition during which the subjects had to gain awareness of their muscular forces and that during which they had to gain awareness of their kinematics (conditions in which the actual motor output was similar), shows that gaining awareness about muscular forces exerted during movement execution makes much higher demands on many brain structures, in particular posterior insula, primary sensorimotor areas and associative somatosensory areas. This indicates the important role of somesthetic information processing in awareness of produced muscular force. Therefore, the often-heard presumption that muscle force sense might be based on the outgoing motor command is not confirmed by the present results.",
+  "doi": "10.1016/j.neuroimage.2003.11.009",
+  "space": "MNI"
+}

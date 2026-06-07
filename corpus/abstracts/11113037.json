@@ -1,0 +1,10 @@
+{
+  "pmid": "11113037",
+  "title": "Dissociable mechanisms of attentional control within the human prefrontal cortex.",
+  "authors": "Nagahama Y, Okada T, Katsumi Y, Hayashi T, Yamauchi H, Oyanagi C, Konishi J, Fukuyama H, Shibasaki H",
+  "year": "2001",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Neuropsychological tests that require shifting an attentional set, such as the Wisconsin Card Sorting Test, are sensitive to frontal lobe damage. Although little information is available for humans, an animal experiment suggested that different regions of the prefrontal cortex may contribute to set shifting behavior at different levels of processing. Behavioral studies also suggest that set shifting trials are more time consuming than non-set shifting trials (i.e. switch cost) and that this may be underpinned by differences at the neural level. We determined whether there were differential neural responses associated with two different levels of shifting behavior, that of reversal of stimulus-response associations within a perceptual dimension or that of shifting an attentional set between different perceptual dimensions. Neural activity in the antero-dorsal prefrontal cortex increased only in attentional set shifting, in which switch costs were significant. Activity in the postero-ventral prefrontal cortex increased not only in set shifting but also in reversing stimulus-response associations, in which switch costs were absent. We conclude that these distinct regions in the human prefrontal cortex provide different levels of attention control in response selection. Thus, the antero-dorsal prefrontal cortex may be critical for higher order control of attention, i.e. attentional set shifting, whereas the postero-ventral area may be related to a lower level of shift, i.e. reorganizing stimulus-response associations.",
+  "doi": "10.1093/cercor/11.1.85",
+  "space": "MNI"
+}

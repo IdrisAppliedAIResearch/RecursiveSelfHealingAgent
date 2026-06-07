@@ -1,0 +1,10 @@
+{
+  "pmid": "10912590",
+  "title": "Modulation and task effects in auditory processing measured using fMRI.",
+  "authors": "Hall DA, Haggard MP, Akeroyd MA, Summerfield AQ, Palmer AR, Elliott MR, Bowtell RW",
+  "year": "2000",
+  "journal": "Human brain mapping",
+  "abstract": "Active listening has been reported to elicit a different sensory response from passive listening and is generally observed as an increase in the magnitude of activation. Sensory activation differences may therefore be masked by the effect of attention. The present study measured activation induced by static and modulated tones, while controlling attention by using target-discrimination and passive listening tasks. The factorial design enabled us to determine whether the stimulus-induced activation in auditory cortex was independent of the information-processing demands of the task. Contrasted against a silent baseline, listening to the tones induced widespread activation in the temporal cortex, including Heschl's gyrus (HG), planum temporale, superior temporal gyrus (STG), and superior temporal sulcus. No additional auditory areas were recruited in the response to modulated tones compared to static tones, but there was an increase in the response in the STG, anterior to HG. Relative to passive listening, the active task increased the response in the STG, posterior to HG. The active task also recruited regions in the frontal and parietal cortex and subcortical areas. These findings indicate that preferential responses to the changing spectro-temporal properties of the stimuli and to the target-discrimination task involve distinct, non-overlapping areas of the secondary auditory cortex. Thus, in the present study, differences in sensory activation were not masked by the effects of attention.",
+  "doi": "10.1002/1097-0193(200007)10:3<107::AID-HBM20>3.0.CO;2-8",
+  "space": "MNI"
+}

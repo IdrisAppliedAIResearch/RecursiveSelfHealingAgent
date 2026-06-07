@@ -1,0 +1,10 @@
+{
+  "pmid": "11709486",
+  "title": "Task-dependency of the neural correlates of episodic encoding as measured by fMRI.",
+  "authors": "Otten LJ, Rugg MD",
+  "year": "2001",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Using event-related functional magnetic resonance imaging (fMRI), the neural correlates of memory encoding can be studied by contrasting item-related activity elicited in a study task according to whether the items are remembered or forgotten in a subsequent memory test. Previous studies using this approach have implicated the left prefrontal cortex in the successful encoding of verbal material into episodic memory when the study task is semantic in nature. In the current study, we asked whether the neural correlates of episodic encoding differ depending on type of study task. Seventeen volunteers participated in an event-related fMRI experiment in which at study, volunteers were cued to make either animacy or syllable judgements about words. A recognition memory test followed after a delay of approximately 15 min. For the animacy task, words that were subsequently remembered showed greater activation in left and medial prefrontal regions. For the syllable task, by contrast, successful memory for words was associated with activations in bilateral intraparietal sulcus, bilateral fusiform gyrus, right prefrontal cortex and left superior occipital gyrus. These findings suggest that the brain networks supporting episodic encoding differ according to study task.",
+  "doi": "10.1093/cercor/11.12.1150",
+  "space": "MNI"
+}

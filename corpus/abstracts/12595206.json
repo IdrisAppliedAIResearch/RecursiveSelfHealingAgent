@@ -1,0 +1,10 @@
+{
+  "pmid": "12595206",
+  "title": "Objects and their actions: evidence for a neurally distributed semantic system.",
+  "authors": "Tyler LK, Stamatakis EA, Dick E, Bright P, Fletcher P, Moss H",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "An influential model of conceptual knowledge claims that objects are represented in a distributed network of cortical areas that store information about different types of attributes, such as form, colour, and motion (A. Martin et al., 2000, in: The Cognitive Neurosciences, 2nd ed., MIT Press, Cambridge). Two specific claims of this account are that (a) the motions and actions associated with objects (along with other attributes) are automatically activated whenever the object concept is evoked and (b) topographically distinct neural regions are responsible for motion/action attributes pertaining to objects in the categories of tools and animals. We used fMRI to examine the neural activation associated with conceptual processing of nouns referring to animals and tools and for verbs referring to tool-associated actions (e.g., drilling, painting) and biological actions (e.g., walking, jumping). We found that object names and their associated actions activated the same set of neural regions (left fusiform gyrus, superior and middle temporal cortex) consistent with the claim that word tool and animal concepts implicitly activate the actions associated with them. However, there was no evidence of category specificity for either objects or actions, with essentially the same activations for the form and motion attributes of both living and nonliving categories.",
+  "doi": "10.1016/S1053-8119(02)00047-2",
+  "space": "MNI"
+}

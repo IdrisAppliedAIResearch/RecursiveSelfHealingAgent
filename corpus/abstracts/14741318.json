@@ -1,0 +1,10 @@
+{
+  "pmid": "14741318",
+  "title": "Recovery of semantic word processing in global aphasia: a functional MRI study.",
+  "authors": "Zahn R, Drews E, Specht K, Kemeny S, Reith W, Willmes K, Schwarz M, Huber W",
+  "year": "2004",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "One important issue concerning the recovery of higher cognitive functions-such as word comprehension in aphasia-is to what extent impairments can be compensated for by intact parts of the network of areas normally involved in a closely related function (\"redundancy recovery\"). In a previous functional MRI investigation, we were able to show that left hemispheric redundancy recovery within a distributed system of related lexical-semantic functions was the most probable basis of recovery of comprehension from transcortical sensory aphasia. The question remained, however, whether redundancy recovery may play a more general role in the recovery of comprehension after large left hemispheric lesions and severe aphasia. We had the possibility, using the same fMRI paradigm, to study seven cases with left middle cerebral artery (MCA) infarction and partial recovery of comprehension > or =6 months after presentation with global aphasia on acute assessment. Lateralization of activation did not differ significantly between patients and controls. The most consistent regions of activation included the left extrasylvian posterior temporal and the right posterior parietal cortex. Recovery of language comprehension was associated predominantly with activations in regions, which were also activated in several normal subjects. We suggest that a redundancy recovery mechanism within multiple representations of closely related functions was more important than take-over of function by previously unrelated areas (vicariation) as the basis of recovery of word comprehension in our patients in spite of extensive left hemispheric damage. We conclude that redundancy within the lexical-semantic system seems to make an important contribution to recovery of comprehension even in severe aphasia.",
+  "doi": "10.1016/j.cogbrainres.2003.10.021",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "12457762",
+  "title": "Prefrontal activity associated with working memory and episodic long-term memory.",
+  "authors": "Ranganath C, Johnson MK, D'Esposito M",
+  "year": "2003",
+  "journal": "Neuropsychologia",
+  "abstract": "Many recent neuroimaging studies have highlighted the role of prefrontal regions in the sustained maintenance and manipulation of information over short delays, or working memory (WM). In addition, neuroimaging findings have highlighted the role of prefrontal regions in the formation and retrieval of memories for events, or episodic long-term memory (LTM), but it remains unclear whether these regions are distinct from those that support WM. We used event-related functional magnetic resonance imaging (fMRI) to identify patterns of prefrontal activity associated with encoding and recognition during WM and LTM tasks performed by the same subjects. Results showed that the same bilateral ventrolateral prefrontal regions (at or near Brodmann's Areas [BA] 6, 44, 45, and 47) and dorsolateral prefrontal regions (BA 9/46) were engaged during encoding and recognition within the context of WM and LTM tasks. In addition, a region situated in the left anterior middle frontal gyrus (BA 10/46) was engaged during the recognition phases of the WM and LTM tasks. These results support the view that the same prefrontal regions implement reflective processes that support both WM and LTM.",
+  "doi": "10.1016/S0028-3932(02)00169-0",
+  "space": "MNI"
+}

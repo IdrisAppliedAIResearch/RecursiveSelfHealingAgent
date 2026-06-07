@@ -1,0 +1,10 @@
+{
+  "pmid": "11285015",
+  "title": "Activation of frontoparietal cortices during memorized triple-step sequences of saccadic eye movements: an fMRI study.",
+  "authors": "Heide W, Binkofski F, Seitz RJ, Posse S, Nitschke MF, Freund HJ, Kompf D",
+  "year": "2001",
+  "journal": "The European journal of neuroscience",
+  "abstract": "To determine the cortical areas controlling memory-guided sequences of saccadic eye movements, we performed functional magnetic resonance imaging (fMRI) in six healthy adults. Subjects had to perform a memorized sequence of three saccades in darkness, after a triple-step stimulus of successively flashed laser targets. To assess the differential contribution of saccadic subfunctions, we applied several control conditions, such as central fixation with or without triple-step visual stimulation, self-paced saccades in darkness, visually guided saccades and single memory-guided saccades. Triple-step saccades strongly activated the regions of the frontal eye fields, the adjacent ventral premotor cortex, the supplementary eye fields, the anterior cingulate cortex and several posterior parietal foci in the superior parietal lobule, the precuneus, and the middle and posterior portion of the intraparietal sulcus, the probable location of the human parietal eye field. Comparison with the control conditions showed that the right intraparietal sulcus and parts of the frontal and supplementary eye fields are more involved in the execution of triple-step saccades than in the other saccade tasks. In accordance with evidence from clinical lesion studies, we propose that the supplementary eye field essentially controls the triggering of memorized saccadic sequences, whereas activation near the middle portion of the right intraparietal sulcus appears to reflect the necessary spatial computations, including the use of extraretinal information (efference copy) about a saccadic eye displacement for updating the spatial representation of the second or third target of the triple-step sequence.",
+  "doi": "10.1046/j.0953-816x.2001.01472.x",
+  "space": "MNI"
+}

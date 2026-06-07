@@ -1,0 +1,10 @@
+{
+  "pmid": "14683727",
+  "title": "Ipsilateral motor cortex activation on functional magnetic resonance imaging during unilateral hand movements is related to interhemispheric interactions.",
+  "authors": "Kobayashi M, Hutchinson S, Schlaug G, Pascual-Leone A",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Distal, unilateral hand movements can be associated with activation of both sensorimotor cortices on functional MRI. The neurophysiological significance of the ipsilateral activation remains unclear. We examined 10 healthy right-handed subjects with and without activation of the ipsilateral sensorimotor area during unilateral index-finger movements, to examine ipsilateral, uncrossed-descending pathways and interhemispheric interaction between bilateral motor areas, using transcranial magnetic stimulation (TMS). No subject showed ipsilateral activation during right hand movement. Five subjects showed ipsilateral sensorimotor cortical activation during left hand movement (IpsiLM1). In these subjects, paired-pulse TMS revealed a significant interhemispheric inhibition of the left motor cortex by the right hemisphere that was not present in the 5 subjects without IpsiLM1. Neither ipsilateral MEPs nor ipsilateral silent periods were evoked by TMS in any subjects. Our observation suggests that IpsiLM1 is not associated with the presence of ipsilateral uncrossed-descending projections. Instead, IpsiLM1 may reveal an enhanced interhemispheric inhibition from the right hemisphere upon the left to suppress superfluous, excessive activation.",
+  "doi": "10.1016/S1053-8119(03)00220-9",
+  "space": "MNI"
+}

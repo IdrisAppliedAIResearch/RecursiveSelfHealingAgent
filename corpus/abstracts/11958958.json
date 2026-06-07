@@ -1,0 +1,10 @@
+{
+  "pmid": "11958958",
+  "title": "The role of lateral premotor-cerebellar-parietal circuits in motor sequence control: a parametric fMRI study.",
+  "authors": "Haslinger B, Erhard P, Weilke F, Ceballos-Baumann AO, Bartenstein P, Grafin von Einsiedel H, Schwaiger M, Conrad B, Boecker H",
+  "year": "2002",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Functional characterisation of higher order motor systems can be obtained by modulating the processing demands imposed onto relevant motor circuitries. Here we performed whole-brain functional magnetic resonance imaging (fMRI) and parametric statistical analyses in eight healthy volunteers to study task-related recruitment of motor circuits associated with unilateral finger movement sequences of increasing length and complexity, but with equal basic motor parameters. Statistical parametric mapping software was applied for analysis. Categorical analysis of the main effect of motor action showed cerebral activation in the established cortical and subcortical motor network. Parametric analyses of the blood-oxygen-level-dependent (BOLD) contrast revealed significant signal increases correlating to sequence length and complexity in a subset of activated areas, notably contralateral ventral and dorsal premotor cortex, bilateral superior parietal cortex, left inferior frontal gyrus/Broca's area, right dentate nucleus, and left visual association cortex. These data underscore the importance of ventral premotor-cerebellar-parietal circuits in processing length and complexity of sequential finger movements.",
+  "doi": "10.1016/S0926-6410(01)00104-5",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "10792453",
+  "title": "Differential amygdala responses to winning and losing: a functional magnetic resonance imaging study in humans.",
+  "authors": "Zalla T, Koechlin E, Pietrini P, Basso G, Aquino P, Sirigu A, Grafman J",
+  "year": "2000",
+  "journal": "The European journal of neuroscience",
+  "abstract": "The amygdala has been shown to respond to many distinct types of affective stimuli, including reward and punishment feedback in animals. In humans, winning and losing situations can be considered as reward and punishment experiences, respectively. In this study, we used functional magnetic resonance imaging (fMRI) to measure regional brain activity when human subjects were given feedback on their performance during a simple response time task in a fictitious competitive tournament. Lexical stimuli were used to convey positive 'win' or negative 'lose' feedback. The frequency of positive and negative trials was parametrically varied by the experimenters independently from the subjects' actual performance and unbeknownst to them. The results showed that the parametric increase of winning was associated with left amygdala activation whereas the parametric increase of losing was associated with right amygdala activation. These findings provide functional evidence that the human amygdala differentially responds to changes in magnitude of positive or negative reinforcement conveyed by lexical stimuli.",
+  "doi": "10.1046/j.1460-9568.2000.00064.x",
+  "space": "MNI"
+}

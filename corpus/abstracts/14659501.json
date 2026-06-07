@@ -1,0 +1,10 @@
+{
+  "pmid": "14659501",
+  "title": "Successful episodic memory retrieval of newly learned faces activates a left fronto-parietal network.",
+  "authors": "Leube DT, Erb M, Grodd W, Bartels M, Kircher TT",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "It is easier to recognize a familiar face than a newly learned face. The neural basis of familiar face recognition has been elucidated in functional imaging and lesion studies. Behavioural and neuropsychological data indicate, however, that brain systems involved in episodic retrieval of familiar and newly learned faces are distinct. In our study, 12 subjects viewed 30 novel faces in an encoding session. In the study condition, event-related functional magnetic resonance imaging (fMRI) was used to compare brain activation during correct recognition of the recently learned faces to that observed during correct rejection of unknown control faces. Differences were present in the left inferior parietal (BA 40) and left medial frontal/anterior cingulate (BA 32/9) cortex. These two regions may be part of a pathway in the dorsal visual stream, responsible for a \"feeling of familiarity\" in contrast to the ventral pathway in the temporal lobes, which is mainly involved in the recognition of personal identity.",
+  "doi": "10.1016/j.cogbrainres.2003.09.008",
+  "space": "MNI"
+}

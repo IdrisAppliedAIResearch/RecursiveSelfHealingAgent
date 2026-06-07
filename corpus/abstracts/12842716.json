@@ -1,0 +1,10 @@
+{
+  "pmid": "12842716",
+  "title": "What aspect of the fMRI BOLD signal best reflects the underlying electrophysiology in human somatosensory cortex?",
+  "authors": "Arthurs OJ, Boniface SJ",
+  "year": "2003",
+  "journal": "Clinical neurophysiology : official journal of the International Federation of Clinical Neurophysiology",
+  "abstract": "The interpretation of task-induced functional imaging of the brain is critically dependent on understanding the relationship between observed haemodynamic responses and the underlying neural changes. However, the precise nature of this neurovascular coupling relationship remains unknown. In particular, it is unclear which measure of functional magnetic resonance imaging blood oxygen level dependent (fMRI BOLD) activity is the best correlate of neural activity. We measured the somatosensory evoked potential (SEP) amplitude at the scalp, and fMRI BOLD signal to increases in intensity of contralateral median nerve electrical stimulation in healthy non-anaesthetised subjects. We compared correlation analyses between SEP amplitude and both peak voxel fMRI BOLD percentage signal change and mean voxel fMRI BOLD percentage signal change across a somatosensory cluster, and we also performed a voxel-by-voxel correlation between fMRI BOLD activity and SEP amplitude. We found that fMRI BOLD changes in primary somatosensory cortex correlate significantly with SEP amplitudes, suggesting a linear neurovascular coupling relationship under the conditions investigated. We also found that mean changes across a cluster correlate less well with SEP amplitude than peak voxel levels. This suggests that the area of haemodynamic activity correlating with SEP amplitude is smaller than the entire cluster observed.",
+  "doi": "10.1016/S1388-2457(03)00080-4",
+  "space": "MNI"
+}

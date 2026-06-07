@@ -1,0 +1,10 @@
+{
+  "pmid": "11839605",
+  "title": "Top-down controlled visual dimension weighting: an event-related fMRI study.",
+  "authors": "Weidner R, Pollmann S, Muller HJ, von Cramon DY",
+  "year": "2002",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Target detection in visual singleton feature search is slowed when consecutive targets are defined in different visual dimensions. Behavioral data provide evidence that attentional weight needs to be shifted between dimension-specific processing modules. We found similar dimension-specific change effects in a conjunction search task, in which observers searched for an odd-one-out target defined by a unique combination of size and color or, respectively, size and motion direction. Changes of the secondary target dimension (color or motion) across trials, but not target feature changes within a dimension, increased the time required to detect the target. Dimensional change costs were greatly increased for singleton conjunction search compared to singleton feature search. This suggests involvement of top-down control processes in dimensional change in conjunction search, in contrast to stimulus-driven dimensional change in singleton feature search. The functional anatomical correlates of top-down controlled visual dimension changes were investigated in two event-related functional magnetic resonance imaging (fMRI) experiments. In Experiment 1, dimensional change in singleton conjunction search was accompanied by transient activations in a fronto-posterior network of brain areas that was largely non-overlapping with the general network activated during visual search. Experiment 2, which contrasted singleton feature and conjunction search within the same session, revealed a double dissociation in anterior prefrontal cortex: left frontopolar cortex was selectively involved in stimulus-driven dimension changes but not in top-down controlled dimension changes, whereas the reverse was observed in frontomedian cortex.",
+  "doi": "10.1093/cercor/12.3.318",
+  "space": "MNI"
+}

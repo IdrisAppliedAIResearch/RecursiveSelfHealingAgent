@@ -1,0 +1,10 @@
+{
+  "pmid": "12948705",
+  "title": "Visual presentation of single letters activates a premotor area involved in writing.",
+  "authors": "Longcamp M, Anton JL, Roth M, Velay JL",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "In the present fMRI study, we addressed the question as to whether motor-perceptual interactions might be involved in reading. Recognizing the letters encountered when reading is generally assumed to be a purely visual process, yet because we know how to write, we also possess a sensorimotor representation of the letters. Does simply viewing a letter suffice to activate the corresponding motor representation? To answer this question, we asked right-handed subjects first to look at and then to copy single letters or pseudoletters. We established that the visual presentation of letters activated a part of the left premotor cortex (BA6) that was also activated when the letters were being written by the subjects. This premotor zone resembles Exner's area, which is thought to contain the motor programs necessary for producing letters. Visually presented pseudoletters, which had never been written before by the subjects, did not activate this region. These results indicate that the writing motor processes are implicitly evoked when passively observing letters. The cerebral representation of letters is therefore presumably not strictly visual, but based on a multicomponent neural network built up while learning concomitantly to read and write. One of the components might be a sensorimotor one associated with handwriting. This finding shows the existence of close functional relations between the reading and writing processes, and suggests that our reading abilities might be somehow dependent on the way we write.",
+  "doi": "10.1016/S1053-8119(03)00088-0",
+  "space": "MNI"
+}

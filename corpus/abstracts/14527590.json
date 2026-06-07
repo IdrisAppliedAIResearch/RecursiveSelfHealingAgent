@@ -1,0 +1,10 @@
+{
+  "pmid": "14527590",
+  "title": "Brain activity during automatic semantic priming revealed by event-related functional magnetic resonance imaging.",
+  "authors": "Copland DA, de Zubicaray GI, McMahon K, Wilson SJ, Eastburn M, Chenery HJ",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Semantic priming occurs when a subject is faster in recognising a target word when it is preceded by a related word compared to an unrelated word. The effect is attributed to automatic or controlled processing mechanisms elicited by short or long interstimulus intervals (ISIs) between primes and targets. We employed event-related functional magnetic resonance imaging (fMRI) to investigate blood oxygen level dependent (BOLD) responses associated with automatic semantic priming using an experimental design identical to that used in standard behavioural priming tasks. Prime-target semantic strength was manipulated by using lexical ambiguity primes (e.g., bank) and target words related to dominant or subordinate meaning of the ambiguity. Subjects made speeded lexical decisions (word/nonword) on dominant related, subordinate related, and unrelated word pairs presented randomly with a short ISI. The major finding was a pattern of reduced activity in middle temporal and inferior prefrontal regions for dominant versus unrelated and subordinate versus unrelated comparisons, respectively. These findings are consistent with both a dual process model of semantic priming and recent repetition priming data that suggest that reductions in BOLD responses represent neural priming associated with automatic semantic activation and implicate the left middle temporal cortex and inferior prefrontal cortex in more automatic aspects of semantic processing.",
+  "doi": "10.1016/S1053-8119(03)00279-9",
+  "space": "MNI"
+}

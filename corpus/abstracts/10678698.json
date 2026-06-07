@@ -1,0 +1,10 @@
+{
+  "pmid": "10678698",
+  "title": "The calculating brain: an fMRI study.",
+  "authors": "Rickard TC, Romero SG, Basso G, Wharton C, Flitman S, Grafman J",
+  "year": "2000",
+  "journal": "Neuropsychologia",
+  "abstract": "To explore brain areas involved in basic numerical computation, functional magnetic imaging (fMRI) scanning was performed on college students during performance of three tasks; simple arithmetic, numerical magnitude judgment, and a perceptual-motor control task. For the arithmetic relative to the other tasks, results for all eight subjects revealed bilateral activation in Brodmann's area 44, in dorsolateral prefrontal cortex (areas 9 and 10), in inferior and superior parietal areas, and in lingual and fusiform gyri. Activation was stronger on the left for all subjects, but only at Brodmann's area 44 and the parietal cortices. No activation was observed in the arithmetic task in several other areas previously implicated for arithmetic, including the angular and supramarginal gyri and the basal ganglia. In fact, angular and supramarginal gyri were significantly deactivated by the verification task relative to both the magnitude judgment and control tasks for every subject. Areas activated by the magnitude task relative to the control were more variable, but in five subjects included bilateral inferior parietal cortex. These results confirm some existing hypotheses regarding the neural basis of numerical processes, invite revision of others, and suggest productive lines for future investigation.",
+  "doi": "10.1016/S0028-3932(99)00068-8",
+  "space": "MNI"
+}

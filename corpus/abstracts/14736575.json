@@ -1,0 +1,10 @@
+{
+  "pmid": "14736575",
+  "title": "Dissociating the cortical basis of memory for voices, words and tones.",
+  "authors": "Stevens AA",
+  "year": "2004",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Human speech carries both linguistic content and information about the speaker's identity and affect. While neuroimaging has been used extensively to study verbal memory, there has been little attention to the neural basis of memory for voices. Evidence from studies of aphasia and auditory agnosia suggests that voice memory may rely on anatomically distinct areas in the right temporal and parietal lobes regions, but there is little data on the broader neural systems involved in voice memory. The present study tested the hypothesis that the neural systems involved in voice memory are functionally distinct from the systems involved in word recognition and are primarily located in the right cerebral hemisphere. Subjects performed two-back tasks in which they were required to alternately remember the voices speaking (Voice condition), and the words they produced (Word condition). A tone memory condition was also included, as a non-speech comparison. The contrast between the Voice and Word conditions revealed greater Voice-related effects in left temporal, right frontal and right medial parietal areas, while the Word-related effects appeared in left frontal and bilateral parietal areas. These findings map out a partially right-lateralized fronto-parietal network associated with voice memory, which can be distinguished from predominantly left-hemisphere regions associated with verbal working memory. These results provide further evidence that distinct neural systems are associated with the carrier waves of speech and word identity.",
+  "doi": "10.1016/j.cogbrainres.2003.10.008",
+  "space": "MNI"
+}

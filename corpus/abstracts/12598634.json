@@ -1,0 +1,10 @@
+{
+  "pmid": "12598634",
+  "title": "Human cortical object recognition from a visual motion flowfield.",
+  "authors": "Kriegeskorte N, Sorger B, Naumer M, Schwarzbach J, van den Boogert E, Hussy W, Goebel R",
+  "year": "2003",
+  "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+  "abstract": "Moving dots can evoke a percept of the spatial structure of a three-dimensional object in the absence of other visual cues. This phenomenon, called structure from motion (SFM), suggests that the motion flowfield represented in the dorsal stream can form the basis of object recognition performed in the ventral stream. SFM processing is likely to contribute to object perception whenever there is relative motion between the observer and the object viewed. Here we investigate the motion flowfield component of object recognition with functional magnetic resonance imaging. Our SFM stimuli encoded face surfaces and random three-dimensional control shapes with matched curvature properties. We used two different types of an SFM stimulus with the dots either fixed to the surface of the object or moving on it. Despite the radically different encoding of surface structure in the two types of SFM, both elicited strong surface percepts and involved the same network of cortical regions. From early visual areas, this network extends dorsally into the human motion complex and parietal regions and ventrally into object-related cortex. The SFM stimuli elicited a face-selective response in the fusiform face area. The human motion complex appears to have a central role in SFM object recognition, not merely representing the motion flowfield but also the surface structure of the motion-defined object. The motion complex and a region in the intraparietal sulcus reflected the motion state of the SFM-implicit object, responding more strongly when the implicit object was in motion than when it was stationary.",
+  "doi": "",
+  "space": "TAL"
+}

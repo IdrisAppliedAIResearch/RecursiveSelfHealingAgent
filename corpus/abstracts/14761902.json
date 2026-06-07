@@ -1,0 +1,10 @@
+{
+  "pmid": "14761902",
+  "title": "The role of human parietal cortex in attention networks.",
+  "authors": "Han S, Jiang Y, Gu H, Rao H, Mao L, Cui Y, Zhai R",
+  "year": "2004",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "The parietal cortex has been proposed as part of the neural network for guiding spatial attention. However, it is unclear to what degree the parietal cortex contributes to the attentional modulations of activities of the visual cortex and the engagement of the frontal cortex in the attention network. We recorded behavioural performance and haemodynamic responses using functional MRI from a patient with focal left parietal damage in covert visual orienting tasks requiring detection of targets at the attended or unattended locations. While the patient's reaction times to left visual field stimuli were speeded by valid relative to invalid cues, attention to LVF stimuli was associated with enhanced activities in the right extrastriate cortex, right parietal and cingulate cortices, and bilateral frontal cortices. However, the patient's behavioural and neural responses to right visual field stimuli were not influenced by cue validity. The results are discussed in terms of the role of human parietal cortex in the neural network underlying voluntary attentional control.",
+  "doi": "10.1093/brain/awh071",
+  "space": "MNI"
+}

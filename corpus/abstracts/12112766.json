@@ -1,0 +1,10 @@
+{
+  "pmid": "12112766",
+  "title": "Modality independence of word comprehension.",
+  "authors": "Booth JR, Burman DD, Meyer JR, Gitelman DR, Parrish TB, Mesulam MM",
+  "year": "2002",
+  "journal": "Human brain mapping",
+  "abstract": "Functional magnetic resonance imaging (fMRI) was used to examine the functional anatomy of word comprehension in the auditory and visual modalities of presentation. We asked our subjects to determine if word pairs were semantically associated (e.g., table, chair) and compared this to a reference task where they were asked to judge whether word pairs rhymed (e.g., bank, tank). This comparison showed task-specific and modality-independent activation for semantic processing in the heteromodal cortices of the left inferior frontal gyrus (BA 46, 47) and left middle temporal gyrus (BA 21). There were also modality-specific activations in the fusiform gyrus (BA 37) for written words and in the superior temporal gyrus (BA 22) for spoken words. Our findings are consistent with the hypothesis that word form recognition (lexical encoding) occurs in unimodal cortices and that heteromodal brain regions in the anterior as well as posterior components of the language network subserve word comprehension (semantic decoding).",
+  "doi": "10.1002/hbm.10054",
+  "space": "MNI"
+}

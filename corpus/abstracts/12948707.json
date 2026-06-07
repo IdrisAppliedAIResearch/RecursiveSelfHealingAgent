@@ -1,0 +1,10 @@
+{
+  "pmid": "12948707",
+  "title": "Increased frontocerebellar activation in alcoholics during verbal working memory: an fMRI study.",
+  "authors": "Desmond JE, Chen SH, DeRosa E, Pryor MR, Pfefferbaum A, Sullivan EV",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Although there is clear evidence of alcoholism-related damage to the frontal lobes and cerebellum from neuroimaging, neuropathological, and neuropsychological studies, the functional role of the cerebellum and cerebrocerebellar circuits related to verbal working memory deficits of alcoholics have not been well studied. Alcoholic and nonalcoholic subjects performed a Sternberg verbal working memory task while receiving an fMRI scan in a 3T magnet. This task has been found in previous studies to reliably activate the articulatory control and phonological storage components of the phonological loop (left frontal, left temporal/parietal structures, right superior cerebellar regions) in young healthy controls. We hypothesized that the alcoholics would show a different pattern of activation from the controls, based on the regions of interest (ROIs) identified from a previous study of healthy subjects. Behavioral results showed the alcoholics to be performing at a comparable level to the matched controls in terms of accuracy and median reaction time, with no statistically significant differences. However, analysis of the functional data revealed that the alcoholics exhibited greater activation in the left frontal (BA44/45) and right superior cerebellum (HVI) regions relative to the matched controls. These findings suggest that brain activation in left frontal and right cerebellar regions that support the articulatory control system of verbal working memory may require a compensatory increase in alcoholics in order to maintain the same level of performance as controls.",
+  "doi": "10.1016/S1053-8119(03)00102-2",
+  "space": "MNI"
+}

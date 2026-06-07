@@ -1,0 +1,10 @@
+{
+  "pmid": "12738340",
+  "title": "Brain activation patterns during a selective attention test-a functional MRI study in healthy volunteers and patients with schizophrenia.",
+  "authors": "Weiss EM, Golaszewski S, Mottaghy FM, Hofer A, Hausmann A, Kemmler G, Kremser C, Brinkhoff C, Felber SR, Fleischhacker WW",
+  "year": "2003",
+  "journal": "Psychiatry research",
+  "abstract": "Functional magnetic resonance imaging was used to compare cortical activation patterns in healthy volunteers with those in patients with schizophrenia during a modified verbal Stroop task. Healthy subjects (n=13) and patients with schizophrenia (n=13) on stable antipsychotic treatment, matched on demographic variables, were included. Patients were preselected on the basis of good performance on a selective attention test. Patients with schizophrenia showed a significantly increased pattern of activation in the left and right inferior frontal cortex and the anterior cingulate cortex. A significant negative correlation between activation of the left prefrontal cortex and accuracy in the modified Stroop test was observed for healthy controls but not schizophrenia patients. Although both groups recruited the prefrontal cortex during the modified Stroop task, for the schizophrenia patients this activation was bilateral, whereas for the controls this activation was primarily in the left hemisphere, suggesting that patients with schizophrenia recruited more prefrontal regions to perform the task with the same accuracy as healthy controls. Our findings of increased activity across multiple areas of the brain, including dorsolateral frontal cortex and anterior cingulate, in patients with schizophrenia who perform relatively well on a task of selective attention give further evidence that task performance may be a confounding factor in the interpretation of neuroimaging results.",
+  "doi": "10.1016/S0925-4927(03)00019-2",
+  "space": "MNI"
+}

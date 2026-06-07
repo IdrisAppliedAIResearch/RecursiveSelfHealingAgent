@@ -1,0 +1,10 @@
+{
+  "pmid": "12668238",
+  "title": "Phonological processing during language production: fMRI evidence for a shared production-comprehension network.",
+  "authors": "Heim S, Opitz B, Muller K, Friederici AD",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Studies of phonological processes during language comprehension consistently report activation of the superior portion of Broca's area. In the domain of language production, however, there is no unequivocal evidence for the contribution of Broca's area to phonological processing. The present event-related fMRI study investigated the existence of a common neural network for phonological decisions in comprehension and production by using production tasks most comparable to those previously used in comprehension. Subjects performed two decision tasks on the initial phoneme of German picture names (/b/ or not? Vowel or not?). A semantic decision task served as a baseline for both phonological tasks. The contrasts between each phonological task and the semantic task were calculated, and a conjunction analysis was performed. There was significant activation in the superior portion of Broca's area (Brodmann's area (BA) 44) in the conjunction analysis, also present in each single contrast. In addition, further left frontal (BA 45/46) and temporal (posterior superior temporal gyrus) areas known to support phonological processing in both production and comprehension were activated. The results suggest the existence of a shared fronto-temporal neural network engaged in the processing of phonological information in both perception and production.",
+  "doi": "10.1016/S0926-6410(02)00284-7",
+  "space": "MNI"
+}

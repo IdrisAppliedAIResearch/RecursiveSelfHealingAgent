@@ -1,0 +1,10 @@
+{
+  "pmid": "12948722",
+  "title": "Context-dependent cortical activation in response to financial reward and penalty: an event-related fMRI study.",
+  "authors": "Akitsuki Y, Sugiura M, Watanabe J, Yamashita K, Sassa Y, Awata S, Matsuoka H, Maeda Y, Matsue Y, Fukuda H, Kawashima R",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "An event-related fMRI technique was used to assess neural responses to financial reward and penalty during a simple gambling task. We attempted to determine whether brain activities are dependent on the unique context of an event sequence. Thirty-six healthy volunteers participated in the study. The task was to guess the color of the suit of a card on each trial and to respond by pressing a button. Every correct response (\"win\") and incorrect response (\"loss\") was associated with financial reward and penalty, respectively. The magnitude of reward or penalty in each trial did not change; however, the subjects' self-reported emotional arousal was significantly higher for the events of \"the fourth win of four wins in a row\" and \"the fourth loss of four losses in a row.\" We also found that the bilateral anterior cingulate and medial prefrontal cortices were specifically activated when the subjects experienced \"the fourth win of four wins in a row\" and \"the fourth loss of four losses in a row.\" When the subjects experienced \"a win following four losses in a row\" or \"a loss following four wins in a row,\" the right dorsolateral prefrontal cortex was specifically activated. Our data indicate that there exist brain activities associated with the event-sequence context in which abstract reward or penalty is received. These context-dependent activities appear to be crucial for adapting oneself to new circumstances and may account for clinical symptoms of various mental illnesses in which dysfunction of these regions has been reported.",
+  "doi": "10.1016/S1053-8119(03)00250-7",
+  "space": "MNI"
+}

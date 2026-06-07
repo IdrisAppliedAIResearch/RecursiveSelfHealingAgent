@@ -1,0 +1,10 @@
+{
+  "pmid": "11170305",
+  "title": "Error-related brain activation during a Go/NoGo response inhibition task.",
+  "authors": "Menon V, Adleman NE, White CD, Glover GH, Reiss AL",
+  "year": "2001",
+  "journal": "Human brain mapping",
+  "abstract": "Inhibitory control and performance monitoring are critical executive functions of the human brain. Lesion and imaging studies have shown that the inferior frontal cortex plays an important role in inhibition of inappropriate response. In contrast, specific brain areas involved in error processing and their relation to those implicated in inhibitory control processes are unknown. In this study, we used a random effects model to investigate error-related brain activity associated with failure to inhibit response during a Go/NoGo task. Error-related brain activation was observed in the rostral aspect of the right anterior cingulate (BA 24/32) and adjoining medial prefrontal cortex, the left and right insular cortex and adjoining frontal operculum (BA 47) and left precuneus/posterior cingulate (BA 7/31/29). Brain activation related to response inhibition and competition was observed bilaterally in the dorsolateral prefrontal cortex (BA 9/46), pars triangularis region of the inferior frontal cortex (BA 45/47), premotor cortex (BA 6), inferior parietal lobule (BA 39), lingual gyrus and the caudate, as well as in the right dorsal anterior cingulate cortex (BA 24). These findings provide evidence for a distributed error processing system in the human brain that overlaps partially, but not completely, with brain regions involved in response inhibition and competition. In particular, the rostal anterior cingulate and posterior cingulate/precuneus as well as the left and right anterior insular cortex were activated only during error processing, but not during response competition, inhibition, selection, or execution. Our results also suggest that the brain regions involved in the error processing system overlap with brain areas implicated in the formulation and execution of articulatory plans.",
+  "doi": "10.1002/1097-0193(200103)12:3<131::AID-HBM1010>3.0.CO;2-C",
+  "space": "MNI"
+}

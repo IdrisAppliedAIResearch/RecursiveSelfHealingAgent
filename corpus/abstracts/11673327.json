@@ -1,0 +1,10 @@
+{
+  "pmid": "11673327",
+  "title": "Phantom movements and pain. An fMRI study in upper limb amputees.",
+  "authors": "Lotze M, Flor H, Grodd W, Larbig W, Birbaumer N",
+  "year": "2001",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "Using functional MRI, we investigated 14 upper limb amputees and seven healthy controls during the execution of hand and lip movements and imagined movements of the phantom limb or left hand. Only patients with phantom limb pain showed a shift of the lip representation into the deafferented primary motor and somatosensory hand areas during lip movements. Displacement of the lip representation in the primary motor and somatosensory cortex was positively correlated to the amount of phantom limb pain. Thalamic activation was only present during executed movements in the healthy controls. The cerebellum showed no evidence of reorganizational changes. In amputees, movement of the intact hand showed a level of activation similar to movement of the right dominant hand in the healthy controls. During imagination of moving the phantom hand, all patients showed significantly higher activation in the contralateral primary motor and somatosensory cortices compared with imagination of hand movements in the controls. In the patients with phantom limb pain but not the pain-free amputees, imagined movement of the phantom hand activated the neighbouring face area. These data suggest selective coactivation of the cortical hand and mouth areas in patients with phantom limb pain. This reorganizational change may be the neural correlate of phantom limb pain.",
+  "doi": "10.1093/brain/124.11.2268",
+  "space": "MNI"
+}

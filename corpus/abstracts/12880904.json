@@ -1,0 +1,10 @@
+{
+  "pmid": "12880904",
+  "title": "Medial temporal lobe activation during semantic language processing: fMRI findings in healthy left- and right-handers.",
+  "authors": "Bartha L, Brenneis C, Schocke M, Trinka E, Koylu B, Trieb T, Kremser C, Jaschke W, Bauer G, Poewe W, Benke T",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Medial temporal lobe (MTL) areas are well known to serve episodic memory functions; their contribution to semantic memory has been occasionally noticed but not studied in detail. In the present fMRI study, 35 right-handed and 35 left-handed healthy subjects performed a semantic decision paradigm during which subjects heard spoken concrete nouns designating objects and had to decide on whether these objects were available in the supermarket and cost lest then a certain amount of money. The control paradigm consisted of sequences of low and high tones where subjects had to decide whether a sequence contained two high tones. The resulting contrast activation of semantic decision versus tone decision involved neocortical temporal, parietal, and prefrontal areas. Additional significant, bilateral activations in the MTL, the hippocampal formation, and adjacent areas were found. The exact incidence and location of activation was studied in a single-subject analysis for all 70 subjects. At the chosen threshold of P<0.001, 94% of subjects showed activations in the MTL and inferior temporal lobe (ITL). Activations were found along the longitudinal axis of the MTL, including the hippocampal formation and the parahippocampal gyrus. In the ITL, parts of the fusiform and lingual gyri were activated. Activations were similar in right- and left-handers. We conclude from this study that the MTL and parts of the ITL can be added to the areas activated by semantic verbal memory processing.",
+  "doi": "10.1016/S0926-6410(03)00135-6",
+  "space": "MNI"
+}

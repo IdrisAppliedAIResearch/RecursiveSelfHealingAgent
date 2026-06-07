@@ -1,0 +1,10 @@
+{
+  "pmid": "14645385",
+  "title": "How self-initiated memorized movements become automatic: a functional MRI study.",
+  "authors": "Wu T, Kansaku K, Hallett M",
+  "year": "2004",
+  "journal": "Journal of neurophysiology",
+  "abstract": "We used functional magnetic resonance imaging (fMRI) and dual tasks to investigate the physiology of how movements become automatic. Normal subjects were asked to practice some self-initiated, self-paced, memorized sequential finger movements with different complexity until they could perform the tasks automatically. Automaticity was evaluated by having subjects perform a secondary task simultaneously with the sequential movements. Our secondary task was a letter-counting task where subjects were asked to identify the number of times a target letter from the letter sequences was seen. Only the performances that achieved high accuracy in both single and dual tasks were considered automatic. The fMRI results before and after automaticity was achieved were compared. Our data showed that for both conditions, sequential movements activated similar brain regions. No additional activity was observed in the automatic condition. There was less activity in bilateral cerebellum, presupplementary motor area, cingulate cortex, left caudate nucleus, premotor cortex, parietal cortex, and prefrontal cortex during the automatic stage. These findings suggest that most of the motor network participates in executing automatic movements and that it becomes more efficient as movements become more automatic. Our results do not provide evidence for any area to become more activated for automatic movements.",
+  "doi": "10.1152/jn.01052.2003",
+  "space": "MNI"
+}

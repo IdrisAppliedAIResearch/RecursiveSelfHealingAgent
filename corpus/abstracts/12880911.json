@@ -1,0 +1,10 @@
+{
+  "pmid": "12880911",
+  "title": "Brain networks for analyzing eye gaze.",
+  "authors": "Hooker CI, Paller KA, Gitelman DR, Parrish TB, Mesulam MM, Reber PJ",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "The eyes convey a wealth of information in social interactions. This information is analyzed by multiple brain networks, which we identified using functional magnetic resonance imaging (MRI). Subjects attempted to detect a particular directional cue provided either by gaze changes on an image of a face or by an arrow presented alone or by an arrow superimposed on the face. Another control condition was included in which the eyes moved without providing meaningful directional information. Activation of the superior temporal sulcus accompanied extracting directional information from gaze relative to directional information from an arrow and relative to eye motion without relevant directional information. Such selectivity for gaze processing was not observed in face-responsive fusiform regions. Brain activations were also investigated while subjects viewed the same face but attempted to detect when the eyes gazed directly at them. Most notably, amygdala activation was greater during periods when direct gaze never occurred than during periods when direct gaze occurred on 40% of the trials. In summary, our results suggest that increases in neural processing in the amygdala facilitate the analysis of gaze cues when a person is actively monitoring for emotional gaze events, whereas increases in neural processing in the superior temporal sulcus support the analysis of gaze cues that provide socially meaningful spatial information.",
+  "doi": "10.1016/S0926-6410(03)00143-5",
+  "space": "TAL"
+}

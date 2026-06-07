@@ -1,0 +1,10 @@
+{
+  "pmid": "11960021",
+  "title": "The neural system that bridges reward and cognition in humans: an fMRI study.",
+  "authors": "Pochon JB, Levy R, Fossati P, Lehericy S, Poline JB, Pillon B, Le Bihan D, Dubois B",
+  "year": "2002",
+  "journal": "Proceedings of the National Academy of Sciences of the United States of America",
+  "abstract": "We test the hypothesis that motivational and cognitive processes are linked by a specific neural system to reach maximal efficiency. We studied six normal subjects performing a working memory paradigm (n-back tasks) associated with different levels of monetary reward during an fMRI session. The study showed specific brain activation in relation with changes in both the cognitive loading and the reward associated with task performance. First, the working memory tasks activated a network including the dorsolateral prefrontal cortex [Brodmann area (BA) 9/46] and, in addition, in the lateral frontopolar areas (BA 10), but only in the more demanding condition (3-back task). This result suggests that lateral prefrontal areas are organized in a caudo-rostral continuum in relation with the increase in executive requirement. Second, reward induces an increased activation in the areas already activated by working memory processing and in a supplementary region, the medial frontal pole (BA 10), regardless of the level of cognitive processing. It is postulated that the latter region plays a specific role in monitoring the reward value of ongoing cognitive processes. Third, we detected areas where the signal decreases (ventral-BA 11/47 and subgenual prefrontal cortices) in relation with both the increase of cognitive demand and the reward. The deactivation may represent an emotional gating aimed at inhibiting adverse emotional signals to maximize the level of performance. Taken together, these results suggest a balance between increasing activity in cortical cognitive areas and decreasing activity in the limbic and paralimbic structures during ongoing higher cognitive processing.",
+  "doi": "10.1073/pnas.082111099",
+  "space": "MNI"
+}

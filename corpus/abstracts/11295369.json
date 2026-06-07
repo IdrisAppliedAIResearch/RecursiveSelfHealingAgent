@@ -1,0 +1,10 @@
+{
+  "pmid": "11295369",
+  "title": "An event-related functional magnetic resonance imaging study of an auditory oddball task in schizophrenia.",
+  "authors": "Kiehl KA, Liddle PF",
+  "year": "2001",
+  "journal": "Schizophrenia research",
+  "abstract": "Schizophrenia is a diffuse brain disease that affects many facets of cognitive function. One of the most replicated findings in the neurobiology of schizophrenia is that the event-related potentials to auditory oddball stimuli are abnormal, effects believed to be related to abnormalities in attentional and memory processes. Although event-related potentials provide excellent resolution regarding the time course of information processing, such studies are poor at characterizing the spatial location of these abnormalities. To address this issue, we used event-related functional magnetic resonance imaging techniques to elucidate the neural areas underlying target detection in schizophrenia. Consistent with recent event-related functional magnetic resonance imaging results, target processing by control participants was associated with bilateral activation in the anterior superior temporal gyri, inferior and superior parietal lobules, and activation in anterior and posterior cingulate, thalamus, and right lateral frontal cortex. For the schizophrenic patients, selective deficits were observed in both the extent and strength of activation associated with target processing in the right lateral frontal cortex, thalamus, bilateral anterior superior temporal gyrus, anterior and posterior cingulate, and right inferior and superior parietal lobules. These findings are consistent with the evidence for abnormal processing of oddball stimuli suggested by event-related potential studies in schizophrenic patients, but provide much more detailed evidence regarding the anatomical sites implicated. These data are consistent with the hypothesis that schizophrenia is characterized by a widespread pathological process affecting many cerebral areas, including association cortex and thalamus.",
+  "doi": "10.1016/S0920-9964(00)00117-1",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "15050577",
+  "title": "Neural representations of nouns and verbs in Chinese: an fMRI study.",
+  "authors": "Li P, Jin Z, Tan LH",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The neural representation of nouns and verbs has been a focus of many recent neuroimaging and neuropsychological studies. These studies have in general found that in English and other Indo-European languages, verbs are represented in the frontal region (e.g., the left prefrontal cortex) while nouns in the posterior regions (the temporal-occipital regions). There is accumulating evidence, however, that the picture may have been overly simplified. In the present study, we examine the representations of nouns and verbs in Chinese, a language that has unique properties in its grammar and particularly in the structure of nouns and verbs. In an fMRI experiment, subjects viewed a list of disyllabic nouns, verbs, and class-ambiguous words and performed a lexical decision on the target. Results from the experiment indicate that nouns and verbs in Chinese activate a wide range of overlapping brain areas in distributed networks, in both the left and the right hemispheres. The results provide support for the prediction regarding the impact of linguistic typology and language-specific influences on the neural representation of grammatical categories. They are consistent with recent proposals that specific linguistic experience shapes neural systems of reading and speaking and that the language-specific properties of the Chinese grammar affect the representation, processing, and acquisition in this language.",
+  "doi": "10.1016/j.neuroimage.2003.10.044",
+  "space": "MNI"
+}

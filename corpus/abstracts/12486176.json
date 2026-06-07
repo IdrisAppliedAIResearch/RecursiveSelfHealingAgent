@@ -1,0 +1,10 @@
+{
+  "pmid": "12486176",
+  "title": "Appetitive and aversive olfactory learning in humans studied using event-related  functional magnetic resonance imaging.",
+  "authors": "Gottfried JA, O'Doherty J, Dolan RJ",
+  "year": "2002",
+  "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+  "abstract": "We combined event-related functional magnetic resonance imaging (fMRI) with olfactory classical conditioning to differentiate the neural responses evoked during appetitive and aversive olfactory learning. Three neutral faces [the conditioned stimuli (CS+)] were repetitively paired with pleasant, neutral, or unpleasant odors [the unconditioned stimuli (UCS)] in a partial reinforcement schedule. A fourth face was never paired to odor [the nonconditioned stimulus (CS-)]. Learning-related neural activity, comparing unpaired (face only) CS+ stimuli with CS-, showed valence-independent activations in rostral and caudal orbitofrontal cortex (OFC). Medial OFC responded to the appetitive (app) CS+, whereas lateral OFC responded to the aversive (av) CS+. Within nucleus accumbens, neural responses showed divergent activation profiles that increased with time in response to the appCS+ but decreased in response to the avCS+. In posterior amygdala, responses were elicited by the appCS+, which habituated over time. In temporal piriform cortex, neural responses were evoked by the avCS+, which progressively increased with time. These results highlight regional and temporal dissociations during olfactory learning and imply that emotionally salient odors can engender cross-modal associative learning. Moreover, the findings suggest that the role of human primary (piriform) and secondary olfactory cortices transcends their function as mere intermediaries of chemosensory information processing.",
+  "doi": "",
+  "space": "MNI"
+}

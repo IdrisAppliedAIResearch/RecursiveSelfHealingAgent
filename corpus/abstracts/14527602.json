@@ -1,0 +1,10 @@
+{
+  "pmid": "14527602",
+  "title": "Adolescent immaturity in attention-related brain engagement to emotional facial expressions.",
+  "authors": "Monk CS, McClure EB, Nelson EE, Zarahn E, Bilder RM, Leibenluft E, Charney DS, Ernst M, Pine DS",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Selective attention, particularly during the processing of emotionally evocative events, is a crucial component of adolescent development. We used functional magnetic resonance imagining (fMRI) with adolescents and adults to examine developmental differences in activation in a paradigm that involved selective attention during the viewing of emotionally engaging face stimuli. We evaluated developmental differences in neural activation for three comparisons: (1) directing attention to subjective responses to fearful facial expressions relative to directing attention to a nonemotional aspect (nose width) of fearful faces, (2) viewing fearful relative to neutral faces while attending to a nonemotional aspect of the face, and (3) viewing fearful relative to neutral faces while attention was unconstrained (passive viewing). The comparison of activation across attention tasks revealed greater activation in the orbital frontal cortex in adults than in adolescents. Conversely, when subjects attended to a nonemotional feature, fearful relative to neutral faces influenced activation in the anterior cingulate more in adolescents than in adults. When attention was unconstrained, adolescents relative to adults showed greater activation in the anterior cingulate, bilateral orbitofrontal cortex, and right amygdala in response to the fearful relative to neutral faces. These findings suggest that adults show greater modulation of activity in relevant brain structures based on attentional demands, whereas adolescents exhibit greater modulation based on emotional content.",
+  "doi": "10.1016/S1053-8119(03)00355-0",
+  "space": "MNI"
+}

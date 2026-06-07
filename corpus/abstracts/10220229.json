@@ -1,0 +1,10 @@
+{
+  "pmid": "10220229",
+  "title": "Learning-related neuronal responses in prefrontal cortex studied with functional  neuroimaging.",
+  "authors": "Fletcher P, Buchel C, Josephs O, Friston K, Dolan R",
+  "year": "1999",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "We assessed time-dependent neuronal activity accompanying learning using functional magnetic resonance imaging (fMRI). An artificial grammar learning paradigm enabled us to dissociate activations associated with individual item learning from those involved in learning the underlying grammar system. We show that a localized region of right prefrontal cortex (PFC) is preferentially sensitive to individual item learning during the early stages of the experiment, while the left PFC region is sensitive to grammar learning which occurred across the entire course of the experiment. In addition to dissociating these two types of learning, we were able to characterize the effect of rule acquisition on neuronal responses associated with explicit learning of individual items. This effect was expressed as modulation of the time-dependent right PFC activations such that the early increase in activation associated with item learning was attenuated as the experiment progressed. In a further analysis we used structural equation modelling to explore time-dependent changes in inter-regional connectivity as a function of both item and grammar rule learning. Although there were no significant effects of item learning on the measured path strengths, rule learning was associated with a decrease in right fronto-parietal connectivity and an increase in connectivity between left and right PFC. Further fronto-parietal path strengths were observed to change, with an increase in left fronto-parietal and a decrease in right fronto-parietal connectivity path strength from right PFC to left parietal cortex. We interpret our findings in terms of a left frontal system mediating the semantic analysis of study items and directly influencing a right fronto-parietal system associated with episodic memory retrieval.",
+  "doi": "10.1093/cercor/9.2.168",
+  "space": "MNI"
+}

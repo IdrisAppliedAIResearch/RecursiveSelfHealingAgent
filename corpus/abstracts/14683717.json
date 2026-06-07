@@ -1,0 +1,10 @@
+{
+  "pmid": "14683717",
+  "title": "Parametric manipulation of conflict and response competition using rapid mixed-trial event-related fMRI.",
+  "authors": "Durston S, Davidson MC, Thomas KM, Worden MS, Tottenham N, Martinez A, Watts R, Ulug AM, Casey BJ",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "In the current study we examined the influence of preceding context on attentional conflict and response competition using a flanker paradigm. Nine healthy right-handed adults participated in a rapid mixed trial event-related functional magnetic resonance imaging (fMRI) study, in which increasing numbers of either compatible or incompatible trials preceded an incompatible trial. Behaviorally, reaction times on incompatible trials increased as a function of the number of preceding compatible trials. Several brain regions showed monotonic changes to the preceding context manipulation. The most common pattern was observed in anterior cingulate, dorsolateral prefrontal, and superior parietal regions. These areas showed an increase in activity for incompatible trials as the number of preceding compatible trials increased and a decrease in activity for incompatible trials as the number of preceding incompatible trials increased. Post hoc analysis showed that while the MR signal in the anterior cingulate and dorsolateral prefrontal regions peaked before the superior parietal region, the dorsolateral prefrontal MR signal peaked early and remained at this level. These findings are consistent with the conflict monitoring theory that postulates that the anterior cingulate cortex detects or monitors conflict, while PFC is involved in control adjustments that may then lead to modulation of superior parietal cortex in top-down biasing of attention.",
+  "doi": "10.1016/j.neuroimage.2003.08.004",
+  "space": "TAL"
+}

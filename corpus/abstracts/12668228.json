@@ -1,0 +1,10 @@
+{
+  "pmid": "12668228",
+  "title": "Attentional set for external information activates the right intraparietal area.",
+  "authors": "Imaruoka T, Yanagida T, Miyauchi S",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Visual attention can be allocated to a location or an object by using two different types of information: internal information and external information. The results of recent psychological studies [Bagon and Egeth, Percept. Psychophys. 55 (1994) 485] suggest that an observer's attentional set determines how these two kinds of information are used in visual tasks. In this study, we measured brain activities during two modes of visual search; one is the feature search mode, in which an attentional set for knowledge of a target item (internal information) is used, and the other is the singleton detection mode, in which an attentional set for oddness in the visual scene (external information) is used. We found extended activation in the frontal and parietal areas for both search modes. In addition, a direct comparison of brain activity during the singleton detection mode and the feature search mode revealed that the areas around the right intraparietal sulcus were more involved in the attentional set for oddness. These results suggest that the human right intraparietal cortex is related to the attentional set for external information.",
+  "doi": "10.1016/S0926-6410(02)00274-4",
+  "space": "MNI"
+}

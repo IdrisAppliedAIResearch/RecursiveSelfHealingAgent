@@ -1,0 +1,10 @@
+{
+  "pmid": "11587890",
+  "title": "Encoding and retrieval related cerebral activation in continuous verbal recognition.",
+  "authors": "Jessen F, Flacke S, Granath DO, Manka C, Scheef L, Papassotiropoulos A, Schild HH, Heun R",
+  "year": "2001",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "The differential neuronal activation related to encoding of novel and recognition of previously studied items and the effect of retrieval effort on neuronal activation were assessed in a event-related functional magnetic resonance imaging experiment. A verbal continuous recognition task with two repetitions of the target items was used. The interpretation of the results was focused on brain areas that have been previously reported to be involved in explicit memory. Encoding of novel words in comparison with the first repetition was associated with a stronger activation in the left parahippocampal and inferior frontal gyrus. Encoding of novel words compared to the second repetition was related to a greater bifrontal activation. Recognition of studied items was associated with greater activation in the medial and bilateral inferior parietal lobe at first repetition and in the medial and left inferior parietal lobe at second repetition in comparison with encoding of the novel items. Recognition at first repetition compared to recognition at second repetition was associated with greater bilateral frontal activation. The results are discussed in relation to current concepts of spatial differentiation of memory function and findings from event-related potentials studies of continuous recognition.",
+  "doi": "10.1016/S0926-6410(01)00046-5",
+  "space": "MNI"
+}

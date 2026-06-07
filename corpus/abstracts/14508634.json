@@ -1,0 +1,10 @@
+{
+  "pmid": "14508634",
+  "title": "The neural basis of the bilateral distribution advantage.",
+  "authors": "Pollmann S, Zaidel E, von Cramon DY",
+  "year": "2003",
+  "journal": "Experimental brain research",
+  "abstract": "Letters can be matched by their physical identity (i.e., a-a: same/A-a: different) or by their name (both a-a and A-a: same). The latter, more demanding task has in previous experiments led to an advantage of bilateral over within-hemifield matches, which was not observed in the former. We have investigated the neural basis of this bilateral distribution advantage (BDA) in letter name matching with event-related fMRI. Unilateral, compared to bilateral, name matching led to increased activation in the contralateral fusiform and lateral occipital gyri. This increase went along with an ipsilateral increase of activation in homologous areas. Such a hemispheric resource sharing was not observed for letter shape matching. This pattern of activation shows that letter name matching induces hemispheric resource sharing in visual areas, which occurs when task demands in the hemisphere of input reach a critical level. Activation in anterior cingulate complex and posterior cingulate/retrosplenial cortex showed a task x visual field interaction with lower activation for bilateral than unilateral name matches but higher activation for bilateral than unilateral shape matches, which fits the interhemispheric transfer demands in these tasks.",
+  "doi": "10.1007/s00221-003-1551-0",
+  "space": "MNI"
+}

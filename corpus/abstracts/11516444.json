@@ -1,0 +1,10 @@
+{
+  "pmid": "11516444",
+  "title": "Neural activity associated with episodic memory for emotional context.",
+  "authors": "Maratos EJ, Dolan RJ, Morris JS, Henson RN, Rugg MD",
+  "year": "2001",
+  "journal": "Neuropsychologia",
+  "abstract": "To address the question of which brain regions subserve retrieval of emotionally-valenced memories, we used event-related fMRI to index neural activity during the incidental retrieval of emotional and non-emotional contextual information. At study, emotionally neutral words were presented in the context of sentences that were either negatively, neutrally or positively valenced. At test, fMRI data were obtained while participants discriminated between studied and unstudied words. Recognition of words presented in emotionally negative relative to emotionally neutral contexts was associated with enhanced activity in right dorsolateral prefrontal cortex, left amygdala and hippocampus, right lingual gyrus and posterior cingulate cortex. Recognition of words from positive relative to neutral contexts was associated with increased activity in bilateral prefrontal and orbitofrontal cortices, and left anterior temporal lobe. These findings suggest that neural activity mediating episodic retrieval of contextual information and its subsequent processing is modulated by emotion in at least two ways. First, there is enhancement of activity in networks supporting episodic retrieval of neutral information. Second, regions known to be activated when emotional information is encountered in the environment are also active when emotional information is retrieved from memory.",
+  "doi": "10.1016/S0028-3932(01)00025-2",
+  "space": "MNI"
+}

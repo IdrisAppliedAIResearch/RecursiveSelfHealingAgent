@@ -1,0 +1,10 @@
+{
+  "pmid": "14980573",
+  "title": "Voxel-based relaxometry: a new approach for analysis of T2 relaxometry changes in epilepsy.",
+  "authors": "Pell GS, Briellmann RS, Waites AB, Abbott DF, Jackson GD",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The measurement of the T2 relaxation time (T2 relaxometry) had been established as a reliable tool for the assessment of certain conditions such as temporal lobe epilepsy. The standard procedure for analysis of T2 data uses manually drawn regions of interest (ROIs). This approach is limited by its subjective nature and its restricted scope of investigation within selected regions of the brain. In this study, we introduce a voxel-based analysis approach termed voxel-based relaxometry (VBR). Tissue signal changes were assessed in 19 patients with hippocampal sclerosis (HS) and in 38 healthy controls using (i) conventional ROI-based analysis with several bilateral ROIs and also (ii) the VBR method in which the T2 maps are warped to a stereotactic space, smoothed and statistically compared. Conventional ROI analysis identified the expected T2 increase in the sclerotic hippocampus in all HS patients. Furthermore, 13 of the 19 patients displayed a T2 increase in at least one of the other ROIs. The VBR analysis showed a similar pattern of statistically significant areas of increased T2 within the sclerotic hippocampus. In addition, extrahippocampal areas of increased T2 were apparent including the anterior temporal lobe white matter and the parahippocampal gyrus. The results of the VBR analysis are in agreement with the conventional ROI analysis. The VBR analysis has the advantage of providing an even-handed assessment of T2 differences through the brain. We recommend VBR as an alternative means of relaxometry data analysis that provides an objective assessment of differences between subjects.",
+  "doi": "10.1016/j.neuroimage.2003.09.059",
+  "space": "MNI"
+}

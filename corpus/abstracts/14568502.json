@@ -1,0 +1,10 @@
+{
+  "pmid": "14568502",
+  "title": "Evidence of enhancement of spatial attention during inhibition of a visuo-motor response.",
+  "authors": "Maguire RP, Broerse A, de Jong BM, Cornelissen FW, Meiners LC, Leenders KL, den Boer JA",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "A visuo-motor task was used as the setting for a study into inhibition in six healthy volunteers using fMRI. The task involved responding to colored stimuli, which appeared at random positions in the left and right visual field, with the corresponding hand. The volunteers were asked to respond to green colored stimuli (\"go\" response) and to inhibit responses to red stimuli (\"no-go\" response). The task was presented in a block design with blocks of three types; only \"go\" trials, a pseudo-random mixture of \"go\" and \"no-go\" tasks (\"go/no-go\" block), and \"visual control.\" ANCOVA analysis of the fMRI data was performed within the framework of SPM99. Increased activation in the go vs visual control comparison was found in the bilateral motor and medial premotor cortices associated with the action of the button press response, as well as parietal regions attending to the task of identifying the visual field. The go/no-go vs visual control comparison showed a similar pattern, plus additional prefrontal areas that have previously been shown to be associated with inhibition. The direct comparison of the go and go/no-go blocks highlighted large differences not only in the prefrontal cortices, associated with inhibition, but also particularly in the right parietal cortex. We interpret the increased parietal activation, during inhibition, as representing a heightened spatial attention required for the correct execution of the inhibition task.",
+  "doi": "10.1016/S1053-8119(03)00402-6",
+  "space": "MNI"
+}

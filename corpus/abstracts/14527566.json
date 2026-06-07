@@ -1,0 +1,10 @@
+{
+  "pmid": "14527566",
+  "title": "The cerebellum and olfaction in the aging brain: a functional magnetic resonance  imaging study.",
+  "authors": "Ferdon S, Murphy C",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "The present study investigated activation of distinct cerebellar regions as a result of olfactory stimulation in healthy young and elderly adults using functional magnetic resonance imaging (fMRI). Ten young and 10 elderly adults were imaged using a 1.5-TMR scanner. The odorant amyl acetate was delivered in 12-s on, 40-s off cycles. Throughout the scan participants responded with a button press at first detection of each stimulus interval followed by a second button press upon odorant extinction. Images were processed with AFNI software. Elderly participants showed significantly decreased cerebellar activation in both the superior semilunar lobule (Crus I) and the inferior semilunar lobule (Crus II), two of three previously identified regions of interest for odor processing, compared to young adults. Interestingly, both groups showed similar levels of activation in the third region of interest, the posterior quadrangular lobule (VI), although the elderly showed more variability than the young did. Previous research identifying this area to be involved in attention may reflect the possibility that elderly adults engaged in olfactory tasks may show more variability than young participants in the degree of attentional demands needed for these tasks as a result of decreased olfactory abilities.",
+  "doi": "10.1016/S1053-8119(03)00276-3",
+  "space": "TAL"
+}

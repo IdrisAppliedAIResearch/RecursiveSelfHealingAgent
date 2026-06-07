@@ -1,0 +1,10 @@
+{
+  "pmid": "12880798",
+  "title": "In search of the hidden: an fMRI study with implications for the study of patients with autism and with acquired brain injury.",
+  "authors": "Manjaly ZM, Marshall JC, Stephan KE, Gurd JM, Zilles K, Fink GR",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "The Embedded Figures Task involves a search for a target hidden in a more complex visual pattern. The task has been used to study local perception and visual search in a range of normal and pathological populations. After acquired brain damage, impairment on embedded figures is strongly associated with aphasia; in the context of developmental disorder, people with autism or with Asperger's syndrome are reliably found to be better than normal controls on the task. The current study employed functional MRI with healthy volunteers to elucidate the brain regions that are specifically involved in the local search aspects of the Embedded Figures Task. We did so by analyzing the neural activations that are implicated in the task over and above those involved in an easier visual search task and in a straightforward shape recognition task. Significant activations (P < 0.05, corrected) specific in the above sense to the Embedded Figures Task were found in left inferior and left superior parietal cortex and in left ventral premotor cortex (inferior frontal gyrus). By contrast, comparing the overall effect of visual search within geometric figures to pure recognition of geometric shapes revealed more widespread activations in parietal, occipital, cerebellar, and frontal areas bilaterally. The implications of these findings for some developmental and acquired pathologies of perceptual functioning are outlined. We also relate our results to studies of local/global processing in other tasks.",
+  "doi": "10.1016/S1053-8119(03)00095-8",
+  "space": "MNI"
+}

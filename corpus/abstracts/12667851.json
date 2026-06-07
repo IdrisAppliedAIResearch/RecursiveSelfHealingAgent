@@ -1,0 +1,10 @@
+{
+  "pmid": "12667851",
+  "title": "Single trial fMRI reveals significant contralateral bias in responses to laser pain within thalamus and somatosensory cortices.",
+  "authors": "Bingel U, Quante M, Knab R, Bromm B, Weiller C, Buchel C",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Pain is processed in multiple brain areas, indicating the complexity of pain perception. The ability to locate pain plays a pivotal role in immediate defense and withdrawal behavior. However, how the brain localizes nociceptive information without additional information from somatotopically organized mechano-receptive pathways is not well understood. We used single-trial functional magnetic resonance imaging (fMRI) to assess hemodynamic responses to right and left painful stimulation. Thulium-YAG-(yttrium-aluminium-granate)-laser-evoked pain stimuli, without concomitant tactile component, were applied to either hand in a randomized order. A contralateral bias of the BOLD response was investigated to determine areas involved in the coding of the side of stimulation, which we observed in primary (SI) and secondary (SII) somatosensory cortex, insula, and the thalamus. This suggests that these structures provide spatial information of selective nociceptive stimuli. More importantly, this contralateral bias of activation allowed functionally segregated activations within the SII complex, the insula, and the thalamus. Only distinct subregions of the SII complex, the posterior insula and the lateral thalamus, but not the remaining SII complex, the anterior insula and the medial thalamus, showed a contralaterally biased representation of painful stimuli. This result supports the hypothesis that sensory-discriminative attributes of painful stimuli, such as those related to body side, are topospecifically represented within the forebrain projections of the nociceptive system and highlights the concept of functional segregation and specialization within these structures.",
+  "doi": "10.1016/S1053-8119(02)00033-2",
+  "space": "MNI"
+}

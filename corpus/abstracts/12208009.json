@@ -1,0 +1,10 @@
+{
+  "pmid": "12208009",
+  "title": "Evidence for cortical encoding specificity in episodic memory: memory-induced re-activation of picture processing areas.",
+  "authors": "Vaidya CJ, Zhao M, Desmond JE, Gabrieli JD",
+  "year": "2002",
+  "journal": "Neuropsychologia",
+  "abstract": "Functional magnetic resonance imaging (fMRI) was used to examine whether neural pathways used to encode pictures into memory were re-activated during retrieval of those memories. At encoding, subjects semantically classified common objects presented as pictures or words. At retrieval, subjects performed yes/no recognition memory judgments on words that had been encoded as pictures or as words. The retrieval test probed memory for the encoded item, but not memory for the modality of the encoded item (picture/word). Results revealed that a subset of the brain regions involved specifically in encoding of pictures were also engaged during recognition memory for the encoded pictures. Specifically, encoding of pictures relative to words engaged bilateral extrastriate visual cortex, namely fusiform, lingual, middle occipital, and inferior temporal gyri (Broadman area (BA) 18/19/37). Recognition memory judgments about words that were encoded as pictures relative to those that were encoded as words activated fusiform and inferior temporal gyri primarily in the left hemisphere. Thus, cortical areas originally involved in perception of a visual experience become part of the long-term memory trace for that experience. These findings suggest a neural basis for encoding specificity and transfer appropriate processing in human memory.",
+  "doi": "10.1016/S0028-3932(02)00053-2",
+  "space": "MNI"
+}

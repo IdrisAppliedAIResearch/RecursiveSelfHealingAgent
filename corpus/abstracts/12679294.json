@@ -1,0 +1,10 @@
+{
+  "pmid": "12679294",
+  "title": "The size of corpus callosum correlates with functional activation of medial motor cortical areas in bimanual and unimanual movements.",
+  "authors": "Stancak A, Cohen ER, Seidler RD, Duong TQ, Kim SG",
+  "year": "2003",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Effects of the size of corpus callosum measured from in vivo magnetic resonance imaging (MRI) recordings on cortical activations evaluated using functional MRI (fMRI) were analyzed during motor tasks. Twelve right-handed men performed unilateral finger movements and bilateral movements either with or without a temporal delay between left and right fingers. The size of the rostral part of corpus callosum and the anterior and posterior callosal truncus explained 11.9 and 15.2% of activation in the mesial frontal cortex in unimanual left and right finger movements, respectively. In bimanual simultaneous movements, 34.2% of the activated voxels in the mesial frontal cortex were related to the size of corpus callosum. In bimanual movements in which left finger movement preceded the onset of the right finger movement, the callosal size accounted for 88.7% of activation in the mesial frontal cortex. In contrast, when the right finger movement preceded the left, callosal size accounted for only 31.3% of the mesial frontal cortex activation. The correlations between callosal parameters and activation over the lateral cortex were sparse and occurred only in bimanual movements. The results suggest that corpus callosum modulates the activity of the supplementary motor and cingulate cortical areas depending on temporal complexity of bimanual movements.",
+  "doi": "10.1093/cercor/13.5.475",
+  "space": "MNI"
+}

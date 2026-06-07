@@ -1,0 +1,10 @@
+{
+  "pmid": "12948717",
+  "title": "Distinct brain representations for early and late learned words.",
+  "authors": "Fiebach CJ, Friederici AD, Muller K, von Cramon DY, Hernandez AE",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Recently there has been a renewed interest in cognitive psychology on the effects of the age of word acquisition (AoA) on lexical processing. In particular, it is currently unclear whether AoA or word frequency are better predictors of word recognition. To date no study has investigated the neural bases of the AoA effect or attempted to dissociate it from word frequency. We report a visual and an auditory event-related fMRI experiment investigating the influence of AoA and word frequency on neural activity, and show that AoA modulates brain areas that are not influenced by word frequency. The precuneus was activated for early learned words across auditory and visual presentation modalities. Additional activity in the auditory cortex was observed specifically for the reading of early acquired words. Late learned words, in contrast, led to a selective activation increase in lateral inferior frontal areas. These findings support models that suggest that early and late learned words are represented differently in the brain. They further allow to specify the nature of the representational differences, namely that early learned words are represented in the brain in a more sensory manner than late learned words.",
+  "doi": "10.1016/S1053-8119(03)00227-1",
+  "space": "MNI"
+}

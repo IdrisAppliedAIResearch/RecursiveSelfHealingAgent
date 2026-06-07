@@ -1,0 +1,10 @@
+{
+  "pmid": "14527565",
+  "title": "Changes in brain activation patterns associated with learning of Korean words by  Japanese: an fMRI study.",
+  "authors": "Lee HS, Fujii T, Okuda J, Tsukiura T, Umetsu A, Suzuki M, Nagasaka T, Takahashi S, Yamadori A",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "We used functional magnetic resonance imaging (fMRI) to explore the change in brain activation associated with the learning of Korean words written in Han-gul characters (K-words) by young Japanese at two stages. Subjects were 12 right-handed native Japanese without previous knowledge of Korean words and characters. On the first day they were taught the pronunciation and meaning of 20 K-words. Then, after the first fMRI session (on day 2), they were given a set of 20 cards with the words and corresponding photographs. They also received a tape and were instructed to memorize the 20 K-words by studying them every day until the day of the second fMRI session (day 16). During the fMRI sessions, 20 Japanese words written in kana syllabograms (J-words) and the 20 previously presented K-words, as well as 20 new K-words (Kn-words) were presented visually for silent reading. The first J-word reading, relative to the first K-word reading, showed activation in the left angular gyrus. K-word reading relative to J-word reading during both sessions showed activation in occipital regions. Within these activated areas, session by condition interaction was found only in the left angular gyrus. The interaction between session and condition resulted from the fact that the differences in blood oxygenation-level-dependent signals between K-words and J-words and between Kn-words and J-words were significantly greater in the first session than in the second session. From the results, we concluded that patterns of brain activation changed as the memory of the 20 K-words became fixed through daily practice and that reading of both Korean words and Japanese syllabograms engaged the left angular gyrus.",
+  "doi": "10.1016/S1053-8119(03)00254-4",
+  "space": "MNI"
+}

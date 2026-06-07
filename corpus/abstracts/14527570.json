@@ -1,0 +1,10 @@
+{
+  "pmid": "14527570",
+  "title": "Cholinergic enhancement modulates neural correlates of selective attention and emotional processing.",
+  "authors": "Bentley P, Vuilleumier P, Thiel CM, Driver J, Dolan RJ",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Neocortical cholinergic afferents are proposed to influence both selective attention and emotional processing. In a study of healthy adults we used event-related fMRI while orthogonally manipulating attention and emotionality to examine regions showing effects of cholinergic modulation by the anticholinesterase physostigmine. Either face or house pictures appeared at task-relevant locations, with the alternative picture type at irrelevant locations. Faces had either neutral or fearful expressions. Physostigmine increased relative activity within the anterior fusiform gyrus for faces at attended, versus unattended, locations, but decreased relative activity within the posterolateral occipital cortex for houses in attended, versus unattended, locations. A similar pattern of regional differences in the effect of physostigmine on cue-evoked responses was also present in the absence of stimuli. Cholinergic enhancement augmented the relative neuronal response within the middle fusiform gyrus to fearful faces, whether at attended or unattended locations. By contrast, physostigmine influenced responses in the orbitofrontal, intraparietal and cingulate cortices to fearful faces when faces occupied task-irrelevant locations. These findings suggest that acetylcholine may modulate both selective attention and emotional processes through independent, region-specific effects within the extrastriate cortex. Furthermore, cholinergic inputs to the frontoparietal cortex may influence the allocation of attention to emotional information.",
+  "doi": "10.1016/S1053-8119(03)00302-1",
+  "space": "MNI"
+}

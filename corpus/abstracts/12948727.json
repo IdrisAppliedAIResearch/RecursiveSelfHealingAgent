@@ -1,0 +1,10 @@
+{
+  "pmid": "12948727",
+  "title": "Interactions of the hippocampal system and the prefrontal cortex in learning language-like rules.",
+  "authors": "Opitz B, Friederici AD",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "One of the most influential views on the hippocampal function suggests that this brain region is critically involved in relational memory processing, that is, binding converging inputs to mediate the representation of relationships among the constituents of episodes. It has been proposed that this binding is automatic and obligatory during learning and remembering In addition, neuroimaging studies have highlighted the importance of the prefrontal cortex, in learning, memory, and language processing. However, the posited importance of hippocampal-prefrontal interaction remains to be empirically tested. In the present study we used functional magnetic resonance imaging to examine in detail this interaction by assessing learning-related changes in hemodynamic activity during artificial language acquisition. It has been shown previously that artificial grammar systems might be learned by evaluating pattern-based relations in word sequences and generalizing beyond specific word order, that is, rule abstraction. During scanning, participants learned an artificial language whose miniature grammar meets the universal principles of a natural language. Increased proficiency level of the artificial language is associated with decreased left hippocampal activity. In contrast, we observed an increased recruitment of the left inferior frontal gyrus (Broca's area), a region that contributes to syntax processing in natural language. The present results, therefore, indicate a learning-related change in brain circuitry underlying relational processes of language learning, with a transition from a similarity-based learning system in the medial temporal lobes to a language-related processing system in the left prefrontal cortex.",
+  "doi": "10.1016/S1053-8119(03)00170-8",
+  "space": "TAL"
+}

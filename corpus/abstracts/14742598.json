@@ -1,0 +1,10 @@
+{
+  "pmid": "14742598",
+  "title": "Voxel based morphometry reveals a distinct pattern of frontal atrophy in progressive supranuclear palsy.",
+  "authors": "Brenneis C, Seppi K, Schocke M, Benke T, Wenning GK, Poewe W",
+  "year": "2004",
+  "journal": "Journal of neurology, neurosurgery, and psychiatry",
+  "abstract": "Frontal lobe atrophy is a well known neuropathological feature of progressive supranuclear palsy (PSP), accompanied by characteristic neuropsychological deficits. To determine subregional frontal lobe atrophy patterns in patients with PSP using voxel based morphometry (VBM). VBM is an observer unbiased volumetry which allows the investigation of the entire brain. An optimised protocol for normalisation, segmentation, and correction for volume changes in preprocessing was used. Grey matter, white matter, and cerebrospinal fluid (CSF) partitions in 12 patients with probable PSP were compared with 12 healthy controls matched for age and sex. In PSP patients, the following cortical areas were decreased in volume (p(corr)<0.05): the prefrontal cortex, predominantly the medial frontal gyri and a cluster in the left lateral middle frontal gyrus; the insular region including the frontal opercula; both supplementary motor areas; and the left medio-temporal area (V5). White matter comparisons revealed a volume reduction in both frontotemporal regions and the mesencephalon. Analysis of the CSF compartment showed no significant regional changes between the groups. Frontal atrophy in PSP predominantly involves mesio-frontal targets of striatal projections. This atrophy pattern probably accounts for cardinal PSP associated behavioural deficits.",
+  "doi": "10.1136/jnnp.2003.015297",
+  "space": "MNI"
+}

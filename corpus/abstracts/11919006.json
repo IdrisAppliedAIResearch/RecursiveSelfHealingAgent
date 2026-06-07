@@ -1,0 +1,10 @@
+{
+  "pmid": "11919006",
+  "title": "An event-related functional MRI study comparing interference effects in the Simon and Stroop tasks.",
+  "authors": "Peterson BS, Kane MJ, Alexander GM, Lacadie C, Skudlarski P, Leung HC, May J, Gore JC",
+  "year": "2002",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "The Stroop and Simon tasks typify a class of interference effects in which the introduction of task-irrelevant stimulus characteristics robustly slows reaction times. Behavioral studies have not succeeded in determining whether the neural basis for the resolution of these interference effects during successful task performance is similar or different across tasks. Event-related functional magnetic resonance imaging (fMRI) studies were obtained in 10 healthy young adults during performance of the Stroop and Simon tasks. Activation during the Stroop task replicated findings from two earlier fMRI studies. These activations were remarkably similar to those observed during the Simon task, and included anterior cingulate, supplementary motor, visual association, inferior temporal, inferior parietal, inferior frontal, and dorsolateral prefrontal cortices, as well as the caudate nuclei. The time courses of activation were also similar across tasks. Resolution of interference effects in the Simon and Stroop tasks engage similar brain regions, and with a similar time course. Therefore, despite the widely differing stimulus characteristics employed by these tasks, the neural systems that subserve successful task performance are likely to be similar as well.",
+  "doi": "10.1016/S0926-6410(02)00054-X",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "10683393",
+  "title": "Recoding, storage, rehearsal and grouping in verbal short-term memory: an fMRI study.",
+  "authors": "Henson RN, Burgess N, Frith CD",
+  "year": "2000",
+  "journal": "Neuropsychologia",
+  "abstract": "Functional magnetic resonance imaging (fMRI) of healthy volunteers is used to localise the processes involved in verbal short-term memory (VSTM) for sequences of visual stimuli. Specifically, the brain areas underlying (i) recoding, (ii) storage, (iii) rehearsal and (iv) temporal grouping are investigated. Successive subtraction of images obtained from five tasks revealed a network of left-lateralised areas, including posterior temporal regions, supramarginal gyri, Broca's area and dorsolateral premotor cortex. The results are discussed in relation to neuropsychological distinctions between recoding and rehearsal, previous neuroimaging studies of storage and rehearsal, and, in particular, a recent connectionist model of VSTM that makes explicit assumptions about the temporal organisation of rehearsal. The functional modules of this model are tentatively mapped onto the brain in light of the imaging results. Our findings are consistent with the representation of verbal item information in left posterior temporal areas and short-term storage of phonological information in left supramarginal gyrus. They also suggest that left dorsolateral premotor cortex is involved in the maintenance of temporal order, possibly as the location of a timing signal used in the rhythmic organisation of rehearsal, whereas Broca's area supports the articulatory processes required for phonological recoding of visual stimuli.",
+  "doi": "10.1016/S0028-3932(99)00098-6",
+  "space": "MNI"
+}

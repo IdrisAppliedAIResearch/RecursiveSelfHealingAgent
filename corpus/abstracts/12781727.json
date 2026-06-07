@@ -1,0 +1,10 @@
+{
+  "pmid": "12781727",
+  "title": "Overlapping neural regions for processing rapid temporal cues in speech and nonspeech signals.",
+  "authors": "Joanisse MF, Gati JS",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Speech perception involves recovering the phonetic form of speech from a dynamic auditory signal containing both time-varying and steady-state cues. We examined the roles of inferior frontal and superior temporal cortex in processing these aspects of auditory speech and nonspeech signals. Event-related functional magnetic resonance imaging was used to record activation in superior temporal gyrus (STG) and inferior frontal gyrus (IFG) while participants discriminated pairs of either speech syllables or nonspeech tones. Speech stimuli differed in either the consonant or the vowel portion of the syllable, whereas the nonspeech signals consisted of sinewave tones differing along either a dynamic or a spectral dimension. Analyses failed to identify regions of activation that clearly contrasted the speech and nonspeech conditions. However, we did identify regions in the posterior portion of left and right STG and left IFG yielding greater activation for both speech and nonspeech conditions that involved rapid temporal discrimination, compared to speech and nonspeech conditions involving spectral discrimination. The results suggest that, when semantic and lexical factors are adequately ruled out, there is significant overlap in the brain regions involved in processing the rapid temporal characteristics of both speech and nonspeech signals.",
+  "doi": "10.1016/S1053-8119(03)00046-6",
+  "space": "TAL"
+}

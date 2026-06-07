@@ -1,0 +1,10 @@
+{
+  "pmid": "12727182",
+  "title": "Differential brain responses when applying criterion attribute versus family resemblance rule learning.",
+  "authors": "Tracy JI, Mohamed F, Faro S, Pinus A, Tiver R, Harvan J, Bloomer C, Pyrros A, Madi S",
+  "year": "2003",
+  "journal": "Brain and cognition",
+  "abstract": "Subsystems of category learning have been identified on the basis of general domains of content (e.g., tools, faces). The present study examined categories from the standpoint of internal structure and determined brain topography associated with expressing two fundamentally different category rule structures (criterion attribute, CA, and family resemblance, FR). CA category learning involves processing stimuli by isolated features and classifying by properties held by all members. FR learning involves processing stimuli by integral wholes and classifying on overall similarity among members without sharing identical features. fMRI BOLD response to CA and FR categorization was measured with pseudowords as stimuli. Category knowledge for both tasks was mastered prior to brain imaging. Areas of activation emerged unique to the structure of each category and followed from the nature of the rule abstraction procedure. CA categorization was implemented by strong target monitoring and expectation (medial parietal), rule maintenance in working memory, feature selection processes (inferior frontal), and a sensitivity to high frequency components of the stimulus such as isolated features (anterior temporal). FR categorization, consistent with its multi-featural nature, involved word-level processing (left extrastriate) that evoked articulatory rehearsal (medial cerebellar). The data suggest category structure is an important determinant of brain response during categorization. For instance, anterior temporal structures may help attune visual processing systems to high frequency components to support the learning of criterial, highly predictive rules.",
+  "doi": "10.1016/S0278-2626(03)00052-6",
+  "space": "MNI"
+}

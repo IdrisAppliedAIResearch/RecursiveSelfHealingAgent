@@ -1,0 +1,10 @@
+{
+  "pmid": "10355678",
+  "title": "A functional neuroimaging study of the variables that generate category-specific  object processing differences.",
+  "authors": "Moore CJ, Price CJ",
+  "year": "1999",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "Brain damage can cause remarkably selective deficits in processing specific categories of objects, indicating the high degree of functional segregation within the brain. The neuroimaging study presented here investigates differences in the neural activity associated with two categories of natural objects (animals and fruit) and two categories of man-made objects (vehicles and tools). Stimuli were outline drawings and the tasks were naming and word-picture matching. For man-made objects, the only category-specific effect was in the left posterior middle temporal cortex, which was most active for drawings of tools, as previously reported. For natural objects, drawings of animals and fruit (relative to drawings of man-made objects) enhanced activity in bilateral anterior temporal and right posterior middle temporal cortices. Critically, these effects with natural objects were not observed when the stimuli were coloured appropriately to facilitate identification. Furthermore, activation in the same right hemisphere areas was also observed for viewing and matching unfamiliar non-objects relative to naming and matching man-made objects. These results indicate that, in the right hemisphere, differences between processing natural relative to man-made objects overlap with the effects of increasing demands on object identification. In the left hemisphere, the effects are more consistent with functional specialization within the semantic system. We discuss (i) how category-specific differences can emerge for multiple reasons and (ii) the implications of these effects on the interpretation of functional imaging data and patients with category-specific deficits.",
+  "doi": "10.1093/brain/122.5.943",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "12395390",
+  "title": "Novelty detection and repetition suppression in a passive picture viewing task: a possible approach for the evaluation of neuropsychiatric disorders.",
+  "authors": "Jessen F, Manka C, Scheef L, Granath DO, Schild HH, Heun R",
+  "year": "2002",
+  "journal": "Human brain mapping",
+  "abstract": "The applicability of functional magnetic resonance imaging (fMRI) in patients with Alzheimer's disease (AD) or schizophrenia is frequently limited by cognitive impairment, which prevents the adequate execution of complex tasks. An experimental design that puts only minor demands on the patients' cognitive ability but engages disease-relevant brain structures would be of benefit. Novelty detection and repetition suppression are two basic components of memory that might be used to investigate specific brain areas under these conditions. Novelty detection has been related to hippocampal activation increases. Stimulus repetition related activation decreases (suppression) have been observed in the extrastriate cortex and have been related to perceptual priming. Both processes have been examined primarily in neuroimaging studies with complex cognitive tasks. We used event-related fMRI to investigate novelty- and repetition-related effects in an attended but passive picture-viewing task in healthy subjects. The differential activation, detected in the novel vs. repeated contrast, was located in the bilateral anterior hippocampus and in bilateral occipital and inferior-temporal areas. The hippocampal activation is of interest because medial temporal lobe lesions are key features in AD and schizophrenia. The repetition-related activation decreases in the extrastriate areas are of potential value in investigating the conflicting results regarding perceptual priming impairment in both disorders. Our results indicate that activation of disease-relevant brain regions under passive task conditions is possible. This might increase the utility of functional imaging in cognitively impaired patients.",
+  "doi": "10.1002/hbm.10071",
+  "space": "MNI"
+}
