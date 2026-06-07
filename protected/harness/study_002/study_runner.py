@@ -7,6 +7,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
+
 from protected.attention.analyzer import AttentionAnalyzer, AttentionResult
 from protected.attention.segmenter import segment_abstract, align_tokens
 from protected.attention.scorer import RoutingScore, compute_routing_score
@@ -718,3 +720,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
 
 def run_study(study_id: str = STUDY_ID, n_iterations: int = N_ITERATIONS) -> None:
     asyncio.run(_run_study_async(study_id, n_iterations))
+
+
+if __name__ == "__main__":
+    run_study()
