@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Tuple
 
 import torch
 
@@ -89,6 +90,51 @@ class AttentionAnalyzer:
             abstract_text=abstract_text,
             attention_weights=dict(self._stored_weights),
         )
+
+    def complete_with_usage(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int | None = None,
+    ) -> Tuple[str, "TokenUsage"]:
+        """Generate a completion using the loaded transformers model."""
+        from extractor.provider import TokenUsage
+
+        full_prompt = system_prompt + "\n" + user_message
+        inputs = self.tokenizer(
+            full_prompt, return_tensors="pt", truncation=True
+        )
+        input_ids = inputs["input_ids"].to(self.model.device)
+        prompt_len = input_ids.shape[1]
+
+        self._stored_weights.clear()
+        generated = self.model.generate(
+            input_ids=input_ids,
+            max_new_tokens=max_tokens or 8192,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            output_attentions=True,
+            return_dict_in_generate=True,
+            use_cache=True,
+        )
+
+        output_ids = generated.sequences[0][prompt_len:]
+        text = self.tokenizer.decode(output_ids, skip_special_tokens=True)
+
+        completion_tokens = len(output_ids)
+        total_tokens = prompt_len + completion_tokens
+
+        self._stored_weights.clear()
+
+        token_usage = TokenUsage(
+            prompt_tokens=prompt_len,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            tokens_per_second=0.0,
+            context_window=4096,
+        )
+        return text, token_usage
 
     def close(self) -> None:
         for hook in self._hooks:

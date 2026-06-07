@@ -48,6 +48,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
 N_ITERATIONS = 20
 
+# Shared analyzer instance for both attention analysis and completions
+_analyzer_instance: "AttentionAnalyzer | None" = None
+
 
 class StudyAlreadyComplete(Exception):
     pass
@@ -691,6 +694,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             print("  Loading AttentionAnalyzer model...")
             analyzer = AttentionAnalyzer(model_path)
             analyzer.load()
+            _analyzer_instance = analyzer
             print("  AttentionAnalyzer loaded successfully.")
         else:
             print("  TRANSFORMERS_MODEL_PATH not set — skipping attention analysis.")
@@ -713,6 +717,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
 
     if analyzer is not None:
         analyzer.close()
+        _analyzer_instance = None
 
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
     summarize(study_id)

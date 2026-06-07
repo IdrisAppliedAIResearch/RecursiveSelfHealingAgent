@@ -3,7 +3,6 @@ import json
 import re
 from pathlib import Path
 
-from extractor.provider import LlamaCppProvider
 from protected.harness.shared.edit_protocol import (
     AgentFailure,
     AgentResponse,
@@ -13,7 +12,6 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_provider = LlamaCppProvider()
 _AGENT_MAX_TOKENS = 28672
 _REPAIR_MAX_TOKENS = 4096
 
@@ -138,6 +136,16 @@ def _build_repair_prompt(
     return system, user
 
 
+def _get_provider():
+    from protected.harness.study_002.study_runner import _analyzer_instance
+
+    if _analyzer_instance is not None:
+        return _analyzer_instance
+    from extractor.provider import LlamaCppProvider
+
+    return LlamaCppProvider()
+
+
 def _parse_response(raw: str) -> dict:
     raw = raw.strip()
     m = re.search(r'\{.*\}', raw, re.DOTALL)
@@ -178,7 +186,7 @@ async def invoke(
 
     try:
         raw, token_usage = await asyncio.to_thread(
-            _provider.complete_with_usage,
+            _get_provider().complete_with_usage,
             system_prompt,
             user_message,
             _AGENT_MAX_TOKENS,
@@ -234,7 +242,7 @@ async def invoke_repair(
 
     try:
         raw, token_usage = await asyncio.to_thread(
-            _provider.complete_with_usage,
+            _get_provider().complete_with_usage,
             system_prompt,
             user_message,
             _REPAIR_MAX_TOKENS,

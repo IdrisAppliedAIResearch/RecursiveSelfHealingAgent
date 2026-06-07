@@ -12,7 +12,7 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
     examples = (prompts_dir / "examples.md").read_text(encoding="utf-8").strip()
     if examples:
         system_prompt = system_prompt + "\n\n" + examples
-    raw = _provider.complete(system_prompt, abstract_text)
+    raw = _provider.complete_with_usage(system_prompt, abstract_text)[0]
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:

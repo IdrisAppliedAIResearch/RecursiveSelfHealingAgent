@@ -74,22 +74,30 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
         abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
         abstract_files = sorted(abstracts_dir.glob("*.json"))
 
-    playground_mod = __import__("playground.extractor", fromlist=["extract"])
-    import inspect
-    old_provider = None
-    for name, obj in inspect.getmembers(playground_mod):
-        if hasattr(obj, "_provider") and hasattr(obj, "complete"):
-            old_provider = obj._provider
-            break
-    if old_provider is None:
-        import playground.extractor as pg_extractor_mod
-        old_provider = getattr(pg_extractor_mod, "_provider", None)
+    import playground.extractor as pg_extractor_mod
 
-    proxy = None
-    if old_provider is not None:
-        proxy = _CountingProviderProxy(old_provider)
-        import playground.extractor as pg_extractor_mod
-        pg_extractor_mod._provider = proxy
+    # Inject shared analyzer if available, so corpus runs use the same model
+    from protected.harness.study_002.study_runner import _analyzer_instance
+
+    if _analyzer_instance is not None:
+        old_provider = pg_extractor_mod._provider
+        pg_extractor_mod._provider = _analyzer_instance
+        proxy = None
+    else:
+        playground_mod = __import__("playground.extractor", fromlist=["extract"])
+        import inspect
+        old_provider = None
+        for name, obj in inspect.getmembers(playground_mod):
+            if hasattr(obj, "_provider") and hasattr(obj, "complete"):
+                old_provider = obj._provider
+                break
+        if old_provider is None:
+            old_provider = getattr(pg_extractor_mod, "_provider", None)
+
+        proxy = None
+        if old_provider is not None:
+            proxy = _CountingProviderProxy(old_provider)
+            pg_extractor_mod._provider = proxy
 
     results: list[ExtractionResult] = []
     failures: list[CorpusAbstractFailure] = []
@@ -118,9 +126,11 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
 
     duration = time.monotonic() - start
 
-    if proxy:
+    if _analyzer_instance is not None:
+        pg_extractor_mod._provider = old_provider
+        token_usage = CorpusTokenUsage(0, 0, 0.0, 0.0)
+    elif proxy:
         token_usage = proxy.get_usage()
-        import playground.extractor as pg_extractor_mod
         pg_extractor_mod._provider = old_provider
     else:
         token_usage = CorpusTokenUsage(0, 0, 0.0, 0.0)
