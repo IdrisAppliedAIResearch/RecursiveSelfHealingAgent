@@ -29,8 +29,10 @@ class AttentionAnalyzer:
         )
 
         bnb_config = BitsAndBytesConfig(
-            load_in_8bit=True,
-            llm_int8_skip_modules=["lm_head"],
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
         )
 
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -50,9 +52,10 @@ class AttentionAnalyzer:
                     if "k_proj" in name or "v_proj" in name:
                         quantize_(module, int8_dynamic_activation_int8_weight())
                         kv_quantized += 1
-            print(f"  KV cache quantized (int8): {kv_quantized} layers")
-        except ImportError:
-            print("  torchao not available — skipping KV cache quantization")
+            if kv_quantized:
+                print(f"  KV cache quantized (int8): {kv_quantized} layers")
+        except Exception as e:
+            print(f"  KV cache quantization skipped: {e}")
 
         self.model.eval()
         self._register_hooks()
