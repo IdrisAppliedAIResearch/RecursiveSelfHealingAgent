@@ -21,6 +21,7 @@ class AttentionAnalyzer:
         self.tokenizer = None
 
     def load(self) -> None:
+        import os
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -35,9 +36,24 @@ class AttentionAnalyzer:
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_path,
             quantization_config=bnb_config,
+            torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True,
         )
+
+        # Quantize KV cache to int8 using torchao
+        try:
+            from torchao.quantization import quantize_, int8_dynamic_activation_int8_weight
+            kv_quantized = 0
+            for name, module in self.model.named_modules():
+                if isinstance(module, torch.nn.Linear) and "self_attn" in name:
+                    if "k_proj" in name or "v_proj" in name:
+                        quantize_(module, int8_dynamic_activation_int8_weight())
+                        kv_quantized += 1
+            print(f"  KV cache quantized (int8): {kv_quantized} layers")
+        except ImportError:
+            print("  torchao not available — skipping KV cache quantization")
+
         self.model.eval()
         self._register_hooks()
         self._log_shapes()
