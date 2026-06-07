@@ -2,7 +2,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from protected.harness.corpus_runner import CorpusRunResult
+from protected.harness.shared.corpus_runner import CorpusRunResult
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -85,6 +85,45 @@ def append_rationale(iteration_n: int, study_id: str, rationale: str) -> None:
         "iteration_n": iteration_n,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "rationale": rationale,
+    }
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
+
+
+def append_metrics_study_002(
+    iteration_n: int,
+    study_id: str,
+    metrics: dict,
+    routing_pre: float | None,
+    routing_post: float | None,
+    routing_delta: float | None,
+    control_improved: int,
+    control_declined: int,
+    code_changes_attempted: bool,
+) -> None:
+    path = _study_dir(study_id) / "metrics.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if routing_delta is not None:
+        if routing_delta > 0.02:
+            direction = "positive"
+        elif routing_delta < -0.02:
+            direction = "negative"
+        else:
+            direction = "neutral"
+    else:
+        direction = "neutral"
+
+    record = {
+        "iteration_n": iteration_n,
+        **metrics,
+        "pre_routing_score": routing_pre,
+        "post_routing_score": routing_post,
+        "routing_delta": routing_delta,
+        "routing_direction": direction,
+        "control_abstracts_improved": control_improved,
+        "control_abstracts_declined": control_declined,
+        "code_changes_attempted": code_changes_attempted,
     }
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")

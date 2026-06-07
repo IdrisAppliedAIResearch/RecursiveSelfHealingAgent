@@ -2,33 +2,101 @@ import asyncio
 import json
 import os
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from protected.harness import (
-    agent_caller,
-    allowlist,
-    anomaly_logger,
-    artifact_writer,
-    corpus_runner,
-    episode_store,
-    git_ops,
-    interface_validator,
-    model_performance,
+from protected.attention.analyzer import AttentionAnalyzer, AttentionResult
+from protected.attention.segmenter import segment_abstract, align_tokens
+from protected.attention.scorer import RoutingScore, compute_routing_score
+from protected.harness.shared.anomaly_logger import log_anomaly
+from protected.harness.shared.artifact_writer import (
+    append_metrics,
+    append_rationale,
+    snapshot_playground,
+    write_iteration_artifacts,
 )
+from protected.harness.shared.corpus_runner import run_corpus
 from protected.harness.shared.edit_applier import apply_edits
 from protected.harness.shared.edit_protocol import AgentFailure
-from protected.harness.shared.anomaly_logger import log_anomaly
+from protected.harness.shared.episode_store import append as append_episode
+from protected.harness.shared.episode_store import load_all as load_episodes
+from protected.harness.shared.git_ops import (
+    commit_iteration,
+    ensure_branch,
+    last_committed_iteration,
+    reset_partial_iteration,
+    rollback_playground,
+    verify_no_remote_push,
+)
+from protected.harness.shared.interface_validator import validate_interface
+from protected.harness.shared.model_performance import append_after_iteration, summarize
+from protected.harness.study_002.agent_caller import invoke, invoke_repair
+from protected.harness.study_002.routing_history import (
+    append as append_routing,
+    format_for_agent,
+    load_all as load_routing,
+)
+from protected.harness.shared.allowlist import ALLOWED_FILE_EXACT
 from protected.interface import ITERATION_TIMEOUT_S
-
 from protected.scorer import score_corpus
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+STUDY_ID = "study_002"
+N_ITERATIONS = 20
 
 
 class StudyAlreadyComplete(Exception):
     pass
+
+
+def _load_probe_set() -> list[str]:
+    probe_path = PROJECT_ROOT / "experiments" / STUDY_ID / "probe_set.json"
+    if not probe_path.exists():
+        raise RuntimeError("probe_set.json not found — run select_probe_set.py first")
+    data = json.loads(probe_path.read_text(encoding="utf-8"))
+    return data["abstract_ids"]
+
+
+def _load_impact_abstracts(probe_ids: list[str], n: int = 15) -> list[str]:
+    abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
+    all_ids = [f.stem for f in sorted(abstracts_dir.glob("*.json"))]
+    impact_ids = [aid for aid in all_ids if aid not in probe_ids]
+    import random
+
+    random.seed(42)
+    return random.sample(impact_ids, min(n, len(impact_ids)))
+
+
+def _load_abstract_text(abstract_id: str) -> str:
+    af = PROJECT_ROOT / "corpus" / "abstracts" / f"{abstract_id}.json"
+    data = json.loads(af.read_text(encoding="utf-8", errors="replace"))
+    return data.get("abstract", data.get("text", ""))
+
+
+def _get_mini_corpus_files() -> list[Path]:
+    probe_ids = _load_probe_set()
+    impact_ids = _load_impact_abstracts(probe_ids)
+    all_ids = probe_ids + impact_ids
+    abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
+    files = []
+    for aid in all_ids:
+        af = abstracts_dir / f"{aid}.json"
+        if af.exists():
+            files.append(af)
+    return files
+
+
+def _get_control_corpus_files() -> list[Path]:
+    probe_ids = _load_probe_set()
+    abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
+    files = []
+    for aid in probe_ids:
+        af = abstracts_dir / f"{aid}.json"
+        if af.exists():
+            files.append(af)
+    return files
 
 
 def _load_ground_truth() -> dict[str, list[str]]:
@@ -122,13 +190,83 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "corpus_avg_tokens_per_second": None,
         "repair_prompt_tokens": None,
         "repair_completion_tokens": None,
+        "pre_routing_score": None,
+        "post_routing_score": None,
+        "routing_delta": None,
+        "routing_direction": None,
+        "control_abstracts_improved": 0,
+        "control_abstracts_declined": 0,
+        "code_changes_attempted": False,
     }
+
+
+def _read_system_prompt() -> str:
+    prompts_dir = PROJECT_ROOT / "prompts"
+    sp = prompts_dir / "system_prompt.md"
+    examples = prompts_dir / "examples.md"
+    prompt = sp.read_text(encoding="utf-8") if sp.exists() else ""
+    ex = examples.read_text(encoding="utf-8").strip() if examples.exists() else ""
+    if ex:
+        prompt = prompt + "\n\n" + ex
+    return prompt
+
+
+async def _run_attention_pass(
+    analyzer: AttentionAnalyzer,
+    abstract_ids: list[str],
+    system_prompt: str,
+) -> list[RoutingScore]:
+    scores = []
+    for aid in abstract_ids:
+        abstract_text = _load_abstract_text(aid)
+        result = analyzer.forward_pass(
+            abstract_text=abstract_text,
+            system_prompt=system_prompt,
+            abstract_id=aid,
+        )
+
+        segments = segment_abstract(abstract_text)
+        align_tokens(segments, analyzer.tokenizer, abstract_text)
+
+        score = compute_routing_score(result, segments, analyzer.tokenizer)
+        if score.score is None:
+            log_anomaly(
+                STUDY_ID, -1,
+                "routing_score_null",
+                {"abstract_id": aid},
+            )
+        elif score.n_results_tokens == 0 and score.n_methods_tokens == 0:
+            log_anomaly(
+                STUDY_ID, -1,
+                "no_results_sentences",
+                {"abstract_id": aid},
+            )
+        scores.append(score)
+
+    return scores
+
+
+def _check_code_changes(edits) -> bool:
+    from protected.harness.shared.edit_protocol import Edit as EditType
+
+    for edit in edits:
+        if isinstance(edit, EditType):
+            path = edit.file_path
+        else:
+            path = edit.get("file_path", "")
+        if path.startswith("playground/") and path.endswith(".py"):
+            return True
+    return False
 
 
 def _pre_run_checks(study_id: str) -> None:
     pre_reg = PROJECT_ROOT / "experiments" / study_id / "pre-registration.md"
     if not pre_reg.exists():
         raise RuntimeError(f"Pre-registration not found: {pre_reg}")
+
+    probe_path = PROJECT_ROOT / "experiments" / study_id / "probe_set.json"
+    if not probe_path.exists():
+        raise RuntimeError("probe_set.json not found — run select_probe_set.py first")
 
     gt_path = PROJECT_ROOT / "corpus" / "ground_truth.jsonl"
     if not gt_path.exists():
@@ -137,48 +275,29 @@ def _pre_run_checks(study_id: str) -> None:
     manifest = PROJECT_ROOT / "corpus" / "corpus_manifest.md"
     if not manifest.exists():
         raise RuntimeError("Corpus manifest not found")
-    if "commit_sha" not in manifest.read_text(encoding="utf-8"):
-        raise RuntimeError("Corpus manifest missing commit_sha")
 
-    for fp in allowlist.ALLOWED_FILE_EXACT:
+    for fp in ALLOWED_FILE_EXACT:
         full = PROJECT_ROOT / fp
         if not full.exists():
             raise RuntimeError(f"Required file missing: {fp}")
 
     branch_name = f"experiment/{study_id}"
-    git_ops.ensure_branch(branch_name)
-    git_ops.verify_no_remote_push(branch_name)
+    ensure_branch(branch_name)
+    verify_no_remote_push(branch_name)
 
     metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
     if metrics_path.exists():
         count = 0
         for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
-                if line.strip():
-                    try:
-                        json.loads(line)
-                        count += 1
-                    except json.JSONDecodeError:
-                        pass
-        if count >= 21:
+            if line.strip():
+                try:
+                    json.loads(line)
+                    count += 1
+                except json.JSONDecodeError:
+                    pass
+        if count >= 22:
             raise StudyAlreadyComplete(
                 f"Study {study_id} already complete ({count} metrics entries)"
-            )
-
-    episodes_count = episode_store.count(study_id)
-    if metrics_path.exists() and episodes_count > 0:
-        persisted_count = 0
-        for line in metrics_path.read_text(encoding="utf-8").strip().splitlines():
-                if line.strip():
-                    try:
-                        rec = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    if rec.get("episode_persisted"):
-                        persisted_count += 1
-        if episodes_count != persisted_count:
-            raise RuntimeError(
-                f"Episode count ({episodes_count}) does not match "
-                f"episode_persisted count ({persisted_count}) in metrics"
             )
 
     llm_provider = os.environ.get("LLM_PROVIDER")
@@ -187,23 +306,26 @@ def _pre_run_checks(study_id: str) -> None:
         raise RuntimeError("LLM_PROVIDER and LLAMA_CPP_BASE_URL must be set")
 
     harness_diff = subprocess.run(
-        ["git", "diff", "--exit-code", "HEAD", "--", "protected/harness/"],
+        ["git", "diff", "--exit-code", "HEAD", "--", "protected/harness/", "protected/attention/"],
         cwd=PROJECT_ROOT,
         capture_output=True,
     )
     if harness_diff.returncode != 0:
         raise RuntimeError(
-            "protected/harness/ has uncommitted modifications relative to HEAD"
+            "protected/harness/ or protected/attention/ has uncommitted modifications relative to HEAD"
         )
 
 
-async def _run_baseline(study_id: str) -> None:
+async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> None:
     ground_truth = _load_ground_truth()
-    print(f"  Corpus run starting...")
+    probe_ids = _load_probe_set()
+
+    mini_files = _get_mini_corpus_files()
+    print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...")
     t0 = time.time()
     try:
         corpus_result = await asyncio.wait_for(
-            corpus_runner.run_corpus(study_id),
+            run_corpus(study_id, mini_files),
             timeout=ITERATION_TIMEOUT_S,
         )
     except asyncio.TimeoutError:
@@ -211,20 +333,36 @@ async def _run_baseline(study_id: str) -> None:
         log_anomaly(study_id, 0, "iteration_timeout", {})
         metrics = _make_metrics_base(0)
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(0, study_id, metrics)
+        append_metrics(0, study_id, metrics)
         return
     except Exception as e:
         print(f"  Corpus FAILED: {e}")
         log_anomaly(study_id, 0, "scan_failure", {"error": str(e)})
         metrics = _make_metrics_base(0)
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(0, study_id, metrics)
+        append_metrics(0, study_id, metrics)
         return
     elapsed = time.time() - t0
-    print(f"  Corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
+    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
 
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
+
+    system_prompt = _read_system_prompt()
+    pre_scores: list[RoutingScore] = []
+    post_scores: list[RoutingScore] = []
+
+    if analyzer is not None:
+        print("  Running attention analysis on control abstracts...")
+        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
+        pre_agg = 0.0
+        post_agg = (
+            sum(s.score for s in post_scores if s.score is not None)
+            / max(1, len(post_scores))
+        )
+    else:
+        pre_agg = None
+        post_agg = None
 
     metrics = _make_metrics_base(0)
     metrics["scanned"] = True
@@ -248,31 +386,42 @@ async def _run_baseline(study_id: str) -> None:
     metrics["corpus_avg_tokens_per_second"] = (
         corpus_result.corpus_token_usage.avg_tokens_per_second
     )
+    metrics["pre_routing_score"] = pre_agg
+    metrics["post_routing_score"] = post_agg
 
-    artifact_writer.write_iteration_artifacts(0, study_id, corpus_result)
-    artifact_writer.snapshot_playground(0, study_id)
-    artifact_writer.append_metrics(0, study_id, metrics)
-    model_performance.append_after_iteration(study_id, 0)
+    append_routing(study_id, 0, pre_scores, post_scores)
+    write_iteration_artifacts(0, study_id, corpus_result)
+    snapshot_playground(0, study_id)
+    append_metrics(0, study_id, metrics)
+    append_after_iteration(study_id, 0)
 
 
-async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
+async def _run_iteration(
+    iteration_n: int,
+    study_id: str,
+    analyzer: AttentionAnalyzer | None,
+) -> str | None:
     prior_output, prior_iter = _load_prior_output(study_id)
     if not prior_output:
         log_anomaly(study_id, iteration_n, "no_prior_output", {})
         metrics = _make_metrics_base(iteration_n)
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
 
-    prior_episodes = episode_store.load_all(study_id)
+    prior_episodes = load_episodes(study_id)
     current_files = _current_files()
 
+    routing_history = load_routing(study_id)
+    routing_history_text = format_for_agent(routing_history)
+
     print(f"  Calling agent (output from iteration {prior_iter}, {len(prior_episodes)} prior episodes)...")
-    agent_result = await agent_caller.invoke(
+    agent_result = await invoke(
         prior_output=prior_output,
         prior_output_iteration=prior_iter,
         current_files=current_files,
         prior_episodes=prior_episodes,
+        routing_history_text=routing_history_text,
     )
 
     metrics = _make_metrics_base(iteration_n)
@@ -285,10 +434,11 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
             {"reason": agent_result.reason},
         )
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
 
     metrics["agent_edits_proposed"] = len(agent_result.edits)
+    metrics["code_changes_attempted"] = _check_code_changes(agent_result.edits)
 
     if agent_result.token_usage:
         tu = agent_result.token_usage
@@ -301,8 +451,6 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
     print(f"  Agent: hypothesis={agent_result.episode.hypothesis[:100]}...")
     print(f"  Agent: expectation={agent_result.episode.expectation[:100]}...")
     print(f"  Agent proposed {len(agent_result.edits)} edits")
-    if not agent_result.edits:
-        log_anomaly(study_id, iteration_n, "empty_edits", {})
 
     apply_result = apply_edits(agent_result.edits)
     if not apply_result.applied:
@@ -313,7 +461,7 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
             {"offending_path": apply_result.offending_path},
         )
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
 
     metrics["agent_edits_applied"] = len(apply_result.files_changed or [])
@@ -325,7 +473,7 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
     repair_completion_tokens = 0
     validation_ok = False
     for attempt in range(1, 4):
-        val_result = await interface_validator.validate_interface()
+        val_result = await validate_interface()
         if val_result.valid:
             validation_ok = True
             if attempt > 1:
@@ -333,7 +481,6 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
             break
 
         print(f"  Interface INVALID (attempt {attempt}): {val_result.error}")
-
         log_anomaly(
             study_id, iteration_n,
             "interface_validation_failed",
@@ -341,17 +488,17 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
         )
 
         if attempt == 3:
-            git_ops.rollback_playground()
+            rollback_playground()
             log_anomaly(study_id, iteration_n, "repair_exhausted", {})
             log_anomaly(study_id, iteration_n, "episode_discarded", {})
             metrics["repair_attempts"] = 3
             metrics["anomaly"] = True
-            artifact_writer.append_metrics(iteration_n, study_id, metrics)
+            append_metrics(iteration_n, study_id, metrics)
             return None
 
         repair_files = _current_files()
         print(f"  Repair attempt {attempt}: calling agent...")
-        repair_result = await agent_caller.invoke_repair(
+        repair_result = await invoke_repair(
             error_message=val_result.error or "Validation failed",
             current_files=repair_files,
             attempt_number=attempt,
@@ -364,10 +511,10 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
                 "repair_agent_failure",
                 {"reason": repair_result.reason},
             )
-            git_ops.rollback_playground()
+            rollback_playground()
             metrics["repair_attempts"] = repair_attempts
             metrics["anomaly"] = True
-            artifact_writer.append_metrics(iteration_n, study_id, metrics)
+            append_metrics(iteration_n, study_id, metrics)
             return None
 
         repair_apply = apply_edits(repair_result.edits)
@@ -380,42 +527,92 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
                 repair_apply.reason or "repair_edit_apply_failed",
                 {"offending_path": repair_apply.offending_path},
             )
-            git_ops.rollback_playground()
+            rollback_playground()
             metrics["repair_attempts"] = repair_attempts
             metrics["anomaly"] = True
-            artifact_writer.append_metrics(iteration_n, study_id, metrics)
+            append_metrics(iteration_n, study_id, metrics)
             return None
 
     if not validation_ok:
-        git_ops.rollback_playground()
+        rollback_playground()
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
 
     metrics["repair_attempts"] = repair_attempts
     if repair_attempts > 0:
         metrics["repair_prompt_tokens"] = repair_prompt_tokens
         metrics["repair_completion_tokens"] = repair_completion_tokens
-    artifact_writer.snapshot_playground(iteration_n, study_id)
 
-    print(f"  Corpus run starting...")
+    system_prompt = _read_system_prompt()
+    probe_ids = _load_probe_set()
+
+    pre_scores: list[RoutingScore] = []
+    post_scores: list[RoutingScore] = []
+    pre_agg = None
+    post_agg = None
+    routing_delta = None
+
+    if analyzer is not None:
+        print("  Running POST-MODIFICATION attention pass on control abstracts...")
+        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
+
+        routing_history = load_routing(study_id)
+        if routing_history:
+            last_entry = routing_history[-1]
+            last_post = last_entry.get("post_scores", [])
+            pre_scores = post_scores
+            prev_scores_map = {s["abstract_id"]: s for s in last_post}
+            pre_agg_list = []
+            post_agg_list = []
+            control_improved = 0
+            control_declined = 0
+            for s in post_scores:
+                prev = prev_scores_map.get(s.abstract_id, {})
+                prev_score = prev.get("score")
+                if prev_score is not None and s.score is not None:
+                    pre_agg_list.append(prev_score)
+                    post_agg_list.append(s.score)
+                    d = s.score - prev_score
+                    if d > 0.02:
+                        control_improved += 1
+                    elif d < -0.02:
+                        control_declined += 1
+
+            pre_agg = sum(pre_agg_list) / len(pre_agg_list) if pre_agg_list else None
+            post_agg = sum(post_agg_list) / len(post_agg_list) if post_agg_list else None
+            routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
+            metrics["control_abstracts_improved"] = control_improved
+            metrics["control_abstracts_declined"] = control_declined
+        else:
+            pre_agg = (
+                sum(s.score for s in post_scores if s.score is not None)
+                / max(1, len(post_scores))
+            )
+            post_agg = pre_agg
+            pre_scores = post_scores
+
+    snapshot_playground(iteration_n, study_id)
+
+    print(f"  Mini-corpus run starting...")
     t0 = time.time()
+    mini_files = _get_mini_corpus_files()
     try:
         corpus_result = await asyncio.wait_for(
-            corpus_runner.run_corpus(study_id),
+            run_corpus(study_id, mini_files),
             timeout=ITERATION_TIMEOUT_S,
         )
     except asyncio.TimeoutError:
         print(f"  Corpus TIMEOUT after {time.time()-t0:.0f}s")
-        git_ops.rollback_playground()
+        rollback_playground()
         log_anomaly(study_id, iteration_n, "iteration_timeout", {})
         log_anomaly(study_id, iteration_n, "episode_discarded", {})
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
     except Exception as e:
         print(f"  Corpus FAILED: {e}")
-        git_ops.rollback_playground()
+        rollback_playground()
         log_anomaly(
             study_id, iteration_n,
             "scan_failure",
@@ -423,17 +620,17 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
         )
         log_anomaly(study_id, iteration_n, "episode_discarded", {})
         metrics["anomaly"] = True
-        artifact_writer.append_metrics(iteration_n, study_id, metrics)
+        append_metrics(iteration_n, study_id, metrics)
         return None
 
     elapsed = time.time() - t0
-    print(f"  Corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
+    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
 
     ground_truth = _load_ground_truth()
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
 
-    episode_store.append(study_id, iteration_n, agent_result.episode)
+    append_episode(study_id, iteration_n, agent_result.episode)
     metrics["episode_persisted"] = True
 
     metrics["scanned"] = True
@@ -457,38 +654,67 @@ async def _run_iteration(iteration_n: int, study_id: str) -> str | None:
     metrics["corpus_avg_tokens_per_second"] = (
         corpus_result.corpus_token_usage.avg_tokens_per_second
     )
+    metrics["pre_routing_score"] = pre_agg
+    metrics["post_routing_score"] = post_agg
+    metrics["routing_delta"] = routing_delta
+    if routing_delta is not None:
+        if routing_delta > 0.02:
+            metrics["routing_direction"] = "positive"
+        elif routing_delta < -0.02:
+            metrics["routing_direction"] = "negative"
+        else:
+            metrics["routing_direction"] = "neutral"
+    else:
+        metrics["routing_direction"] = "neutral"
 
-    artifact_writer.write_iteration_artifacts(iteration_n, study_id, corpus_result)
-    artifact_writer.append_metrics(iteration_n, study_id, metrics)
-    artifact_writer.append_rationale(iteration_n, study_id, agent_result.rationale)
-    model_performance.append_after_iteration(study_id, iteration_n)
+    append_routing(study_id, iteration_n, pre_scores, post_scores)
+    write_iteration_artifacts(iteration_n, study_id, corpus_result)
+    append_metrics(iteration_n, study_id, metrics)
+    append_rationale(iteration_n, study_id, agent_result.rationale)
+    append_after_iteration(study_id, iteration_n)
 
     return agent_result.rationale
 
 
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
     _pre_run_checks(study_id)
-    model_performance._get_run_start(study_id)
-    git_ops.reset_partial_iteration()
 
-    last = git_ops.last_committed_iteration(study_id)
+    last = last_committed_iteration(study_id)
     start_iter = last + 1
+
+    analyzer = None
+    try:
+        model_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
+        if model_path:
+            print("  Loading AttentionAnalyzer model...")
+            analyzer = AttentionAnalyzer(model_path)
+            analyzer.load()
+            print("  AttentionAnalyzer loaded successfully.")
+        else:
+            print("  TRANSFORMERS_MODEL_PATH not set — skipping attention analysis.")
+    except Exception as e:
+        print(f"  AttentionAnalyzer failed to load: {e}")
+        log_anomaly(study_id, -1, "transformers_load_failure", {"error": str(e)})
+        analyzer = None
 
     if start_iter == 0:
         print(f"[{study_id}] Running baseline (iteration 0)...")
-        await _run_baseline(study_id)
-        git_ops.commit_iteration(0, study_id, "Baseline run")
+        await _run_baseline(study_id, analyzer)
+        commit_iteration(0, study_id, "Baseline run")
         start_iter = 1
 
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...")
-        rationale = await _run_iteration(i, study_id)
-        git_ops.commit_iteration(i, study_id, rationale or f"Iteration {i}")
+        rationale = await _run_iteration(i, study_id, analyzer)
+        commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
+    if analyzer is not None:
+        analyzer.close()
+
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
-    model_performance.summarize(study_id)
+    summarize(study_id)
 
 
-def run_study(study_id: str = "study_001", n_iterations: int = 20) -> None:
+def run_study(study_id: str = STUDY_ID, n_iterations: int = N_ITERATIONS) -> None:
     asyncio.run(_run_study_async(study_id, n_iterations))

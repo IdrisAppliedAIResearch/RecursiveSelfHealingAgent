@@ -7,11 +7,12 @@ from extractor.provider import LlamaCppProvider
 from protected.harness.shared.edit_protocol import (
     AgentFailure,
     AgentResponse,
+    Edit,
     Episode,
     RepairResponse,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _provider = LlamaCppProvider()
 _AGENT_MAX_TOKENS = 28672
 _REPAIR_MAX_TOKENS = 4096
@@ -65,6 +66,8 @@ def _build_invoke_prompt(
     current_files: dict[str, str],
     objective: str,
     prior_episodes: list[dict],
+    routing_history_text: str,
+    baseline_correction: str,
 ) -> tuple[str, str]:
     system = (
         "You are an autonomous AI researcher modifying a scientific claim "
@@ -74,6 +77,8 @@ def _build_invoke_prompt(
         f"OBJECTIVE:\n{objective}\n\n"
     )
 
+    system += f"BASELINE CORRECTION:\n{baseline_correction}\n\n"
+
     if prior_episodes:
         system += (
             "EPISODIC MEMORY (prior iterations):\n"
@@ -81,6 +86,9 @@ def _build_invoke_prompt(
         )
     else:
         system += "This is your first iteration; you have no prior episodes.\n\n"
+
+    if routing_history_text:
+        system += f"{routing_history_text}\n\n"
 
     system += "CURRENT FILE CONTENTS:\n"
     for filepath, content in sorted(current_files.items()):
@@ -147,17 +155,33 @@ async def invoke(
     current_files: dict[str, str],
     objective: str = OBJECTIVE,
     prior_episodes: list[dict] | None = None,
+    routing_history_text: str = "",
 ) -> AgentResponse | AgentFailure:
     if prior_episodes is None:
         prior_episodes = []
 
+    from protected.harness.study_002.baseline_correction import (
+        compose_baseline_correction,
+    )
+
+    baseline_text = compose_baseline_correction()
+
     system_prompt, user_message = _build_invoke_prompt(
-        prior_output, prior_output_iteration, current_files, objective, prior_episodes
+        prior_output,
+        prior_output_iteration,
+        current_files,
+        objective,
+        prior_episodes,
+        routing_history_text,
+        baseline_text,
     )
 
     try:
         raw, token_usage = await asyncio.to_thread(
-            _provider.complete_with_usage, system_prompt, user_message, _AGENT_MAX_TOKENS
+            _provider.complete_with_usage,
+            system_prompt,
+            user_message,
+            _AGENT_MAX_TOKENS,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
@@ -179,8 +203,6 @@ async def invoke(
         edits_data = data.get("edits", [])
         edits = []
         for ed in edits_data:
-            from protected.harness.shared.edit_protocol import Edit
-
             edits.append(
                 Edit(
                     file_path=str(ed.get("file_path", "")),
@@ -212,7 +234,10 @@ async def invoke_repair(
 
     try:
         raw, token_usage = await asyncio.to_thread(
-            _provider.complete_with_usage, system_prompt, user_message, _REPAIR_MAX_TOKENS
+            _provider.complete_with_usage,
+            system_prompt,
+            user_message,
+            _REPAIR_MAX_TOKENS,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
@@ -226,8 +251,6 @@ async def invoke_repair(
         edits_data = data.get("edits", [])
         edits = []
         for ed in edits_data:
-            from protected.harness.shared.edit_protocol import Edit
-
             edits.append(
                 Edit(
                     file_path=str(ed.get("file_path", "")),

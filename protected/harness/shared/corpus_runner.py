@@ -4,8 +4,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from protected.harness.anomaly_logger import log_anomaly
-from protected.harness.interface_validator import reload_playground
+from protected.harness.shared.anomaly_logger import log_anomaly
+from protected.harness.shared.interface_validator import reload_playground
 from protected.schema import ExtractionResult
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
