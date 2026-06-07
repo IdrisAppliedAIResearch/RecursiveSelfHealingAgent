@@ -1,0 +1,6 @@
+import os
+
+ENTRY_POINT_MODULE = "playground.extractor"
+ENTRY_POINT_FUNCTION = "extract"
+ENTRY_POINT_PARAMS = 2
+ITERATION_TIMEOUT_S = int(os.environ.get("STUDY_ITERATION_TIMEOUT_S", 14400))
