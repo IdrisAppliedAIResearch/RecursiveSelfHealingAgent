@@ -1,0 +1,6 @@
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12598634", "error": "Expecting value: line 1 column 1 (char 0)"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12657700", "error": "Expecting value: line 1 column 1 (char 0)"}}
+{"iteration_n": 4, "anomaly_type": "empty_file_replacement", "details": {"offending_path": "prompts/examples.md"}}
+{"iteration_n": 5, "anomaly_type": "empty_file_replacement", "details": {"offending_path": "prompts/system_prompt.md"}}
+{"iteration_n": 6, "anomaly_type": "agent_response_malformed", "details": {"reason": "Malformed response: Invalid JSON response: Expecting value: line 1 column 1 (char 0)"}}
+{"iteration_n": 8, "anomaly_type": "agent_response_malformed", "details": {"reason": "Malformed response: Invalid JSON response: Expecting value: line 1 column 1 (char 0)"}}
