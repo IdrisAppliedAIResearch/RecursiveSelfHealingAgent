@@ -1,0 +1,10 @@
+{
+  "pmid": "15050567",
+  "title": "Cerebellar and premotor function in bimanual coordination: parametric neural responses to spatiotemporal complexity and cycling frequency.",
+  "authors": "Debaere F, Wenderoth N, Sunaert S, Van Hecke P, Swinnen SP",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "In the present functional magnetic resonance imaging (fMRI) study, we assessed the neural network governing bimanual coordination during manipulations of spatiotemporal complexity and cycling frequency. A parametric analysis was applied to determine the effects of each of both factors as well as their interaction. Subjects performed four different cyclical movement tasks of increasing spatiotemporal complexity (i.e., unimanual left-right hand movements, bimanual in-phase movements, bimanual anti-phase movements, and bimanual 90 degrees out-of-phase movements) across four frequency levels (0.9, 1.2, 1.5, and 1.8 Hz). Results showed that, within the network involved in bimanual coordination, functional subcircuits could be distinguished: Activation in the supplementary motor area, superior parietal cortex (SPS), and thalamic VPL Nc was mainly correlated with increasing spatiotemporal complexity of the limb movements, suggesting that these areas are involved in higher-order movement control. By contrast, activation within the primary motor cortex, cingulate motor cortex (CMC), globus pallidus, and thalamic VLo Nc correlated mainly with movement frequency, indicating that these areas play an important role during movement execution. Interestingly, the cerebellum and the dorsal premotor cortex were identified as the principal regions responding to manipulation of both parameters and exhibiting clear interaction effects. Therefore, it is concluded that both areas represent critical sites for the control of bimanual coordination.",
+  "doi": "10.1016/j.neuroimage.2003.12.011",
+  "space": "MNI"
+}

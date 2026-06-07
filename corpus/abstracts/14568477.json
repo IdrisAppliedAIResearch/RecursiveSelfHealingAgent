@@ -1,0 +1,10 @@
+{
+  "pmid": "14568477",
+  "title": "Self-responsibility and the self-serving bias: an fMRI investigation of causal attributions.",
+  "authors": "Blackwood NJ, Bentall RP, ffytche DH, Simmons A, Murray RM, Howard RJ",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "We use causal attributions to infer the most likely cause of events in the social world. Internal attributions imply self-responsibility for events. The self-serving bias describes the tendency of normal subjects to attribute the causation of positive events internally (\"I am responsible em leader \") and negative events externally (\"Other people or situational factors are responsible em leader \"). The self-serving bias has been assumed to serve a positive motivational function by enhancing self-esteem. Abnormalities of attributional style have been implicated in both depression and psychosis. We examined the neural basis of both self-responsibility and the self-serving bias using functional magnetic resonance imaging during the performance of attributional decision tasks. We found that the determination of self-responsibility recruits areas previously implicated in action simulation (bilateral premotor cortex and cerebellum), suggesting that such higher order social cognition is related to simpler internal models of goal-directed action. The dorsal striatum, previously implicated in motivated behavior, mediates the self-serving bias.",
+  "doi": "10.1016/S1053-8119(03)00331-8",
+  "space": "MNI"
+}

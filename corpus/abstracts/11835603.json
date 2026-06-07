@@ -1,0 +1,10 @@
+{
+  "pmid": "11835603",
+  "title": "Neural representation of verb meaning: an fMRI study.",
+  "authors": "Grossman M, Koenig P, DeVita C, Glosser G, Alsop D, Detre J, Gee J",
+  "year": "2002",
+  "journal": "Human brain mapping",
+  "abstract": "The neural basis for verb comprehension has proven elusive, in part because of the limited range of verb categories that have been assessed. In the present study, 16 healthy young adults were probed for the meaning associated with verbs of MOTION and verbs of COGNITION. We observed distinct patterns of activation for each verb subcategory: MOTION verbs are associated with recruitment of left ventral temporal-occipital cortex, bilateral prefrontal cortex and caudate, whereas COGNITION verbs are associated with left posterolateral temporal activation. These findings are consistent with the claim that the neural representations of verb subcategories are distinct. Although the \"sensory-motor\" hypothesis may play a role in explaining activation associated with MOTION verbs, the left posterolateral temporal distribution of cortical activation associated with COGNITION verbs cannot be easily explained by the \"sensory-motor\" hypothesis. We suggest that left posterolateral temporal activation supports aspects of lexical semantic processing concerned with the neural representation of propositional knowledge contributing to COGNITION verbs.",
+  "doi": "10.1002/hbm.10117",
+  "space": "MNI"
+}

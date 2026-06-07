@@ -1,0 +1,10 @@
+{
+  "pmid": "12880789",
+  "title": "Physiological self-regulation of regional brain activity using real-time functional magnetic resonance imaging (fMRI): methodology and exemplary data.",
+  "authors": "Weiskopf N, Veit R, Erb M, Mathiak K, Grodd W, Goebel R, Birbaumer N",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "A brain-computer interface (BCI) based on real-time functional magnetic resonance imaging (fMRI) is presented which allows human subjects to observe and control changes of their own blood oxygen level-dependent (BOLD) response. This BCI performs data preprocessing (including linear trend removal, 3D motion correction) and statistical analysis on-line. Local BOLD signals are continuously fed back to the subject in the magnetic resonance scanner with a delay of less than 2 s from image acquisition. The mean signal of a region of interest is plotted as a time-series superimposed on color-coded stripes which indicate the task, i.e., to increase or decrease the BOLD signal. We exemplify the presented BCI with one volunteer intending to control the signal of the rostral-ventral and dorsal part of the anterior cingulate cortex (ACC). The subject achieved significant changes of local BOLD responses as revealed by region of interest analysis and statistical parametric maps. The percent signal change increased across fMRI-feedback sessions suggesting a learning effect with training. This methodology of fMRI-feedback can assess voluntary control of circumscribed brain areas. As a further extension, behavioral effects of local self-regulation become accessible as a new field of research.",
+  "doi": "10.1016/S1053-8119(03)00145-9",
+  "space": "UNKNOWN"
+}

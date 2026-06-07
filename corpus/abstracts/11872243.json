@@ -1,0 +1,10 @@
+{
+  "pmid": "11872243",
+  "title": "Effects of hyperoxia on human sensorimotor cortex activity produced by electrical stimulation of the median nerve: a functional magnetic resonance imaging study.",
+  "authors": "Boakye M, Krauss BR, Huckins SC, Zhang L, Szeverenyi NM, Hodge CJ Jr",
+  "year": "2002",
+  "journal": "Neuroscience letters",
+  "abstract": "This study investigated the effect of hyperoxia on sensorimotorcortical activity resulting from electrical stimulation of the median nerve, using functional magnetic resonance imaging (fMRI). Nine volunteers underwent stimulation at 5 and 100 Hz while breathing 21% FIO(2) (fraction of inspired oxygen) or 100% FIO(2). fMRI data were correlated with a stimulus predictor curve, transformed into Talairach space and averaged by group. Normoxic (21% FIO(2)) and hyperoxic (100% FIO(2)) sensorimotor activation volumes were compared using Student's t-test. There were no significant differences between the primary somatosensory/primary motor/Brodmann area 40 (SI/MI/Ba40) and secondary somatosensory cortex (SII) activation volumes for normoxia and hyperoxia. (P>0.05). There was no difference between SI/MI/Ba40 and SII activations at 5 and 100 Hz. In contrast to results previously reported for primary visual cortex (V1), hyperoxia did not enhance sensorimotor cortical activation in area SI/MI/Ba40 or SII. These results indicate that there is regional heterogeneity of the fMRI response to hyperoxia in the cerebral cortex.",
+  "doi": "10.1016/S0304-3940(01)02406-5",
+  "space": "TAL"
+}

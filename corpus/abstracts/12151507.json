@@ -1,0 +1,10 @@
+{
+  "pmid": "12151507",
+  "title": "Parahippocampal reactivation signal at retrieval after interruption of rehearsal.",
+  "authors": "Sakai K, Rowe JB, Passingham RE",
+  "year": "2002",
+  "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+  "abstract": "Verbal information is maintained on-line within working memory by rehearsal. However, we still can recall the verbal information when rehearsal is interrupted. Here we show that this is achieved by reactivation of maintained information. We used event-related functional magnetic resonance imaging to identify brain activation at encoding, during memory delay, and at retrieval, within the same trial of a verbal working memory task. On half of the trials, retrieval was tested after arithmetic distraction to interrupt rehearsal of the remembered verbal items. We found that the parahippocampal cortex (PHC) was highly active at retrieval on trials with distraction compared with trials without distraction. The PHC did not show sustained activation during the memory delay. By contrast, the dorsolateral prefrontal cortex (DLPF), left superior temporal region (ST), and Broca's area showed sustained activation during the memory delay, suggesting their role in maintenance of verbal items. After arithmetic distraction, the DLPF and ST were engaged in arithmetic processing. Thus, these areas could not maintain the verbal items during the distraction. At retrieval of verbal items after the distraction, the DLPF, ST and Broca's area were also active. The activity was taken to reflect reactivated representation of the verbal items. The primary role of the PHC in retrieval may be to trigger the reactivation of these cortical areas that had maintained the remembered items, thereby reactivating the information that is no longer maintained on-line.",
+  "doi": "",
+  "space": "MNI"
+}

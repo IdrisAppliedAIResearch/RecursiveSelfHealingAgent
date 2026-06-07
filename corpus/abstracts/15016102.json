@@ -1,0 +1,10 @@
+{
+  "pmid": "15016102",
+  "title": "Cortical mechanisms of smooth pursuit eye movements with target blanking. An fMRI study.",
+  "authors": "Lencer R, Nagel M, Sprenger A, Zapf S, Erdmann C, Heide W, Binkofski F",
+  "year": "2004",
+  "journal": "The European journal of neuroscience",
+  "abstract": "Smooth pursuit eye movements are evoked by retinal image motion of visible moving objects and can also be driven by the internal representation of a target due to extraretinal mechanisms (e.g. efference copy). To delineate the corresponding neuronal correlates, functional magnetic resonance imaging at 1.5 T was applied during smooth pursuit at 10 degrees /s with continuous target presentation and target blanking for 1 s to 16 right-handed healthy males. Eye movements were assessed during scanning sessions by infra-red reflection oculography. Smooth pursuit performance was optimal when the target was visible but decreased to a residual velocity of about 30% of the velocity observed during continuous target presentation. Random effects analysis of the imaging data yielded an activation pattern for smooth pursuit in the absence of a visual target (in contrast to continuous target presentation) which included a number of cortical areas in which extraretinal information is available such as the frontal eye field, the superior parietal lobe, the anterior and the posterior intraparietal sulcus and the premotor cortex, and also the supplementary and the presupplementary eye field, the supramarginal gyrus, the dorsolateral prefrontal cortex, cerebellar areas and the basal ganglia. We suggest that cortical mechanisms such as prediction, visuo-spatial attention and transformation, multimodal visuomotor control and working memory are of special importance for maintaining smooth pursuit eye movements in the absence of a visible target.",
+  "doi": "10.1111/j.1460-9568.2004.03229.x",
+  "space": "MNI"
+}

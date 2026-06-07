@@ -1,0 +1,10 @@
+{
+  "pmid": "12814583",
+  "title": "Power grip disinhibits the ipsilateral sensorimotor cortex: a TMS and fMRI study.",
+  "authors": "Foltys H, Meister IG, Weidemann J, Sparing R, Thron A, Willmes K, Topper R, Hallett M, Boroojerdi B",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Electrophysiological studies have shown that forceful activation of the hand muscles (power grip) is accompanied by an increased excitability of the ipsilateral corticospinal system. This increase in excitability may be due to spinal or cortical mechanisms. Here we show with fMRI that this phenomenon is at least in part mediated at a cortical level. We used TMS to show that the increased ipsilateral excitability during a forceful maneuver leads to enhanced stimulus-response curves. fMRI was used to compare the activation during a repetitive hand movement with or without an accompanying power grip on the opposite site. The power grip reduced movement-related activation in the ipsilateral sensorimotor cortex. Peak deactivation was located in the left postcentral gyrus extending into the adjacent precentral gyrus. This finding suggests that a forceful activation of the hand muscles disinhibits a distinct functional representation in the ipsilateral sensorimotor cortex. Consequently, the excitability of the corticospinal system increases and less neuronal excitatory activity is needed to perform a given task. The results may be important for a variety of studies as they suggest that fMRI may show decreased hemodynamic response under conditions in which other neurophysiological methods have shown increased functional activity.",
+  "doi": "10.1016/S1053-8119(03)00107-1",
+  "space": "MNI"
+}

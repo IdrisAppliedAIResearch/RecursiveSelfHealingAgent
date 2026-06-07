@@ -1,0 +1,10 @@
+{
+  "pmid": "11704079",
+  "title": "Unilateral left prefrontal transcranial magnetic stimulation (TMS) produces intensity-dependent bilateral effects as measured by interleaved BOLD fMRI.",
+  "authors": "Nahas Z, Lomarev M, Roberts DR, Shastri A, Lorberbaum JP, Teneback C, McConnell K, Vincent DJ, Li X, George MS, Bohning DE",
+  "year": "2001",
+  "journal": "Biological psychiatry",
+  "abstract": "Transcranial magnetic stimulation (TMS) administered over the prefrontal cortex has been shown to subtly influence neuropsychological tasks, and has antidepressant effects when applied daily for several weeks. Prefrontal TMS does not, however, produce an immediate easily observable effect, making it hard to determine if one has stimulated the cortex. Most prefrontal TMS studies have stimulated using intensity relative to the more easily determined motor threshold (MT) over motor cortex. Five healthy adults were studied in a 1.5 T MRI scanner during short trains of 1 Hz TMS delivered with a figure eight MR compatible TMS coil followed by rest epochs. In a randomized manner, left prefrontal TMS was delivered at 80%, 100% and 120% of MT interleaved with BOLD fMRI acquisition. Compared to rest, all TMS epochs activated auditory cortex, with 80% MT having no other areas of significant activation. 100% MT showed contralateral activation and 120% MT showed bilateral prefrontal activation. Higher intensity TMS, compared to lower, in general produced more activity both under the coil and contralaterally. Higher prefrontal TMS stimulation intensity produces greater local and contralateral activation. Importantly, unilateral prefrontal TMS produces bilateral effects, and TMS at 80% MT produces only minimal prefrontal cortex activation.",
+  "doi": "10.1016/S0006-3223(01)01199-4",
+  "space": "MNI"
+}

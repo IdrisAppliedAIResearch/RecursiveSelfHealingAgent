@@ -1,0 +1,10 @@
+{
+  "pmid": "12203688",
+  "title": "Assessment of spatial normalization of whole-brain magnetic resonance images in children.",
+  "authors": "Wilke M, Schmithorst VJ, Holland SK",
+  "year": "2002",
+  "journal": "Human brain mapping",
+  "abstract": "Commonly used frameworks for spatial normalization of brain imaging data (e.g., Talairach-space) are based on one or more adult brains. As pediatric brains are different in size and shape from adult brains and continue to develop through childhood, we aimed to assess the influence of age on various spatial normalization parameters. One hundred forty-eight healthy children aged 5-18 years were included in this study. The linear scaling parameters and the deformations from the non-linear spatial normalization to both a standard adult and a custom pediatric template were analyzed within SPM99. The effect of using a brain mask on the linear and of using different levels of constraint on the non-linear spatial normalization was assessed. Of the linear scaling factors, only the X-dimension (left-right) showed a significant age-correlation when based on brain tissue, whereas the overall scaling was not correlated with age. When based on the whole head, a very strong age-effect can be found in all dimensions. Non-linear deformations also show localized correlations with age, most pronounced in parietal and frontal areas. The total amount of volume change is significantly lower when using a pediatric template. It is also substantially influenced by the degree of regularization that is exerted on the spatial normalization parameters. Our results suggest that in the cortical areas showing a strong correlation of deformation with age, caution should be used in assigning imaging results in children to a specific morphological structure. Also, to minimize the amount of deformation during non-linear spatial normalization, a pediatric template should be used. Further implications of our findings on developmental neuroimaging studies are discussed.",
+  "doi": "10.1002/hbm.10053",
+  "space": "MNI"
+}

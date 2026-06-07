@@ -1,0 +1,10 @@
+{
+  "pmid": "12880907",
+  "title": "Distinct neural substrates for visual search amongst spatial versus temporal distractors.",
+  "authors": "Coull JT, Walsh V, Frith CD, Nobre AC",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Whether the contribution of the superior parietal cortex (BA7) to attention-demanding tasks is strictly spatial in nature remains unresolved. We used functional magnetic resonance imaging to explore the behavioural and neuroanatomical correlates of non-spatial search for a conjunction of features within a stream of temporally-distracting stimuli. In addition, we compared these data to those from a conventional visuo-spatial search task, performed by the same subjects, in order to determine the specificity of right BA7 activation. Mode of stimulus-distribution (spatial versus temporal) and search type (target defined by a single feature or a conjunction of features) were manipulated in a 2 x 2 factorial design. Behaviourally, the temporal conjunction task was shown to index temporal selective attention. Accuracy of detecting a second target varied with the temporal proximity of two successive targets when subjects searched for a conjunction of features, but not a single feature. The temporal conjunction task activated a network of areas including right superior parietal cortex and bilateral regions of intraparietal sulcus, frontal operculum and putamen. The two latter regions were selectively activated by the attentional demands of the temporal conjunction task when compared directly to the attentional demands of the spatial conjunction task, implicating these regions specifically in selective attention among temporally-distracting stimuli. By comparison, only a very medial region of right BA7 was selectively activated by the spatial conjunction task. The more lateral region of BA7 previously reported by other groups was engaged to a similar degree by both spatial and temporal versions of the conjunction search task.",
+  "doi": "10.1016/S0926-6410(03)00138-1",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "12454910",
+  "title": "Posterior cingulate cortex activation by emotional words: fMRI evidence from a valence decision task.",
+  "authors": "Maddock RJ, Garrett AS, Buonocore MH",
+  "year": "2003",
+  "journal": "Human brain mapping",
+  "abstract": "Functional imaging studies consistently find that emotional stimuli activate the posterior cingulate cortex, a region that appears to have memory-related functions. However, prior imaging studies have not controlled for non-emotional stimulus features that might activate this region by engaging memory processes unrelated to emotion. This study examined whether emotional words activated the posterior cingulate cortex when these potentially confounding factors were controlled. Sixty-four pleasant and 64 unpleasant words were matched with neutral words on non-emotional features known to influence memory. Eight subjects underwent block-designed functional magnetic resonance imaging scans while evaluating the valence of these words. The posterior cingulate cortex was significantly activated bilaterally during both unpleasant and pleasant compared to neutral words. The strongest activation peak with both unpleasant and pleasant words was observed in the left subgenual cingulate cortex. Anteromedial orbital and left inferior and middle frontal cortices were also activated by both pleasant and unpleasant words. Right amygdala and auditory cortex were activated only by unpleasant words, while left frontal pole was activated only by pleasant words. The results show that activation of the posterior cingulate cortex by emotional stimuli cannot be attributed to the memory-enhancing effects of non-emotional stimulus features. The findings are consistent with the suggestion that this region may mediate interactions of emotional and memory-related processes. The results also extend prior findings that evaluating emotional words consistently activates the subgenual cingulate cortex, and suggest a means of probing this region in patients with mood disorders.",
+  "doi": "10.1002/hbm.10075",
+  "space": "MNI"
+}

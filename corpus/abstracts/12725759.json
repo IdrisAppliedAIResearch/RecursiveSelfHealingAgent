@@ -1,0 +1,10 @@
+{
+  "pmid": "12725759",
+  "title": "Feeling-of-knowing in episodic memory: an event-related fMRI study.",
+  "authors": "Maril A, Simons JS, Mitchell JP, Schwartz BL, Schacter DL",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "An individual may fail to recall an item from memory but still feel that it would be recognized on a later test, a retrieval state termed the \"feeling-of-knowing\" (FOK). In this study we used event-related fMRI and the FOK to examine both encoding- and retrieval-related factors that are associated with different levels of recall performance: successful retrieval of a previously studied item, retrieval failure accompanied by the FOK, and retrieval failure without any FOK. The results revealed one predominant pattern of retrieval-related activation: an intermediate level of activation for FOK-less than that associated with successful recall and greater than that associated with unsuccessful recall (frontal and left parietal cortices). Two further patterns were also observed: greater activation for both successful recall and FOK than for unsuccessful recall (left midlateral prefrontal cortex) and greater activation for successful recall than for both FOK and unsuccessful recall (left MTL). Analysis of encoding trials conditional upon subsequent retrieval success revealed a pattern of activation that appeared to predict subsequent recall, but which further analysis indicated to be a better predictor of subsequent recognition. These results provide evidence that the phenomenology of graded recall is represented neurally in frontal and parietal cortices, but that activation at encoding may not precipitate the different levels of recall experience.",
+  "doi": "10.1016/S1053-8119(03)00014-4",
+  "space": "MNI"
+}

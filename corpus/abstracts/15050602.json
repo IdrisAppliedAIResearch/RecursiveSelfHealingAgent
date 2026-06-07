@@ -1,0 +1,10 @@
+{
+  "pmid": "15050602",
+  "title": "Eyes open and eyes closed as rest conditions: impact on brain activation patterns.",
+  "authors": "Marx E, Deutschlander A, Stephan T, Dieterich M, Wiesmann M, Brandt T",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The patterns of associated brain activations during eyes-open and eyes-closed states in complete darkness considerably differ in fMRI. An \"interoceptive\" state with the eyes closed is characterized by visual cortex activation, while an \"exteroceptive\" state with the eyes open is characterized by ocular motor system activity. The impact of the chosen rest condition (eyes open or eyes closed in complete darkness) on the pattern of brain activations during visual stimulation was evaluated in 14 healthy volunteers. During fixation or dim light room illumination, the activation of the visual cortex was larger with the eyes-open rest condition than with the eyes-closed rest condition; however, activation of the lateral geniculate nucleus was smaller. Activations that can be attributed to ocular motor structures, such as the prefrontal cortex, parietal and frontal eye fields, cerebellar vermis, the thalamus, and basal ganglia were larger with the eyes-closed rest condition than with the eyes-open rest condition. BOLD signal decreases of cortical areas that represent visual, somatosensory, auditory, and vestibular functions were seen in the comparison fixation of light emitting diode (LED) minus eyes closed. Thus, the choice of rest condition (either eyes closed or eyes open) is critical for stimulus-induced brain activation patterns. Activity of the ocular motor system as well as deactivation of sensory cortical areas may go undetected with eyes open as rest condition.",
+  "doi": "10.1016/j.neuroimage.2003.12.026",
+  "space": "MNI"
+}

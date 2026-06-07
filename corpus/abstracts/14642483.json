@@ -1,0 +1,10 @@
+{
+  "pmid": "14642483",
+  "title": "Neural substrates participating in acquisition of facial familiarity: an fMRI study.",
+  "authors": "Kosaka H, Omori M, Iidaka T, Murata T, Shimoyama T, Okada T, Sadato N, Yonekura Y, Wada Y",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "The amygdala is related to recognition of faces and emotions, and functional magnetic resonance imaging (fMRI) studies have reported that the amygdala is habituated over time with repetition of facial stimuli. When subjects are presented repeatedly with unfamiliar faces, they come to gradually recognize the unfamiliar faces as familiar. To investigate the brain areas participating in the acquisition of familiarity to repeatedly presented unfamiliar faces, we conducted an fMRI study in 16 healthy subjects. During the task periods, the subjects were instructed to see presented unfamiliar faces repeatedly and to judge whether the face was male or female or whether the face had emotional valences. The experiment consisted of nine sessions. To clarify the brain areas that showed increasing or decreasing activation as the experimental session proceeded, we analyzed the fMRI data using specified linear covariates in the face recognition task from the first session to the ninth session. Imaging data were investigated on a voxel-by-voxel basis for single-group analysis according to the random effect model using Statistical Parametric Mapping. The bilateral posterior cingulate cortices showed significant increases in activity as the experimental sessions proceeded, while the activation in the right amygdala and the left medial fusiform gyrus decreased. Thus, the posterior cingulate cortex may play an important role in the acquisition of facial familiarity.",
+  "doi": "10.1016/S1053-8119(03)00447-6",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "12718866",
+  "title": "Temporal prediction errors in a passive learning task activate human striatum.",
+  "authors": "McClure SM, Berns GS, Montague PR",
+  "year": "2003",
+  "journal": "Neuron",
+  "abstract": "Functional MRI experiments in human subjects strongly suggest that the striatum participates in processing information about the predictability of rewarding stimuli. However, stimuli can be unpredictable in character (what stimulus arrives next), unpredictable in time (when the stimulus arrives), and unpredictable in amount (how much arrives). These variables have not been dissociated in previous imaging work in humans, thus conflating possible interpretations of the kinds of expectation errors driving the measured brain responses. Using a passive conditioning task and fMRI in human subjects, we show that positive and negative prediction errors in reward delivery time correlate with BOLD changes in human striatum, with the strongest activation lateralized to the left putamen. For the negative prediction error, the brain response was elicited by expectations only and not by stimuli presented directly; that is, we measured the brain response to nothing delivered (juice expected but not delivered) contrasted with nothing delivered (nothing expected).",
+  "doi": "10.1016/S0896-6273(03)00154-5",
+  "space": "UNKNOWN"
+}

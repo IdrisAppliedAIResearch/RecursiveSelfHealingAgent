@@ -1,0 +1,10 @@
+{
+  "pmid": "12694890",
+  "title": "Searching for a structural endophenotype in psychosis using computational morphometry.",
+  "authors": "Marcelis M, Suckling J, Woodruff P, Hofman P, Bullmore E, van Os J",
+  "year": "2003",
+  "journal": "Psychiatry research",
+  "abstract": "Structural cerebral abnormalities are frequently observed in schizophrenia. These abnormalities may indicate vulnerability for the disorder, as evidenced by reports of familial clustering of measures identified through region-of-interest analyses using manual outlining procedures. We used computational morphometry to detect structural differences within the entire brain to further examine possible structural endophenotypes. Magnetic resonance imaging scans were obtained in 31 psychotic patients, 32 non-psychotic first-degree relatives of psychotic patients and 27 healthy controls. The images were processed using an automated procedure, yielding global grey matter, white matter, CSF and total brain volume. The relative distribution of grey matter was compared between groups on a clustered-voxel basis. Global grey matter and total brain volume did not differ between the groups. White matter volume was significantly higher and CSF volume significantly lower in relatives compared to both cases and controls. The clustered-voxel based group comparison yielded evidence for significant grey matter deficits in fronto-thalamic-cerebellar regions, in psychotic patients, whereas the most prominent deficits in relatives involved the cerebellum. Patients with psychosis and first-degree healthy relatives of patients with psychosis show cerebellar abnormalities, which may constitute a marker of genetic transmission.",
+  "doi": "10.1016/S0925-4927(02)00125-7",
+  "space": "TAL"
+}

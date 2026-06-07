@@ -1,0 +1,10 @@
+{
+  "pmid": "15028641",
+  "title": "Task-independent and task-specific age effects on brain activity during working memory, visual attention and episodic retrieval.",
+  "authors": "Cabeza R, Daselaar SM, Dolcos F, Prince SE, Budde M, Nyberg L",
+  "year": "2004",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "It is controversial whether the effects of aging on various cognitive functions have the same common cause or several different causes. To investigate this issue, we scanned younger and older adults with functional magnetic resonance imaging (fMRI) while performing three different tasks: working memory, visual attention and episodic retrieval. There were three main results. First, in all three tasks, older adults showed weaker occipital activity and stronger prefrontal and parietal activity than younger adults. The occipital reduction is consistent with the view that sensory processing decline is a common cause in cognitive aging, and the prefrontal increase may reflect functional compensation. Secondly, older adults showed more bilateral patterns of prefrontal activity than younger adults during working memory and visual attention tasks. These findings are consistent with the Hemispheric Asymmetry Reduction in Older Adults (HAROLD) model. Finally, compared to younger adults, older adults showed weaker hippocampal formation activity in all three tasks but stronger parahippocampal activity in the episodic retrieval task. The former finding suggests that age-related hippocampal deficits may have a global effect in cognition, and the latter is consistent with an age-related increase in familiarity-based recognition. Taken together, the results indicate that both common and specific factors play an important role in cognitive aging.",
+  "doi": "10.1093/cercor/bhg133",
+  "space": "MNI"
+}

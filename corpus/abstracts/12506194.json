@@ -1,0 +1,10 @@
+{
+  "pmid": "12506194",
+  "title": "Functional connectivity in the resting brain: a network analysis of the default mode hypothesis.",
+  "authors": "Greicius MD, Krasnow B, Reiss AL, Menon V",
+  "year": "2003",
+  "journal": "Proceedings of the National Academy of Sciences of the United States of America",
+  "abstract": "Functional imaging studies have shown that certain brain regions, including posterior cingulate cortex (PCC) and ventral anterior cingulate cortex (vACC), consistently show greater activity during resting states than during cognitive tasks. This finding led to the hypothesis that these regions constitute a network supporting a default mode of brain function. In this study, we investigate three questions pertaining to this hypothesis: Does such a resting-state network exist in the human brain? Is it modulated during simple sensory processing? How is it modulated during cognitive processing? To address these questions, we defined PCC and vACC regions that showed decreased activity during a cognitive (working memory) task, then examined their functional connectivity during rest. PCC was strongly coupled with vACC and several other brain regions implicated in the default mode network. Next, we examined the functional connectivity of PCC and vACC during a visual processing task and show that the resultant connectivity maps are virtually identical to those obtained during rest. Last, we defined three lateral prefrontal regions showing increased activity during the cognitive task and examined their resting-state connectivity. We report significant inverse correlations among all three lateral prefrontal regions and PCC, suggesting a mechanism for attenuation of default mode network activity during cognitive processing. This study constitutes, to our knowledge, the first resting-state connectivity analysis of the default mode and provides the most compelling evidence to date for the existence of a cohesive default mode network. Our findings also provide insight into how this network is modulated by task demands and what functions it might subserve.",
+  "doi": "10.1073/pnas.0135058100",
+  "space": "MNI"
+}

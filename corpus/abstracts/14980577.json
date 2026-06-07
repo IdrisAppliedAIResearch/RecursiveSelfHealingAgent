@@ -1,0 +1,10 @@
+{
+  "pmid": "14980577",
+  "title": "Inferring false beliefs from the actions of oneself and others: an fMRI study.",
+  "authors": "Grezes J, Frith CD, Passingham RE",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The ability to make judgments about mental states is critical to social interactions. Simulation theory suggests that the observer covertly mimics the activity of the observed person, leading to shared states of mind between the observer and the person observed. We tested this hypothesis by investigating the neural networks activated while subjects watched videos of themselves and of others lifting a box, and judged the beliefs of the actors about the weight of the box. A parietal premotor circuit was recruited during action perception, and the activity started earlier when making judgments about one's own actions as opposed to those of others. This earlier activity in action-related structures can be explained by simulation theory on the basis that when one observes one's own actions, there is a closer match between the simulated and perceived action than there is when one observes the actions of others. When the observers judged the actions to reflect a false belief, there was activation in the superior temporal sulcus, orbitofrontal, paracingulate cortex and cerebellum. We suggest that this reflects a mismatch between the perceived action and the predicted action's outcomes derived from simulation.",
+  "doi": "10.1016/S1053-8119(03)00665-7",
+  "space": "MNI"
+}

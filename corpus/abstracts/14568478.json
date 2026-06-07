@@ -1,0 +1,10 @@
+{
+  "pmid": "14568478",
+  "title": "Anticipation of reward in a nonaversive differential conditioning paradigm and the brain reward system: an event-related fMRI study.",
+  "authors": "Kirsch P, Schienle A, Stark R, Sammer G, Blecker C, Walter B, Ott U, Burkart J, Vaitl D",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Findings from animal as well as human neuroimaging studies suggest that reward delivery is associated with the activation of subcortical limbic and prefrontal brain regions, including the thalamus, the striatum, the anterior cingulate and the prefrontal cortex. The aim of the present study was to explore if these reward-sensitive regions are also activated during the anticipation of reinforcers that vary with regard to their motivational value. A differential conditioning paradigm was performed, with the presentation of a rewarded reaction time task serving as the unconditioned stimulus (US). Depending on their reaction time, subjects were given (or not given) a monetary reward, or were presented with a verbal feedback consisting of being fast or slow. In a third control condition no task needed to be executed. Each of the three conditions was introduced by a different visual cue (CS). Brain activation of 27 subjects was recorded using event-related functional magnetic resonance imaging. The results showed significant activation of the substantia nigra, thalamic, striatal, and orbitofrontal brain regions as well as of the insula and the anterior cingulate during the presentation of a CS signalling a rewarded task. The anticipation of a monetary reward produced stronger activation in these regions than the anticipation of positive verbal feedback. The results are interpreted as reflecting the motivation-dependent reactivity of the brain reward system with highly motivating stimuli (monetary reward) leading to a stronger activation than those less motivating ones (verbal reward).",
+  "doi": "10.1016/S1053-8119(03)00381-1",
+  "space": "MNI"
+}

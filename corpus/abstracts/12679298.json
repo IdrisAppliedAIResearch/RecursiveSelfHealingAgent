@@ -1,0 +1,10 @@
+{
+  "pmid": "12679298",
+  "title": "An event-related fMRI study of explicit syntactic processing of normal/anomalous  sentences in contrast to implicit syntactic processing.",
+  "authors": "Suzuki K, Sakai KL",
+  "year": "2003",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Using event-related functional magnetic resonance imaging (fMRI), we examined activation of cortical language areas for explicit syntactic processing. In a syntactic decision (Syn) task, the participants judged whether the presented sentence was syntactically correct, where syntactic knowledge about the distinction between transitive and intransitive verbs was required. In a semantic decision (Sem) task, lexico-semantic knowledge about selectional restrictions was indispensable. In a phonological decision (Pho) task, phonological knowledge about accent patterns was required. The Sem and Pho tasks involved implicit syntactic processing, as well as explicit semantic and phonological processing, respectively. We also tested a voice-pitch comparison (Voi) task in which no explicit linguistic knowledge was required. In the direct comparison of Syn - (Sem + Pho + Voi), we found localized activation in the left inferior frontal gyrus (F3op/F3t), indicating that activation of the left F3op/F3t is more prominently enhanced in explicit syntactic processing than in implicit syntactic processing. Moreover, we determined that its activation is selective to syntactic judgments regarding both normal and anomalous sentences. These results suggest that explicit information processing in the syntactic domain critically involves the left F3op/F3t, which is functionally separable from other regions.",
+  "doi": "10.1093/cercor/13.5.517",
+  "space": "MNI"
+}

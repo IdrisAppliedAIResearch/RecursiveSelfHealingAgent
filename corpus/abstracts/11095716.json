@@ -1,0 +1,10 @@
+{
+  "pmid": "11095716",
+  "title": "Disruption of the neural response to rapid acoustic stimuli in dyslexia: evidence from functional MRI.",
+  "authors": "Temple E, Poldrack RA, Protopapas A, Nagarajan S, Salz T, Tallal P, Merzenich MM, Gabrieli JD",
+  "year": "2000",
+  "journal": "Proceedings of the National Academy of Sciences of the United States of America",
+  "abstract": "The biological basis for developmental dyslexia remains unknown. Research has suggested that a fundamental deficit in dyslexia is the inability to process sensory input that enters the nervous system rapidly and that deficits in processing rapid acoustic information are associated with impaired reading. Functional magnetic resonance imaging (fMRI) was used to identify the brain basis of rapid acoustic processing in normal readers and to discover the status of that response in dyslexic readers. Normal readers showed left prefrontal activity in response to rapidly changing, relative to slowly changing, nonlinguistic acoustic stimuli. Dyslexic readers showed no differential left frontal response. Two dyslexic readers participated in a remediation program and showed increased activity in left prefrontal cortex after training. These fMRI results identify left prefrontal regions as normally being sensitive to rapid relative to slow acoustic stimulation, insensitive to the difference between such stimuli in dyslexic readers, and plastic enough in adulthood to develop such differential sensitivity after intensive training.",
+  "doi": "10.1073/pnas.240461697",
+  "space": "MNI"
+}

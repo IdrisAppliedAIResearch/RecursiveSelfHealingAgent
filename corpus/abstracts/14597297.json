@@ -1,0 +1,10 @@
+{
+  "pmid": "14597297",
+  "title": "Neural mechanisms associated with attention to temporal synchrony versus spatial  orientation: an fMRI study.",
+  "authors": "Lux S, Marshall JC, Ritzl A, Zilles K, Fink GR",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Previous neuropsychological and functional imaging studies have suggested that the right hemisphere is crucially involved in spatial cognition. By contrast, much less is known about the putative left hemisphere specialization for aspects of temporal cognition. Accordingly, we studied with functional magnetic resonance imaging the neural mechanisms underlying attention to stimulus onset synchrony or orientational congruence with identical pairs of geometric figures. In each trial, two rhombuses were presented, each 4 degrees peripheral to a central fixation cross, in the left and right visual hemifields. In half of the trials, subjects were asked to judge and indicate via button presses whether the rhombuses appeared simultaneously. In the other half of the trials, subjects indicated whether the orientation of the rhombuses was the same (Factor 1, task, temporal synchrony, orientation). In half of the trials, subjects responded with their right hand and in the other half with their left hand (Factor 2, hand, right, left). Data were analyzed using SPM99 and a random-effects model. Attention to orientation differentially activated right temporo-occipital cortex. Attention to stimulus onset synchrony activated left anterior superior temporal gyrus, left inferior parietal cortex, left medial frontal gyrus, and right operculum. Activation of right temporo-occipital cortex for attention to stimulus orientation is in good agreement with previous functional neuroimaging studies of stimulus orientation. More importantly, activation of a predominantly left-hemispheric network with attention to stimulus onset synchrony extends the results of previous functional imaging, psychophysical, and neuropsychological studies of temporal processing.",
+  "doi": "10.1016/j.neuroimage.2003.09.009",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "11900732",
+  "title": "Modulation of spatial attention by fear-conditioned stimuli: an event-related fMRI study.",
+  "authors": "Armony JL, Dolan RJ",
+  "year": "2002",
+  "journal": "Neuropsychologia",
+  "abstract": "Stimuli that signal threat can capture subjects' attention, leading to more efficient detection of, and faster responses to, events occurring in that part of the environment. In the present study we explored the behavioural and anatomical correlates of the modulation of spatial attention by emotion using a fear conditioning paradigm, combined with a covert spatial orienting task. Reaction times for the detection of a peripheral target, which was preceded by brief (50ms) presentations of the visual conditioned stimulus (CS+) in either the same or opposite visual field, showed an interaction between stimulus emotionality and attention shifts. We used event-related functional magnetic resonance imaging (fMRI) to characterise the associated neural responses. Consistent with previous studies, conditioning-induced enhanced responses were observed in the amygdala and extrastriate visual cortex. The modulation of spatial attention by a conditioned stimulus was associated with enhanced activity in regions of frontal and parietal cortices previously implicated in spatial attention, as well as in the lateral orbitofrontal cortex (lOFC).",
+  "doi": "10.1016/S0028-3932(01)00178-6",
+  "space": "MNI"
+}

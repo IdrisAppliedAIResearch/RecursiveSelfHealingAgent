@@ -1,0 +1,10 @@
+{
+  "pmid": "15006661",
+  "title": "The visual word form area and the frequency with which words are encountered: evidence from a parametric fMRI study.",
+  "authors": "Kronbichler M, Hutzler F, Wimmer H, Mair A, Staffen W, Ladurner G",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "Cohen and Dehaene et al. proposed that the Visual Word Form Area (VWFA) in the left midfusiform gyrus, contrary to its name, is limited to the extraction of an abstract letter string and not involved in proper visual word recognition. We examined this prelexical function of the VWFA by a parametric block design with five levels of written word frequency. The lowest level was represented by pseudowords and the highest level by words of very high frequency. Contrary to the assumed prelexical function of the VWFA, increasing frequency was associated with decreasing brain activation in a large posterior cluster of the left hemisphere including middle and posterior fusiform regions. The same negative relation between frequency and activation was found in several left frontal clusters. The relation of increasing frequency and decreasing activation in occipitotemporal regions corresponds to a similar relation in the same brain regions found by studies which experimentally manipulated object or face familiarity. This convergence suggests that fusiform regions are specialized for extracting and storing abstract patterns when processing visual objects and these patterns serve as recognition units in subsequent encounters with the same objects.",
+  "doi": "10.1016/j.neuroimage.2003.10.021",
+  "space": "MNI"
+}

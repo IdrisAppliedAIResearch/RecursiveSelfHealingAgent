@@ -1,0 +1,10 @@
+{
+  "pmid": "12477708",
+  "title": "Age effects on the neural correlates of successful memory encoding.",
+  "authors": "Morcom AM, Good CD, Frackowiak RS, Rugg MD",
+  "year": "2003",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "Event-related functional MRI (fMRI) was used to investigate the neural correlates of memory encoding as a function of age. While fMRI data were obtained, 14 younger (mean age 21 years) and 14 older subjects (mean age 68 years) made animacy decisions about words. Recognition memory for these words was tested at two delays such that older subjects' performance at the short delay was comparable to that of the young subjects at the long delay. This allowed age-associated changes in the neural correlates of encoding to be dissociated from the correlates of differential recognition performance. Activity in left inferior prefrontal cortex and the left hippocampal formation was greater for subsequently recognized words in both age groups, consistent with the findings of previous studies in young adults. In the prefrontal cortex, these 'subsequent memory effects' were, however, left-lateralized in the younger group but bilateral in the older subjects. In addition, for the younger group only, greater activity for remembered words was observed in anterior inferior temporal cortex, as were reversed effects ('subsequent forgetting' effects) in anterior prefrontal regions. The data indicate that older subjects engage much of the same neural circuitry as younger subjects when encoding new memories. However, the findings also point to age-related differences in both prefrontal and temporal activity during successful episodic encoding.",
+  "doi": "10.1093/brain/awg020",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "14568459",
+  "title": "Abnormal processing of speech during oddball target detection in schizophrenia.",
+  "authors": "Ngan ET, Vouloumanos A, Cairo TA, Laurens KR, Bates AT, Anderson CM, Werker JF, Liddle PF",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Healthy subjects show increased activation in left temporal lobe regions in response to speech sounds compared to complex nonspeech sounds. Abnormal lateralization of speech-processing regions in the temporal lobes has been posited to be a cardinal feature of schizophrenia. Event-related fMRI was used to test the hypothesis that schizophrenic patients would show an abnormal pattern of hemispheric lateralization when detecting speech compared with complex nonspeech sounds in an auditory oddball target-detection task. We predicted that differential activation for speech in the vicinity of the superior temporal sulcus would be greater in schizophrenic patients than in healthy subjects in the right hemisphere, but less in patients than in healthy subjects in the left hemisphere. Fourteen patients with schizophrenia (selected from an outpatient population, 2 females, 12 males, mean age 35.1 years) and 29 healthy subjects (8 females, 21 males, mean age 29.3 years) were scanned while they performed an auditory oddball task in which the oddball stimuli were either speech sounds or complex nonspeech sounds. Compared to controls, individuals with schizophrenia showed greater differential activation between speech and nonspeech in right temporal cortex, left superior frontal cortex, and the left temporal-parietal junction. The magnitude of the difference in the left temporal parietal junction was significantly correlated with severity of disorganized thinking. This study supports the hypothesis that aberrant functional lateralization of speech processing is an underlying feature of schizophrenia and suggests the magnitude of the disturbance in speech-processing circuits may be associated with severity of disorganized thinking.",
+  "doi": "10.1016/S1053-8119(03)00385-9",
+  "space": "MNI"
+}

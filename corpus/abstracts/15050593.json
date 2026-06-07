@@ -1,0 +1,10 @@
+{
+  "pmid": "15050593",
+  "title": "Orthographic and phonological processing of Chinese characters: an fMRI study.",
+  "authors": "Kuo WJ, Yeh TC, Lee JR, Chen LF, Lee PL, Chen SS, Ho LT, Hung DL, Tzeng OJ, Hsieh JC",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The present study used functional magnetic resonance imaging (fMRI) to investigate the neural mechanisms underlying the orthographic and phonological processing of Chinese characters. Four tasks were devised, including one homophone judgment and three physical judgments of characters, pseudo-characters, and Korean-like nonsense figures. While the left occipitotemporal region, left dorsal processing stream, and right middle frontal gyrus constitute a network for orthographic processing, the left premotor gyrus, left middle/inferior frontal gyrus, supplementary motor area (SMA), and the left temporoparietal region work in concert for phonological processing. The ventral part of the left inferior frontal cortex responds specifically to the character stimuli, suggesting a general lexical processing role for this region for linguistic material. The stronger activation of the dorsal visual stream by Chinese homophone judgment pinpoints a tight coupling between phonological representation of Chinese characters and corresponding orthographic percepts. The concomitant engagement of sets of regions for different levels of Chinese orthographic and phonological processing is consistent with the notion of distributed parallel processing.",
+  "doi": "10.1016/j.neuroimage.2003.12.007",
+  "space": "MNI"
+}

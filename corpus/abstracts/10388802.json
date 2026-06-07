@@ -1,0 +1,10 @@
+{
+  "pmid": "10388802",
+  "title": "Right prefrontal cortex and episodic memory retrieval: a functional MRI test of the monitoring hypothesis.",
+  "authors": "Henson RN, Shallice T, Dolan RJ",
+  "year": "1999",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "Though the right prefrontal cortex is often activated in neuroimaging studies of episodic memory retrieval, the functional significance of this activation remains unresolved. In this functional MRI study of 12 healthy volunteers, we tested the hypothesis that one role of the right prefrontal cortex is to monitor the information retrieved from episodic memory in order to make an appropriate response. The critical comparison was between two word recognition tasks that differed only in whether correct responses did or did not require reference to the spatiotemporal context of words presented during a previous study episode. Activation in a dorsal midlateral region of the right prefrontal cortex was associated with increased contextual monitoring demands, whereas a more ventral region of the right prefrontal cortex showed retrieval-related activation that was independent of task instructions. This functional dissociation of dorsal and ventral right prefrontal regions is discussed in relation to a theoretical framework for the control of episodic memory retrieval.",
+  "doi": "10.1093/brain/122.7.1367",
+  "space": "MNI"
+}

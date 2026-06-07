@@ -1,0 +1,10 @@
+{
+  "pmid": "11167053",
+  "title": "A comparison of 'Early' and 'Late' stage brain activation during brief practice of a simple motor task.",
+  "authors": "Tracy JI, Faro SS, Mohammed F, Pinus A, Christensen H, Burkland D",
+  "year": "2001",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "This research study addresses the question: does the neural circuit implementing a motor task undergo change as a function of even limited practice? To detect potential neural changes associated with limited practice we compared brain activation at the early and late stages of motor performance on a simple task over one relatively brief session. Single-finger opposition served as cognitive stimulation during collection of BOLD fMRI signal. We predicted prefrontal cortex activation would be prominent early, with basal ganglia activation becoming prominent during late stage performance. Results revealed that both early and late performance involve areas in the cerebellum, prefrontal, mid-temporal, extrastriate, and parietal cortices, but that the particular regions within these broad areas differed for the two points of performance. The strongest dissociation between early and late performance involved the corpus striatum, thalamus, and cingulate gyrus. The findings suggested the neural circuit implementing this simple task varied over a relatively brief window of practice. Implications for defining the neurocognitive function of the structures involved, particularly the cerebellum, are discussed.",
+  "doi": "10.1016/S0926-6410(00)00045-8",
+  "space": "MNI"
+}

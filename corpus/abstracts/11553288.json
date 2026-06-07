@@ -1,0 +1,10 @@
+{
+  "pmid": "11553288",
+  "title": "Human brain activity in the control of fine static precision grip forces: an fMRI study.",
+  "authors": "Kuhtz-Buschbeck JP, Ehrsson HH, Forssberg H",
+  "year": "2001",
+  "journal": "The European journal of neuroscience",
+  "abstract": "Dexterous manipulation of delicate objects requires exquisite control of fingertip forces. We have used functional magnetic resonance imaging to identify brain regions involved in the skillful scaling of these forces when normal human subjects (n = 8) held with precision grip a small object (weight 200 g) in the dominant right hand. In one condition, they used their normal, automatically scaled grip force. The object was held gently in a second condition; the isometric grip force was maintained just above the critical level at which the object would have slipped. In a third condition, the force was increased to hold the object with a more firm grip. The supplementary and cingulate motor areas were significantly more active during the gentle force condition than during either of the other conditions in all subjects, despite weaker contractions of the hand muscles. In addition, the left primary sensorimotor cortex, the ventral premotor cortex and the left posterior parietal cortex were more strongly activated during gentle than during normal grasping. These novel results suggest that these regions are specifically involved in dexterous scaling of fingertip forces during object manipulation.",
+  "doi": "10.1046/j.0953-816x.2001.01639.x",
+  "space": "MNI"
+}

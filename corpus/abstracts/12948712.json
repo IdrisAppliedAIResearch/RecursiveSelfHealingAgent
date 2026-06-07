@@ -1,0 +1,10 @@
+{
+  "pmid": "12948712",
+  "title": "Functional anatomy and differential time courses of neural processing for explicit, inferred, and illusory contours. An event-related fMRI study.",
+  "authors": "Ritzl A, Marshall JC, Weiss PH, Zafiris O, Shah NJ, Zilles K, Fink GR",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "The perception of shape does not necessarily require viewing an explicit outline figure. Using event-related functional magnetic resonance imaging we examined the time courses of neural activations provoked by shapes defined by (1) lines, (2) illusory contour inducers, and (3) reversed inducers. SPM99 was used to analyze the common and differential neural responses associated with the stimuli and their temporal derivatives. Illusory figures versus reversed inducers activated extrastriate cortex. Reversed inducers versus illusory figures activated the right parietal cortex. For both illusory and line contours versus reversed inducers, analysis of the temporal derivatives showed earlier activations in extrastriate and left parietal cortex and for line contours also in the extrastriate cortex bilaterally and in the right parietal cortex; these earlier activations were mirrored by differences in reaction times with subjects responding more slowly to shapes defined by reversed inducers. The results show substantial bottom-up effects (in occipital cortex) in the recognition of illusory and explicit shapes. By contrast, in stimuli where the shape must be inferred, there is greater reliance on right parietal cortex, consistent with increased attentional demands and top-down processing. The temporal derivatives provide useful information on the differential timing of the associated hemodynamic responses in occipital, parietal, and motor cortex.",
+  "doi": "10.1016/S1053-8119(03)00180-0",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "14741647",
+  "title": "Three-dimensional probabilistic anatomical cranio-cerebral correlation via the international 10-20 system oriented for transcranial functional brain mapping.",
+  "authors": "Okamoto M, Dan H, Sakamoto K, Takeo K, Shimizu K, Kohno S, Oda I, Isobe S, Suzuki T, Kohyama K, Dan I",
+  "year": "2004",
+  "journal": "NeuroImage",
+  "abstract": "The recent advent of multichannel near-infrared spectroscopy (NIRS) has expanded its technical potential for human brain mapping. However, NIRS measurement has a technical drawback in that it measures cortical activities from the head surface without anatomical information of the object to be measured. This problem is also found in transcranial magnetic stimulation (TMS) that transcranially activates or inactivates the cortical surface. To overcome this drawback, we examined cranio-cerebral correlation using magnetic resonance imaging (MRI) via the guidance of the international 10-20 system for electrode placement, which had originally been developed for electroencephalography. We projected the 10-20 standard cranial positions over the cerebral cortical surface. After examining the cranio-cerebral correspondence for 17 healthy adults, we normalized the 10-20 cortical projection points of the subjects to the standard Montreal Neurological Institute (MNI) and Talairach stereotactic coordinates and obtained their probabilistic distributions. We also expressed the anatomical structures for the 10-20 cortical projection points probabilistically. Next, we examined the distance between the cortical surface and the head surface along the scalp and created a cortical surface depth map. We found that the locations of 10-20 cortical projection points in the standard MNI or Talairach space could be estimated with an average standard deviation of 8 mm. This study provided an initial step toward establishing a three-dimensional probabilistic anatomical platform that enables intra- and intermodal comparisons of NIRS and TMS brain imaging data.",
+  "doi": "10.1016/j.neuroimage.2003.08.026",
+  "space": "MNI"
+}

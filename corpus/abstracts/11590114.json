@@ -1,0 +1,10 @@
+{
+  "pmid": "11590114",
+  "title": "Effects of domain-specific interference on brain activation associated with verbal working memory task performance.",
+  "authors": "Gruber O",
+  "year": "2001",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Previous neuroimaging studies have identified brain regions that underlie verbal working memory in humans. According to these studies a phonological store is located in the left inferior parietal cortex, and a complementary subvocal rehearsal mechanism is implemented by mostly left-hemispheric speech areas. In the present functional magnetic resonance imaging study, classical interfering and non-interfering dual-task situations were used to investigate further the neural correlates of verbal working memory. Verbal working memory performance under non-interfering conditions activated Broca's area, the left premotor cortex, the cortex along the left intraparietal sulcus and the right cerebellum, thus replicating the results from previous studies. By contrast, no significant memory- related activation was found in these areas when silent articulatory suppression prevented the subjects from rehearsal. Instead, this non-articulatory maintenance of phonological information was associated with enhanced activity in several other, particularly anterior prefrontal and inferior parietal, brain areas. These results suggest that phonological storage may be a function of a complex prefronto-parietal network, and not localized in only one, parietal brain region. Further possible implications for the functional organization of human working memory are discussed.",
+  "doi": "10.1093/cercor/11.11.1047",
+  "space": "MNI"
+}

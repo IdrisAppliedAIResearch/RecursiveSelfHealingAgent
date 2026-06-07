@@ -1,0 +1,10 @@
+{
+  "pmid": "12135971",
+  "title": "Neural correlates of self-reflection.",
+  "authors": "Johnson SC, Baxter LC, Wilder LS, Pipe JG, Heiserman JE, Prigatano GP",
+  "year": "2002",
+  "journal": "Brain : a journal of neurology",
+  "abstract": "The capacity to reflect on one's sense of self is an important component of self-awareness. In this paper, we investigate some of the neurocognitive processes underlying reflection on the self using functional MRI. Eleven healthy volunteers were scanned with echoplanar imaging using the blood oxygen level-dependent contrast method. The task consisted of aurally delivered statements requiring a yes-no decision. In the experimental condition, participants responded to a variety of statements requiring knowledge of and reflection on their own abilities, traits and attitudes (e.g. 'I forget important things', 'I'm a good friend', 'I have a quick temper'). In the control condition, participants responded to statements requiring a basic level of semantic knowledge (e.g. 'Ten seconds is more than a minute', 'You need water to live'). The latter condition was intended to control for auditory comprehension, attentional demands, decision-making, the motoric response, and any common retrieval processes. Individual analyses revealed consistent anterior medial prefrontal and posterior cingulate activation for all participants. The overall activity for the group, using a random-effects model, occurred in anterior medial prefrontal cortex (t = 13.0, corrected P = 0.05; x, y, z, 0, 54, 8, respectively) and the posterior cingulate (t = 14.7, P = 0.02; x, y, z, -2, -62, 32, respectively; 967 voxel extent). These data are consistent with lesion studies of impaired awareness, and suggest that the medial prefrontal and posterior cingulate cortex are part of a neural system subserving self-reflective thought.",
+  "doi": "10.1093/brain/awf181",
+  "space": "MNI"
+}

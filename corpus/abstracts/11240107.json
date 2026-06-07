@@ -1,0 +1,10 @@
+{
+  "pmid": "11240107",
+  "title": "Neuroanatomical discrimination between manipulating and maintaining processes involved in verbal working memory; a functional MRI study.",
+  "authors": "Tsukiura T, Fujii T, Takahashi T, Xiao R, Inase M, Iijima T, Yamadori A, Okuda J",
+  "year": "2001",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "We used functional magnetic resonance imaging (fMRI) to investigate neural correlates of processes concerning store and manipulation in verbal working memory. We prepared a revised lag 1 digit span, digit span and a simple number detection task. Specific activities in association with manipulating process were identified in the right middle (BA 9/46) and left precentral gyrus (BA 6). Activated areas specific to maintaining process were detected in the right middle (right BA 11/10) and medial (BA 6) frontal gyri, the right inferior parietal lobule (BA 40), and the left middle (BA 9) and inferior frontal gyri (BA 44). The process-nonspecific activated areas common to two processes were identified in the right inferior frontal gyrus (BA 47) and the left superior parietal lobule (BA 7). Using the signal percent change of each subject, we calculated the correlation coefficients among each activated area. The results of this analysis showed that two processes of verbal working memory were clearly discriminated. The two essential processes of manipulation and maintenance in working memory seem to activate process-specific and overlapping (process-nonspecific) areas, but the patterns of combination were definitely different.",
+  "doi": "10.1016/S0926-6410(00)00059-8",
+  "space": "MNI"
+}

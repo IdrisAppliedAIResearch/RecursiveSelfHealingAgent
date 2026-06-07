@@ -1,0 +1,10 @@
+{
+  "pmid": "12823480",
+  "title": "Objects automatically potentiate action: an fMRI study of implicit processing.",
+  "authors": "Grezes J, Tucker M, Armony J, Ellis R, Passingham RE",
+  "year": "2003",
+  "journal": "The European journal of neuroscience",
+  "abstract": "Behavioural data have shown that the perception of an object automatically potentiates motor components (affordances) of possible actions toward that object, irrespective of the subject's intention. We carried out an event-related fMRI study to investigate the influence of the intrinsic properties of an object on motor responses which were either compatible or incompatible with the action that the object affords. The subjects performed power or precision grip responses based on the categorization of objects into natural or man-made. The objects were either 'small' (usually grasped with a precision grip) or 'large' (usually grasped with a power grip). As expected, the motor responses were fastest to objects that afforded the same grip (congruent) and slowest to objects that afforded the other grip (incongruent). Imaging revealed activations which covaried with compatibility in the parietal, dorsal premotor and inferior frontal cortex. We suggest that the greater the difference in reaction times between congruent and incongruent trials, the greater the competition between the action afforded by the object and the action specified by the task, and thus the greater the activation within this network.",
+  "doi": "10.1046/j.1460-9568.2003.02695.x",
+  "space": "MNI"
+}

@@ -1,0 +1,10 @@
+{
+  "pmid": "12873752",
+  "title": "A paced visual serial addition test for fMRI.",
+  "authors": "Lazeron RH, Rombouts SA, de Sonneville L, Barkhof F, Scheltens P",
+  "year": "2003",
+  "journal": "Journal of the neurological sciences",
+  "abstract": "The Paced Auditory Serial Attention Task (PASAT) is an attention and information processing task used in patients with diffuse brain disorders, like cerebral trauma and multiple sclerosis (MS). Based on the PASAT we used a adapted version of the test to assess several cognitive functions with fMRI. In this study we investigated the activation pattern on a group and individual level and upon parametric stimulation. Nine young, healthy, right-handed subjects (mean age 24 years) were studied. The test contrasts an adding-and-memory stage with a control stage in a block design, at two different speeds. Group average maps (random effects analysis, p=0.05) were created to identify the brain areas subserving this task. For each area found active in the group map, the percentage of individuals showing activation in that same anatomical area was calculated. Group activation was localized in the superior and inferior parietal lobe bilaterally, the superior frontal gyrus bilaterally, the left medial frontal gyrus, the left inferior frontal gyrus and adjacent part of the insula, the anterior part of the cingulate gyrus and some cerebellar areas. For the main activated areas, 78-100% of the individual subjects showed activation in that same area. Contrasting the low speed with the high speed condition yielded activation with a considerable individual variation. The group mean activated areas were located mainly in the frontal and parietal lobes and those areas were also activated in the majority of the subjects, indicating limited inter-individual variation, rendering this test suitable for clinical applications in a variety of neurological disorders.",
+  "doi": "10.1016/S0022-510X(03)00144-8",
+  "space": "MNI"
+}

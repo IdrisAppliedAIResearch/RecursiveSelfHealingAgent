@@ -1,0 +1,10 @@
+{
+  "pmid": "14527592",
+  "title": "Effect of head orientation on gaze processing in fusiform gyrus and superior temporal sulcus.",
+  "authors": "Pageler NM, Menon V, Merin NM, Eliez S, Brown WE, Reiss AL",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "We used functional MRI with an event-related design to dissociate the brain activation in the fusiform gyrus (FG) and posterior superior temporal sulcus (STS) for multiple face and gaze orientations. The event-related design allowed for concurrent behavioral analysis, which revealed a significant effect of both head and gaze orientation on the speed of gaze processing, with the face and gaze forward condition showing the fastest reaction times. In conjunction with this behavioral finding, the FG responded with the greatest activation to face and gaze forward, perhaps reflecting the unambiguous social salience of congruent face and gaze directed toward the viewer. Random effects analysis showed greater activation in both the FG and posterior STS when the subjects viewed a direct face compared to an angled face, regardless of gaze direction. Additionally, the FG showed greater activation for forward gaze compared to angled gaze, but only when the face was forward. Together, these findings suggest that head orientation has a significant effect on gaze processing and these effects are manifest not only in the STS, but also the FG.",
+  "doi": "10.1016/S1053-8119(03)00229-5",
+  "space": "MNI"
+}

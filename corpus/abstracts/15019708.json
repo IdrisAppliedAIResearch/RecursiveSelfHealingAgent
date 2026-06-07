@@ -1,0 +1,10 @@
+{
+  "pmid": "15019708",
+  "title": "Where am I? The neurological correlates of self and other.",
+  "authors": "Platek SM, Keenan JP, Gallup GG Jr, Mohamed FB",
+  "year": "2004",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "Although still controversial, there is growing evidence that information about the self is processed in the right hemisphere, specifically the right frontal lobe. It has also been hypothesized that self-awareness and mental state attribution (inferences about the mental experience of others) are part of a similar neurocognitive process [Am. J. Primatol. 2 (1982) 237]. Here we measured blood oxygen level-dependent (BOLD) activity when viewing self-faces and when thinking about the mental states of others. We found significant activation in right superior, middle, and inferior frontal gyri when activation associated with self-face processing was compared with activation associated with familiar famous face processing. Mental state attribution, as measured by a computerized version of the Mind in the Eyes--Revised Test, was associated with activation in the right superior and middle frontal gyri, medial superior frontal gyrus, and left middle frontal gyrus and superior temporal gyrus/temporal pole. Self-face recognition and mental state attribution were colocalized to the middle and superior frontal gyri in the right hemisphere. These data support a model developed over two decades ago by Gallup [Am. J. Primatol. 2 (1982) 237] that posits that self-awareness and mental state attribution are part of a shared neurocognitive suite of processing and that neural architecture implicated in processing knowledge about the self is called upon when inferring knowledge in others.",
+  "doi": "10.1016/j.cogbrainres.2003.11.014",
+  "space": "MNI"
+}

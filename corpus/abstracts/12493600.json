@@ -1,0 +1,10 @@
+{
+  "pmid": "12493600",
+  "title": "Orthography effect on brain activities in the working memory process for phonologically ambiguous syllables: a functional magnetic resonance imaging study using Japanese speakers.",
+  "authors": "Sumiyoshi C, Matsuo K, Kato C, Ozawa F, Takehara Y, Isoda H, Isogai S, Sakahara H, Nakai T",
+  "year": "2003",
+  "journal": "Neuroscience letters",
+  "abstract": "English /l/ and /r/ sounds are not distinctive for Japanese speakers and they are loosely associated with corresponding graphemes. The purpose of this study was to investigate the brain activities in the memory process for the graphemes containing 'l' and 'r' in Japanese speakers. Two functional magnetic resonance imaging (at 1.5 T) experiments was conducted using syllable working memory tasks. The task using 'l' and 'r' syllables was coupled with either task using 'b' and 'n' syllables (l/r versus b/n block-designed experiment), or 'd' and 'n' syllables (l/r versus d/n block-designed experiment). The results revealed that the l/r working memory tasks induced augmented activation specifically in the right middle frontal gyrus (BA9, 46) and the right superior parietal lobule (BA7), compared with the b/n or d/n tasks. The results indicate that a visually-biased memory process (i.e. excessive visual rehearsal or monitoring) was executed for phonologically ambiguous syllables. Significant activation in the left inferior frontal gyrus was not observed only in the b/n task, probably because articulatory contrast between /b/ and /n/ sounds was highly clear for Japanese speakers.",
+  "doi": "10.1016/S0304-3940(02)01201-6",
+  "space": "MNI"
+}

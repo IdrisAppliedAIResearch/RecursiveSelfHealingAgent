@@ -1,0 +1,10 @@
+{
+  "pmid": "14568463",
+  "title": "Functional neuroanatomy of learned helplessness.",
+  "authors": "Bauer H, Pripfl J, Lamm C, Prainsack C, Taylor N",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "In the experiments reported here, female subjects were presented with reasoning tasks that changed from solvable to unsolvable, evoking \"learned helplessness\" or \"loss of control\" reactions in some subjects. Significant differences in slow cortical potential (SCP) changes were found between emotionally highly and lowly reactive subjects (grouped according to responses in postexperimental questionnaires) when processing unsolvable tasks. Cortical LORETA of SCP topographies and subsequent statistical nonparametric mapping (SnPM; analysis indicate clear reduction of anterior cingulate activity only with emotionally highly reactive subjects. In these subjects a region of the brain that is indispensable for goal-directed handling of tasks was switched off, whereas regions that are primarily engaged in processing the task stimuli were even more active during loss of control, although not at a statistically significant level. According to the anterior cingulate monitors the conflicts among brain regions and issues calls for further processing to the PFC that then guides behavior toward a goal. Learned helplessness might then be seen a state in which the function of the anterior cingulate is no longer maintained, perhaps due to the inhibitory influence of the amygdala possibly mediated via the brainstem dopaminergic ventral tegmental area.",
+  "doi": "10.1016/S1053-8119(03)00363-X",
+  "space": "MNI"
+}

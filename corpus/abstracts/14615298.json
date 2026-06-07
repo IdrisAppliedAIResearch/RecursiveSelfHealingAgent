@@ -1,0 +1,10 @@
+{
+  "pmid": "14615298",
+  "title": "Cortical mechanisms of feature-based attentional control.",
+  "authors": "Liu T, Slotnick SD, Serences JT, Yantis S",
+  "year": "2003",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "A network of fronto-parietal cortical areas is known to be involved in the control of visual attention, but the representational scope and specific function of these areas remains unclear. Recent neuroimaging evidence has revealed the existence of both transient (attention-shift) and sustained (attention-maintenance) mechanisms of space-based and object-based attentional control. Here we investigate the neural mechanisms of feature-based attentional control in human cortex using rapid event-related functional magnetic resonance imaging (fMRI). Subjects viewed an aperture containing moving dots in which dot color and direction of motion changed once per second. At any given moment, observers attended to either motion or color. Two of six motion directions and two of six colors embedded in the stimulus stream cued subjects either to shift attention from the currently attended to the unattended feature or to maintain attention on the currently attended feature. Attentional modulation of the blood oxygenation level dependent (BOLD) fMRI signal was observed in early visual areas that are selective for motion and color. More importantly, both transient and sustained BOLD activity patterns were observed in different fronto-parietal cortical areas during shifts of attention. We suggest these differing temporal profiles reflect complementary roles in the control of attention to perceptual features.",
+  "doi": "10.1093/cercor/bhg080",
+  "space": "TAL"
+}

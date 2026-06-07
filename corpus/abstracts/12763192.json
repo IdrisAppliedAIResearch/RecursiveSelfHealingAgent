@@ -1,0 +1,10 @@
+{
+  "pmid": "12763192",
+  "title": "Shared and dissociated cortical regions for object and letter processing.",
+  "authors": "Joseph JE, Gathers AD, Piper GA",
+  "year": "2003",
+  "journal": "Brain research. Cognitive brain research",
+  "abstract": "The present study determined the extent to which object and letter recognition recruit similar or dissociated neural resources. Participants passively viewed and silently named line drawings of objects, single letters, and visual noise patterns and centrally fixated an asterisk. We used whole-brain functional MRI and a very conservative approach to hypothesis testing that distinguished among brain regions that were selectively activated by different experimental conditions and those that were conjointly activated. The left fusiform gyrus (BA 19 & 37) and left inferior frontal cortex BA(44/6) showed a greater degree of conjoined activation for objects and letters than selective activation for either category, whereas left inferior parietal cortex (BA 40) and the left insula showed a strong letter-selective response. Equal recruitment of left fusiform and inferior frontal regions by objects and letters reflects similar demands on cognitive processing by these two categories and argues against category-specific modules in these regions. However, cortical systems for object and letter processing are not completely shared given the exclusive activation of left inferior parietal cortex by letters.",
+  "doi": "10.1016/S0926-6410(03)00080-6",
+  "space": "MNI"
+}

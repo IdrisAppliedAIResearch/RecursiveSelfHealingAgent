@@ -1,0 +1,10 @@
+{
+  "pmid": "12967919",
+  "title": "Dynamic perception of facial affect and identity in the human brain.",
+  "authors": "LaBar KS, Crupain MJ, Voyvodic JT, McCarthy G",
+  "year": "2003",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "Functional magnetic resonance imaging (fMRI) was used to compare brain activation to static facial displays versus dynamic changes in facial identity or emotional expression. Static images depicted prototypical fearful, angry and neutral expressions. Identity morphs depicted identity changes from one person to another, always with neutral expressions. Emotion morphs depicted expression changes from neutral to fear or anger, creating the illusion that the actor was 'getting scared' or 'getting angry' in real-time. Brain regions implicated in processing facial affect, including the amygdala and fusiform gyrus, showed greater responses to dynamic versus static emotional expressions, especially for fear. Identity morphs activated a dorsal fronto-cingulo-parietal circuit and additional ventral areas, including the amygdala, that also responded to the emotion morphs. Activity in the superior temporal sulcus discriminated emotion morphs from identity morphs, extending its known role in processing biologically relevant motion. The results highlight the importance of temporal cues in the neural coding of facial displays.",
+  "doi": "10.1093/cercor/13.10.1023",
+  "space": "MNI"
+}

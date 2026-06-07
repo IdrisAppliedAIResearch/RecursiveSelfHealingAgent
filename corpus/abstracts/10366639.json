@@ -1,0 +1,10 @@
+{
+  "pmid": "10366639",
+  "title": "Differential neural responses during performance of matching and nonmatching to sample tasks at two delay intervals.",
+  "authors": "Elliott R, Dolan RJ",
+  "year": "1999",
+  "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+  "abstract": "Visual short-term memory in humans and animals is frequently assessed using delayed matching to sample (DMTS) and delayed nonmatching to sample (DNMTS) tasks across variable delay intervals. Although these tasks depend on certain common mechanisms, there are behavioral differences between them, and neuroimaging provides a means of assessing explicitly whether this is underpinned by differences at a neural level. Findings of delay-dependent deficits, after lesions in humans and animals, suggest that the neural implementation of these tasks may also critically depend on the delay interval. In this study we determined whether there were differential neural responses associated with DMTS and DNMTS tasks at two different delay intervals using functional magnetic resonance imaging. Ten healthy volunteers were studied under four test conditions: DMTS and DNMTS at 5 and 15 sec delay. The main effect of DMTS compared with DNMTS across both delay intervals was associated with significant activation in bilateral head of caudate and medial orbitofrontal cortex. By contrast, DNMTS compared with DMTS was associated with significant activation in mediodorsal thalamus, bilateral lateral orbitofrontal cortex, and left premotor cortex. The main effect of short compared with long delay, across both tasks, was associated with significantly greater activity in occipital and parietal cortices. By contrast, long compared with short delay was associated with significantly greater activity in temporal and ventrolateral frontal cortices. We conclude that DMTS and DNMTS are not equivalent and furthermore that the precise neural implementation of these tasks is a dynamic function of delay interval.",
+  "doi": "",
+  "space": "MNI"
+}

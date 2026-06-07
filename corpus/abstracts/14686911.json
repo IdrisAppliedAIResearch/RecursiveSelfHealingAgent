@@ -1,0 +1,10 @@
+{
+  "pmid": "14686911",
+  "title": "Effector-independent representations of simple and complex imagined finger movements: a combined fMRI and TMS study.",
+  "authors": "Kuhtz-Buschbeck JP, Mahnkopf C, Holzknecht C, Siebner H, Ulmer S, Jansen O",
+  "year": "2003",
+  "journal": "The European journal of neuroscience",
+  "abstract": "Kinesthetic motor imagery and actual execution of movements share a common neural circuitry. Functional magnetic resonance imaging was used in 12 right-handed volunteers to study brain activity during motor imagery and execution of simple and complex unimanual finger movements of the dominant and the nondominant hand. In the simple task, a flexible object was rhythmically compressed between thumb, index and middle finger. The complex task was a sequential finger-to-thumb opposition movement. Premotor, posterior parietal and cerebellar regions were significantly more active during motor imagery of complex movements than during mental rehearsal of the simple task. In 10 of the subjects, we also used transcranial magnetic brain stimulation to examine corticospinal excitability during the same motor imagery tasks. Motor-evoked potentials increased significantly over values obtained in a reference condition (visual imagery) during imagery of the complex, but not of the simple movement. Imagery of finger movements of either hand activated left dorsal and ventral premotor areas and the supplementary motor cortex regardless of task complexity. The effector-independent activation of left premotor areas was particularly evident in the simple motor imagery task and suggests a left hemispherical dominance for kinesthetic movement representations in right-handed subjects.",
+  "doi": "10.1111/j.1460-9568.2003.03066.x",
+  "space": "MNI"
+}

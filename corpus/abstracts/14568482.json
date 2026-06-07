@@ -1,0 +1,10 @@
+{
+  "pmid": "14568482",
+  "title": "A midline dissociation between error-processing and response-conflict monitoring.",
+  "authors": "Garavan H, Ross TJ, Kaufman J, Stein EA",
+  "year": "2003",
+  "journal": "NeuroImage",
+  "abstract": "Midline brain activation subsequent to errors has been proposed to reflect error detection and, alternatively, conflict-monitoring processes. Adjudicating between these alternatives is challenging as both predict high activation on error trials. In an effort to resolve these interpretations, subjects completed a GO/NOGO task in which errors of commission were frequent and response conflict was independently varied by manipulating response speeds. A mixed-block and event-related fMRI design identified task-related, tonic activation and event-related activations for correct and incorrect trials. The anterior cingulate was the only area with error-related activation that was not modulated by the conflict manipulation and hence is implicated in specific error-related processes. Conversely, activation in the pre-SMA was not specific to errors but was sensitive to the conflict manipulation. A significant region by conflict interaction for tonic activation supported a functional dissociation between these two midline areas. Finally, an intermediate, caudal cingulate area was implicated in both error processing and conflict monitoring. The results suggest that these two action-monitoring processes are distinct and dissociable and are localised along the midline.",
+  "doi": "10.1016/S1053-8119(03)00334-3",
+  "space": "TAL"
+}

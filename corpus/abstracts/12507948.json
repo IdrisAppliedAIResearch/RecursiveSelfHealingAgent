@@ -1,0 +1,10 @@
+{
+  "pmid": "12507948",
+  "title": "The role of left inferior frontal and superior temporal cortex in sentence comprehension: localizing syntactic and semantic processes.",
+  "authors": "Friederici AD, Ruschemeyer SA, Hahne A, Fiebach CJ",
+  "year": "2003",
+  "journal": "Cerebral cortex (New York, N.Y. : 1991)",
+  "abstract": "An event-related functional magnetic resonance imaging (fMRI) paradigm was used to specify those brain areas supporting the processing of sentence-level semantic and syntactic information. Hemodynamic responses were recorded while participants listened to correct, semantically incorrect and syntactically incorrect sentences. Both anomalous conditions recruited larger portions of the superior temporal region than correct sentences. Processing of semantic violations relied primarily on the mid-portion of the superior temporal region bilaterally and the insular cortex bilaterally, whereas processing of syntactic violations specifically involved the anterior portion of the left superior temporal gyrus, the left posterior frontal operculum adjacent to Broca's area and the putamen in the left basal ganglia. A comparison of the two anomalous conditions revealed higher levels of activation for the syntactic over the semantic condition in the left basal ganglia and for the semantic over the syntactic condition in the mid-portion of the superior temporal gyrus, bilaterally. These data indicate that both semantic and syntactic processes are supported by a temporo-frontal network with distinct areas specialized for semantic and syntactic processes.",
+  "doi": "10.1093/cercor/13.2.170",
+  "space": "MNI"
+}
