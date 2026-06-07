@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from protected.harness.edit_protocol import Edit
+from protected.harness.shared.edit_protocol import Edit
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -20,7 +20,7 @@ def apply_edits(edits: list[Edit]) -> ApplyResult:
     if not edits:
         return ApplyResult(applied=True, files_changed=[])
 
-    from protected.harness.allowlist import is_allowed
+    from protected.harness.shared.allowlist import is_allowed
 
     for edit in edits:
         if not is_allowed(edit.file_path, edit.operation):

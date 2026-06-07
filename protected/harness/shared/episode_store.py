@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from protected.harness.edit_protocol import Episode
+from protected.harness.shared.edit_protocol import Episode
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
