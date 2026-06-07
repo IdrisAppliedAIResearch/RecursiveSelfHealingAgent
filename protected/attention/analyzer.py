@@ -21,14 +21,20 @@ class AttentionAnalyzer:
         self.tokenizer = None
 
     def load(self) -> None:
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_path, trust_remote_code=True
         )
+
+        bnb_config = BitsAndBytesConfig(
+            load_in_8bit=True,
+            llm_int8_skip_modules=["lm_head"],
+        )
+
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_path,
-            torch_dtype=torch.float16,
+            quantization_config=bnb_config,
             device_map="auto",
             trust_remote_code=True,
         )
