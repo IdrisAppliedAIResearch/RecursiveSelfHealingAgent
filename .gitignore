@@ -1,1 +1,6 @@
 ﻿corpus/archive/
+**/__pycache__/
+*.pyc
+*.pyo
+experiments/
+protected/experiments/
