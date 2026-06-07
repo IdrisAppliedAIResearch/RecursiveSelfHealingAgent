@@ -1,0 +1,23 @@
+Example 1:
+Abstract: We used fMRI to investigate brain activation during a memory task. Healthy volunteers showed increased activation in the left hippocampus and right prefrontal cortex when remembering words compared to forgetting them. Older adults showed reduced hippocampal activation but increased prefrontal activation. These results suggest age-related compensation in memory networks.
+{"claims": ["Healthy volunteers show increased activation in the left hippocampus and right prefrontal cortex when remembering words compared to forgetting them.", "Older adults show reduced hippocampal activation and increased prefrontal activation during memory tasks compared to younger adults."]}
+
+Example 2:
+Abstract: The study examined cortical reorganization in blind subjects using fMRI during Braille reading. All blind individuals reading Braille showed robust activation of the primary, secondary, and higher visual cortex. Pure motor activation during finger tapping showed expected precentral activation and no activation of visual cortex. Occipital activation during Braille reading is not due to plasticity of sensory or motor function.
+{"claims": ["Blind individuals reading Braille show robust activation of the primary, secondary, and higher visual cortex.", "Pure motor activation during finger tapping in blind subjects shows expected precentral activation and no activation of the visual cortex.", "Occipital activation during Braille reading and discrimination tasks is not due to plasticity of sensory or motor function."]}
+
+Example 3:
+Abstract: While the left occipitotemporal region, left dorsal processing stream, and right middle frontal gyrus constitute a network for orthographic processing, the left premotor gyrus, left middle/inferior frontal gyrus, supplementary motor area (SMA), and the left temporoparietal region work in concert for phonological processing. The ventral part of the left inferior frontal cortex responds specifically to the character stimuli. The stronger activation of the dorsal visual stream by Chinese homophone judgment pinpoints a tight coupling between phonological representation of Chinese characters and corresponding orthographic percepts.
+{"claims": ["The left occipitotemporal region, left dorsal processing stream, and right middle frontal gyrus constitute a network for orthographic processing of Chinese characters.", "The left premotor gyrus, left middle/inferior frontal gyrus, supplementary motor area, and left temporoparietal region work in concert for phonological processing of Chinese characters.", "The ventral part of the left inferior frontal cortex responds specifically to Chinese character stimuli.", "Chinese homophone judgment produces stronger activation in the dorsal visual stream."]}
+
+Example 4:
+Abstract: Functional MRI was used to compare activation in patients and controls during a motor task. Patients showed greater activation in the supplementary motor area and cerebellum compared to controls. Controls showed stronger activation in the primary motor cortex. The results suggest that patients recruit additional areas to compensate for motor deficits.
+{"claims": ["Patients show greater activation in the supplementary motor area and cerebellum compared to controls during the motor task.", "Controls show stronger activation in the primary motor cortex compared to patients during the motor task."]}
+
+Example 5:
+Abstract: The left dorsolateral premotor cortex maintains temporal order during verbal short-term memory processing. Broca's area supports the articulatory processes required for phonological recoding of visual stimuli. Both tasks activated the left inferior frontal gyrus and superior temporal sulcus.
+{"claims": ["The left dorsolateral premotor cortex shows activation during verbal short-term memory processing tasks.", "Broca's area shows activation during phonological recoding of visual stimuli.", "Both tasks activate the left inferior frontal gyrus and superior temporal sulcus."]}
+
+Example 6:
+Abstract: Twelve patients with lesion A and 8 with lesion B were studied. Patients with lesion A showed significant deficits in naming accuracy (p<0.05) compared to controls. fMRI revealed that patients with lesion A had reduced activation in the left inferior frontal gyrus and left posterior temporal cortex during naming. Controls showed robust activation in these areas. No differences in reaction times were observed between groups.
+{"claims": ["Patients with lesion A show reduced activation in the left inferior frontal gyrus and left posterior temporal cortex during naming compared to controls.", "Controls show robust activation in the left inferior frontal gyrus and left posterior temporal cortex during naming."]}
