@@ -42,25 +42,38 @@ def annotate_abstract(client, model: str, prompt: str, abstract_id: str, abstrac
     return data.get("claims", [])
 
 
-def annotate_corpus(output_path: Path = None):
+def reannotate_empty(gt_path: Path = None, abstracts_dir: Path = None):
     base = Path(__file__).parent.parent
-    abstracts_dir = base / "corpus" / "abstracts"
-    if output_path is None:
-        output_path = base / "corpus" / "ground_truth.jsonl"
+    if gt_path is None:
+        gt_path = base / "corpus" / "ground_truth.jsonl"
+    if abstracts_dir is None:
+        abstracts_dir = base / "corpus" / "abstracts"
 
     prompt = load_prompt(base)
     client, model = get_client()
 
-    lines = []
-    for af in sorted(abstracts_dir.glob("*.json")):
-        abstract_id = af.stem
-        abstract_data = json.loads(af.read_text())
+    existing = {}
+    for line in gt_path.read_text(encoding="utf-8-sig").strip().splitlines():
+        entry = json.loads(line)
+        existing[entry["abstract_id"]] = entry
+
+    empty_ids = [aid for aid, entry in existing.items() if not entry.get("claims")]
+    print(f"Found {len(empty_ids)} entries with empty claims: {empty_ids}")
+
+    updated = {}
+    for aid in empty_ids:
+        af = abstracts_dir / f"{aid}.json"
+        if not af.exists():
+            print(f"  WARNING: Abstract file missing for {aid}, skipping")
+            continue
+
+        abstract_data = json.loads(af.read_text(encoding="utf-8"))
         abstract_text = abstract_data.get("abstract", abstract_data.get("text", ""))
-        print(f"Annotating {abstract_id} ...")
+        print(f"Re-annotating {aid} ...")
         claims = []
         for attempt in range(3):
             try:
-                claims = annotate_abstract(client, model, prompt, abstract_id, abstract_text)
+                claims = annotate_abstract(client, model, prompt, aid, abstract_text)
                 break
             except json.JSONDecodeError:
                 if attempt < 2:
@@ -71,12 +84,25 @@ def annotate_corpus(output_path: Path = None):
             except Exception as e:
                 print(f"  Error: {e}")
                 break
-        entry = {"abstract_id": abstract_id, "claims": claims}
-        lines.append(json.dumps(entry))
+        updated[aid] = claims
+        print(f"  Got {len(claims)} claims")
 
-    output_path.write_text("\n".join(lines) + "\n")
-    print(f"Ground truth written to {output_path} ({len(lines)} entries)")
+    all_entries = {}
+    for aid, entry in existing.items():
+        if aid in updated:
+            all_entries[aid] = {"abstract_id": aid, "claims": updated[aid]}
+        else:
+            all_entries[aid] = entry
+
+    gt_path.write_text(
+        "\n".join(json.dumps(all_entries[aid]) for aid in sorted(all_entries.keys())) + "\n",
+        encoding="utf-8"
+    )
+
+    filled = sum(1 for claims in updated.values() if claims)
+    print(f"Re-annotation complete. Filled {filled}/{len(empty_ids)} entries.")
+    print(f"Ground truth written to {gt_path}")
 
 
 if __name__ == "__main__":
-    annotate_corpus()
+    reannotate_empty()
