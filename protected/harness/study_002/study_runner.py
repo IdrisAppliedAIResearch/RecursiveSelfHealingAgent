@@ -108,7 +108,7 @@ def _get_control_corpus_files() -> list[Path]:
 def _load_ground_truth() -> dict[str, list[str]]:
     gt_path = PROJECT_ROOT / "corpus" / "ground_truth.jsonl"
     gt = {}
-    for line in gt_path.read_text(encoding="utf-8").strip().splitlines():
+    for line in gt_path.read_text(encoding="utf-8-sig").strip().splitlines():
         if line.strip():
             try:
                 entry = json.loads(line)
