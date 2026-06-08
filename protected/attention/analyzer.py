@@ -171,7 +171,7 @@ class AttentionAnalyzer:
         self._stored_weights.clear()
         generated = self.model.generate(
             input_ids=input_ids,
-            max_new_tokens=max_tokens or 512,
+            max_new_tokens=max_tokens or 1024,
             do_sample=True,
             temperature=0.7,
             top_p=0.9,
