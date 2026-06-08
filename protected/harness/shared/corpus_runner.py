@@ -95,7 +95,7 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
     failures: list[CorpusAbstractFailure] = []
     abstract_texts: dict[str, str] = {}
 
-    print(f"  Corpus: running {len(abstract_files)} abstracts...")
+    print(f"  Corpus: running {len(abstract_files)} abstracts, provider={_analyzer_instance is not None}...", flush=True)
     start = time.monotonic()
 
     for idx, af in enumerate(abstract_files, 1):
@@ -107,7 +107,7 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
             result = await extract_fn(abstract_id, abstract_text)
             results.append(result)
             elapsed = time.monotonic() - start
-            print(f"  Corpus: {idx}/{len(abstract_files)} done (abstract {abstract_id}) ({elapsed:.0f}s)")
+            print(f"  Corpus: {idx}/{len(abstract_files)} done ({abstract_id}) ({elapsed:.0f}s)", flush=True)
         except Exception as e:
             log_anomaly(
                 study_id, -1,

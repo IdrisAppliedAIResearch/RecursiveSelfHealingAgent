@@ -327,7 +327,7 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
     probe_ids = _load_probe_set()
 
     mini_files = _get_mini_corpus_files()
-    print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...")
+    print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...", flush=True)
     t0 = time.time()
     try:
         corpus_result = await asyncio.wait_for(
@@ -349,17 +349,17 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
         append_metrics(0, study_id, metrics)
         return
     elapsed = time.time() - t0
-    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
+    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures", flush=True)
 
     score_result = score_corpus(corpus_result.results, ground_truth)
-    print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
+    print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}", flush=True)
 
     system_prompt = _read_system_prompt()
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
 
     if analyzer is not None:
-        print("  Running attention analysis on control abstracts...")
+        print("  Running attention analysis on control abstracts...", flush=True)
         post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
         pre_agg = 0.0
         post_agg = (
@@ -708,13 +708,13 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         raise RuntimeError(f"Study cannot run without the model loaded: {e}") from e
 
     if start_iter == 0:
-        print(f"[{study_id}] Running baseline (iteration 0)...")
+        print(f"[{study_id}] Running baseline (iteration 0)...", flush=True)
         await _run_baseline(study_id, analyzer)
         commit_iteration(0, study_id, "Baseline run")
         start_iter = 1
 
     for i in range(start_iter, n_iterations + 1):
-        print(f"[{study_id}] Running iteration {i}...")
+        print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id, analyzer)
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
