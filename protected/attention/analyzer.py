@@ -98,12 +98,14 @@ class AttentionAnalyzer:
     ) -> AttentionResult:
         self._stored_weights.clear()
 
-        full_input = system_prompt + "\n" + abstract_text
-        inputs = self.tokenizer(
-            full_input, return_tensors="pt", truncation=True
-        )
-        input_ids = inputs["input_ids"].to(self.model.device)
-        attention_mask = inputs["attention_mask"].to(self.model.device)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": abstract_text},
+        ]
+        input_ids = self.tokenizer.apply_chat_template(
+            messages, add_generation_prompt=False, return_tensors="pt", truncation=True
+        ).to(self.model.device)
+        attention_mask = (input_ids != self.tokenizer.pad_token_id).long().to(self.model.device)
 
         with torch.no_grad():
             _ = self.model(
@@ -127,11 +129,13 @@ class AttentionAnalyzer:
         """Generate a completion using the loaded transformers model."""
         from extractor.provider import TokenUsage
 
-        full_prompt = system_prompt + "\n" + user_message
-        inputs = self.tokenizer(
-            full_prompt, return_tensors="pt", truncation=True
-        )
-        input_ids = inputs["input_ids"].to(self.model.device)
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message},
+        ]
+        input_ids = self.tokenizer.apply_chat_template(
+            messages, add_generation_prompt=True, return_tensors="pt"
+        ).to(self.model.device)
         prompt_len = input_ids.shape[1]
 
         self._stored_weights.clear()
@@ -159,7 +163,7 @@ class AttentionAnalyzer:
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
             tokens_per_second=0.0,
-            context_window=4096,
+            context_window=131072,
         )
         return text, token_usage
 
