@@ -77,8 +77,10 @@ class AttentionAnalyzer:
                 print("  WARNING: Smoke test produced empty output! Generation may be broken.")
             else:
                 print("  Smoke test passed.")
-        except Exception as e:
-            print(f"  WARNING: Smoke test FAILED: {e}")
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            print("  WARNING: Smoke test FAILED (see traceback above)")
 
     def _register_hooks(self) -> None:
         blocks = self.model.model.layers
@@ -120,11 +122,14 @@ class AttentionAnalyzer:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": abstract_text},
         ]
-        input_ids = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=False, return_tensors="pt", truncation=True
-        ).to(self.model.device)
-        pad_id = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
-        attention_mask = (input_ids != pad_id).long().to(self.model.device)
+        chat_text = self.tokenizer.apply_chat_template(
+            messages, add_generation_prompt=False, tokenize=False
+        )
+        enc = self.tokenizer(
+            chat_text, return_tensors="pt", truncation=True, max_length=65536
+        )
+        input_ids = enc["input_ids"].to(self.model.device)
+        attention_mask = enc["attention_mask"].to(self.model.device)
 
         with torch.no_grad():
             _ = self.model(
@@ -152,9 +157,13 @@ class AttentionAnalyzer:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ]
-        input_ids = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, return_tensors="pt", truncation=True, max_length=65536
-        ).to(self.model.device)
+        chat_text = self.tokenizer.apply_chat_template(
+            messages, add_generation_prompt=True, tokenize=False
+        )
+        enc = self.tokenizer(
+            chat_text, return_tensors="pt", truncation=True, max_length=65536
+        )
+        input_ids = enc["input_ids"].to(self.model.device)
         prompt_len = input_ids.shape[1]
 
         self._stored_weights.clear()
