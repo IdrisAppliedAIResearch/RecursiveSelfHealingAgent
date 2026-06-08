@@ -233,7 +233,7 @@ async def _run_attention_pass(
         segments = segment_abstract(abstract_text)
         align_tokens(segments, analyzer.tokenizer, abstract_text)
 
-        score = compute_routing_score(result, segments, analyzer.tokenizer)
+        score = compute_routing_score(result, segments, analyzer.tokenizer, system_prompt)
         if score.score is None:
             log_anomaly(
                 STUDY_ID, -1,

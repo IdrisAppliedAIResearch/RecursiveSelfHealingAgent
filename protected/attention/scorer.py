@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import torch
+
 from protected.attention.analyzer import AttentionResult
 from protected.attention.segmenter import Sentence
 
@@ -21,8 +23,32 @@ def compute_routing_score(
     attention_result: AttentionResult,
     segments: list[Sentence],
     tokenizer,
+    system_prompt: str,
 ) -> RoutingScore:
     abstract_text = attention_result.abstract_text
+
+    # Tokenize full chat to find where abstract tokens start
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": abstract_text},
+    ]
+    chat_text = tokenizer.apply_chat_template(
+        messages, add_generation_prompt=False, tokenize=False
+    )
+    full_enc = tokenizer(chat_text, return_offsets_mapping=True)
+    full_offsets = full_enc["offset_mapping"]
+
+    # Find character position of abstract text in chat template output
+    abstract_char_start = chat_text.find(abstract_text)
+
+    # Find first token whose character range starts at or after abstract text
+    abstract_token_offset = len(full_offsets)
+    for i, (s, e) in enumerate(full_offsets):
+        if s >= abstract_char_start:
+            abstract_token_offset = i
+            break
+
+    # Tokenize just abstract for offset mapping
     encoding = tokenizer(abstract_text, return_offsets_mapping=True)
     offsets = encoding["offset_mapping"]
 
@@ -68,27 +94,39 @@ def compute_routing_score(
             continue
         layers_used += 1
 
-        attn_avg = weights.mean(dim=0)
-        total_attn = 0.0
-        results_attn = 0.0
-        methods_attn = 0.0
-        background_attn = 0.0
+        attn_avg = weights.mean(dim=0)  # [from_pos, to_pos]
+        to_seq_len = attn_avg.shape[1]
 
-        for tok_idx in abstract_tokens:
-            if tok_idx < attn_avg.shape[0]:
-                w = attn_avg[tok_idx].item()
-                total_attn += w
-                if tok_idx in results_tokens:
-                    results_attn += w
-                elif tok_idx in methods_tokens:
-                    methods_attn += w
-                elif tok_idx in background_tokens:
-                    background_attn += w
+        # Map abstract-relative indices to full-input indices
+        results_full = sorted(
+            i + abstract_token_offset for i in results_tokens
+            if i + abstract_token_offset < to_seq_len
+        )
+        methods_full = sorted(
+            i + abstract_token_offset for i in methods_tokens
+            if i + abstract_token_offset < to_seq_len
+        )
+        background_full = sorted(
+            i + abstract_token_offset for i in background_tokens
+            if i + abstract_token_offset < to_seq_len
+        )
 
-        if total_attn > 0:
-            results_fractions.append(results_attn / total_attn)
-            methods_fractions.append(methods_attn / total_attn)
-            background_fractions.append(background_attn / total_attn)
+        # Column sums: total attention received by each category
+        results_attn = (
+            attn_avg[:, results_full].sum().item() if results_full else 0.0
+        )
+        methods_attn = (
+            attn_avg[:, methods_full].sum().item() if methods_full else 0.0
+        )
+        background_attn = (
+            attn_avg[:, background_full].sum().item() if background_full else 0.0
+        )
+        total = results_attn + methods_attn + background_attn
+
+        if total > 0:
+            results_fractions.append(results_attn / total)
+            methods_fractions.append(methods_attn / total)
+            background_fractions.append(background_attn / total)
         else:
             results_fractions.append(0.0)
             methods_fractions.append(0.0)

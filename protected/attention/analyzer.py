@@ -9,6 +9,7 @@ class AttentionResult:
     abstract_id: str
     abstract_text: str
     attention_weights: dict[int, torch.Tensor | None]
+    abstract_token_offset: int = 0
 
 
 class AttentionAnalyzer:

@@ -77,23 +77,15 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
     import playground.extractor as pg_extractor_mod
 
     # Inject shared analyzer if available, so corpus runs use the same model
-    from protected.harness.study_002.study_runner import _analyzer_instance
+    import protected.harness.study_002.study_runner as _study_runner_mod
+    _analyzer_instance = _study_runner_mod._analyzer_instance
 
     if _analyzer_instance is not None:
         old_provider = pg_extractor_mod._provider
         pg_extractor_mod._provider = _analyzer_instance
         proxy = None
     else:
-        playground_mod = __import__("playground.extractor", fromlist=["extract"])
-        import inspect
-        old_provider = None
-        for name, obj in inspect.getmembers(playground_mod):
-            if hasattr(obj, "_provider") and hasattr(obj, "complete"):
-                old_provider = obj._provider
-                break
-        if old_provider is None:
-            old_provider = getattr(pg_extractor_mod, "_provider", None)
-
+        old_provider = getattr(pg_extractor_mod, "_provider", None)
         proxy = None
         if old_provider is not None:
             proxy = _CountingProviderProxy(old_provider)
