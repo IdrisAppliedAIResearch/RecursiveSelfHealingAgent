@@ -300,9 +300,10 @@ def _pre_run_checks(study_id: str) -> None:
                     count += 1
                 except json.JSONDecodeError:
                     pass
-        if count >= 22:
+        if count >= 21:
             raise StudyAlreadyComplete(
-                f"Study {study_id} already complete ({count} metrics entries)"
+                f"Study {study_id} already complete ({count} metrics entries). "
+                f"Delete experiments/{study_id}/ to re-run."
             )
 
     llm_provider = os.environ.get("LLM_PROVIDER")
