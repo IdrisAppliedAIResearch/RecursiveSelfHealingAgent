@@ -181,10 +181,9 @@ def _pre_run_checks(study_id: str) -> None:
                 f"episode_persisted count ({persisted_count}) in metrics"
             )
 
-    llm_provider = os.environ.get("LLM_PROVIDER")
-    llama_url = os.environ.get("LLAMA_CPP_BASE_URL")
-    if not llm_provider or not llama_url:
-        raise RuntimeError("LLM_PROVIDER and LLAMA_CPP_BASE_URL must be set")
+    transformers_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
+    if not transformers_path:
+        raise RuntimeError("TRANSFORMERS_MODEL_PATH must be set")
 
     harness_diff = subprocess.run(
         ["git", "diff", "--exit-code", "HEAD", "--", "protected/harness/"],

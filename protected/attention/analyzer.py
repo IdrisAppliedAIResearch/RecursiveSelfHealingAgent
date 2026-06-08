@@ -13,18 +13,35 @@ class AttentionResult:
 
 class AttentionAnalyzer:
     def __init__(self, model_path: str, n_last_layers: int = 6):
-        self.model_path = model_path
+        self.model_path = self._resolve_model_path(model_path)
         self.n_last_layers = n_last_layers
         self._stored_weights: dict[int, torch.Tensor | None] = {}
         self._hooks = []
         self.model = None
         self.tokenizer = None
 
+    @staticmethod
+    def _resolve_model_path(path: str) -> str:
+        from pathlib import Path
+
+        p = Path(path)
+        if p.joinpath("config.json").exists():
+            return str(p)
+        refs_dir = p / "refs"
+        if refs_dir.exists():
+            main_ref = refs_dir / "main"
+            if main_ref.exists():
+                commit = main_ref.read_text(encoding="utf-8").strip()
+                snapshot = p / "snapshots" / commit
+                if snapshot.joinpath("config.json").exists():
+                    return str(snapshot)
+        return str(p)
+
     def load(self) -> None:
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_path, trust_remote_code=True
+            self.model_path, trust_remote_code=True, use_fast=False, local_files_only=True
         )
 
         bnb_config = BitsAndBytesConfig(
@@ -41,6 +58,7 @@ class AttentionAnalyzer:
             device_map="cuda:0",
             trust_remote_code=True,
             attn_implementation="eager",
+            local_files_only=True,
         )
 
         print(f"  Model device: {self.model.device}")

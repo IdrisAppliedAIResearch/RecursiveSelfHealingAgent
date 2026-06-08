@@ -306,10 +306,9 @@ def _pre_run_checks(study_id: str) -> None:
                 f"Delete experiments/{study_id}/ to re-run."
             )
 
-    llm_provider = os.environ.get("LLM_PROVIDER")
-    llama_url = os.environ.get("LLAMA_CPP_BASE_URL")
-    if not llm_provider or not llama_url:
-        raise RuntimeError("LLM_PROVIDER and LLAMA_CPP_BASE_URL must be set")
+    transformers_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
+    if not transformers_path:
+        raise RuntimeError("TRANSFORMERS_MODEL_PATH must be set (e.g., C:\\Users\\muzaf\\.cache\\huggingface\\hub\\models--Qwen--Qwen3.6-27B)")
 
     harness_diff = subprocess.run(
         ["git", "diff", "--exit-code", "HEAD", "--", "protected/harness/", "protected/attention/"],
@@ -698,11 +697,11 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             _analyzer_instance = analyzer
             print("  AttentionAnalyzer loaded successfully.")
         else:
-            print("  TRANSFORMERS_MODEL_PATH not set — skipping attention analysis.")
+            raise RuntimeError("TRANSFORMERS_MODEL_PATH not set. The model must be loaded for the study to run.")
     except Exception as e:
         print(f"  AttentionAnalyzer failed to load: {e}")
         log_anomaly(study_id, -1, "transformers_load_failure", {"error": str(e)})
-        analyzer = None
+        raise RuntimeError(f"Study cannot run without the model loaded: {e}") from e
 
     if start_iter == 0:
         print(f"[{study_id}] Running baseline (iteration 0)...")
