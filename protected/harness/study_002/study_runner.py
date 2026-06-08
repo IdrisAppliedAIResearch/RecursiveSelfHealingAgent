@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from protected.attention.analyzer import AttentionAnalyzer, AttentionResult
 from protected.attention.segmenter import segment_abstract, align_tokens
 from protected.attention.scorer import RoutingScore, compute_routing_score
+from protected.harness.shared.analyzer_registry import set_analyzer, get_analyzer
 from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.artifact_writer import (
     append_metrics,
@@ -697,6 +698,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             analyzer = AttentionAnalyzer(model_path)
             analyzer.load()
             _analyzer_instance = analyzer
+            set_analyzer(analyzer)
             print("  AttentionAnalyzer loaded successfully.")
         else:
             raise RuntimeError("TRANSFORMERS_MODEL_PATH not set. The model must be loaded for the study to run.")
@@ -720,6 +722,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
     if analyzer is not None:
         analyzer.close()
         _analyzer_instance = None
+        set_analyzer(None)
 
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
     summarize(study_id)

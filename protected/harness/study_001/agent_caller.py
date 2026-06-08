@@ -129,9 +129,9 @@ def _build_repair_prompt(
 
 
 def _get_provider():
-    import protected.harness.study_002.study_runner as _runner_mod
+    from protected.harness.shared.analyzer_registry import get_analyzer
 
-    _inst = _runner_mod._analyzer_instance
+    _inst = get_analyzer()
     if _inst is not None:
         return _inst
     raise RuntimeError(

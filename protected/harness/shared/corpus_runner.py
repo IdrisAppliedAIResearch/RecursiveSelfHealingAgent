@@ -77,8 +77,8 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
     import playground.extractor as pg_extractor_mod
 
     # Inject shared analyzer if available, so corpus runs use the same model
-    import protected.harness.study_002.study_runner as _study_runner_mod
-    _analyzer_instance = _study_runner_mod._analyzer_instance
+    from protected.harness.shared.analyzer_registry import get_analyzer
+    _analyzer_instance = get_analyzer()
 
     if _analyzer_instance is not None:
         old_provider = pg_extractor_mod._provider
