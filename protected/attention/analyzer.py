@@ -45,10 +45,11 @@ class AttentionAnalyzer:
 
         # Quantize KV cache to int8 using torchao
         try:
-            from torchao.quantization import quantize_, int8_dynamic_activation_int8_weight
+            from torchao import int8_dynamic_activation_int8_weight
+            from torchao.quantization import quantize_
             kv_quantized = 0
             for name, module in self.model.named_modules():
-                if isinstance(module, torch.nn.Linear) and "self_attn" in name:
+                if isinstance(module, torch.nn.Linear) and "attn" in name:
                     if "k_proj" in name or "v_proj" in name:
                         quantize_(module, int8_dynamic_activation_int8_weight())
                         kv_quantized += 1
@@ -66,9 +67,10 @@ class AttentionAnalyzer:
         start = max(0, len(blocks) - self.n_last_layers)
         for i in range(start, len(blocks)):
             block = blocks[i]
-            attn_module = block.self_attn
-            hook = attn_module.register_forward_hook(self._make_hook(i))
-            self._hooks.append(hook)
+            attn_module = getattr(block, "self_attn", None) or getattr(block, "linear_attn", None)
+            if attn_module is not None:
+                hook = attn_module.register_forward_hook(self._make_hook(i))
+                self._hooks.append(hook)
 
     def _make_hook(self, layer_idx: int):
         def hook(module, input, output):
