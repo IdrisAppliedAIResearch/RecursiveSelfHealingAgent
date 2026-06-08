@@ -39,9 +39,13 @@ class AttentionAnalyzer:
             self.model_path,
             quantization_config=bnb_config,
             torch_dtype=torch.float16,
-            device_map="auto",
+            device_map="cuda:0",
             trust_remote_code=True,
         )
+
+        print(f"  Model device: {self.model.device}")
+        gpu_mem = torch.cuda.memory_allocated(0) / 1e9
+        print(f"  GPU VRAM used: {gpu_mem:.1f}GB / {torch.cuda.get_device_properties(0).total_memory / 1e9:.0f}GB")
 
         # Quantize KV cache to int8 using torchao
         try:
@@ -61,6 +65,20 @@ class AttentionAnalyzer:
         self.model.eval()
         self._register_hooks()
         self._log_shapes()
+
+        # Quick smoke test to verify generation works
+        print("  Running generation smoke test...")
+        try:
+            test_text, test_usage = self.complete_with_usage(
+                "You are a helpful assistant.", "Reply with exactly: OK", 16
+            )
+            print(f"  Smoke test output: {repr(test_text[:80])}")
+            if not test_text.strip():
+                print("  WARNING: Smoke test produced empty output! Generation may be broken.")
+            else:
+                print("  Smoke test passed.")
+        except Exception as e:
+            print(f"  WARNING: Smoke test FAILED: {e}")
 
     def _register_hooks(self) -> None:
         blocks = self.model.model.layers
@@ -105,7 +123,8 @@ class AttentionAnalyzer:
         input_ids = self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=False, return_tensors="pt", truncation=True
         ).to(self.model.device)
-        attention_mask = (input_ids != self.tokenizer.pad_token_id).long().to(self.model.device)
+        pad_id = self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
+        attention_mask = (input_ids != pad_id).long().to(self.model.device)
 
         with torch.no_grad():
             _ = self.model(
@@ -134,7 +153,7 @@ class AttentionAnalyzer:
             {"role": "user", "content": user_message},
         ]
         input_ids = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, return_tensors="pt"
+            messages, add_generation_prompt=True, return_tensors="pt", truncation=True, max_length=65536
         ).to(self.model.device)
         prompt_len = input_ids.shape[1]
 
