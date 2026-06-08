@@ -4,7 +4,7 @@ from pathlib import Path
 
 from protected.harness.shared.edit_protocol import Edit
 
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 @dataclass

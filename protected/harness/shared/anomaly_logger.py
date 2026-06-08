@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 def log_anomaly(study_id: str, iteration_n: int, anomaly_type: str, details: dict | None = None) -> None:

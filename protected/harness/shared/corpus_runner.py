@@ -8,7 +8,7 @@ from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.interface_validator import reload_playground
 from protected.schema import ExtractionResult
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 @dataclass
