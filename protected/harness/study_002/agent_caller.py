@@ -137,10 +137,11 @@ def _build_repair_prompt(
 
 
 def _get_provider():
-    from protected.harness.study_002.study_runner import _analyzer_instance
+    import protected.harness.study_002.study_runner as _runner_mod
 
-    if _analyzer_instance is not None:
-        return _analyzer_instance
+    _inst = _runner_mod._analyzer_instance
+    if _inst is not None:
+        return _inst
     raise RuntimeError(
         "No model loaded. Set TRANSFORMERS_MODEL_PATH env var so AttentionAnalyzer loads."
     )

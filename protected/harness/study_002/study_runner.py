@@ -682,6 +682,8 @@ async def _run_iteration(
 
 
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
+    global _analyzer_instance
+
     _pre_run_checks(study_id)
 
     last = last_committed_iteration(study_id)
