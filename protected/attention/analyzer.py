@@ -21,7 +21,6 @@ class AttentionAnalyzer:
         self.tokenizer = None
 
     def load(self) -> None:
-        import os
         from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -41,32 +40,17 @@ class AttentionAnalyzer:
             torch_dtype=torch.float16,
             device_map="cuda:0",
             trust_remote_code=True,
+            attn_implementation="eager",
         )
 
         print(f"  Model device: {self.model.device}")
         gpu_mem = torch.cuda.memory_allocated(0) / 1e9
         print(f"  GPU VRAM used: {gpu_mem:.1f}GB / {torch.cuda.get_device_properties(0).total_memory / 1e9:.0f}GB")
 
-        # Quantize KV cache to int8 using torchao
-        try:
-            from torchao import int8_dynamic_activation_int8_weight
-            from torchao.quantization import quantize_
-            kv_quantized = 0
-            for name, module in self.model.named_modules():
-                if isinstance(module, torch.nn.Linear) and "attn" in name:
-                    if "k_proj" in name or "v_proj" in name:
-                        quantize_(module, int8_dynamic_activation_int8_weight())
-                        kv_quantized += 1
-            if kv_quantized:
-                print(f"  KV cache quantized (int8): {kv_quantized} layers")
-        except Exception as e:
-            print(f"  KV cache quantization skipped: {e}")
-
         self.model.eval()
         self._register_hooks()
         self._log_shapes()
 
-        # Quick smoke test to verify generation works
         print("  Running generation smoke test...")
         try:
             test_text, test_usage = self.complete_with_usage(
@@ -74,7 +58,7 @@ class AttentionAnalyzer:
             )
             print(f"  Smoke test output: {repr(test_text[:80])}")
             if not test_text.strip():
-                print("  WARNING: Smoke test produced empty output! Generation may be broken.")
+                print("  WARNING: Smoke test produced empty output!")
             else:
                 print("  Smoke test passed.")
         except Exception:
@@ -87,18 +71,18 @@ class AttentionAnalyzer:
         start = max(0, len(blocks) - self.n_last_layers)
         for i in range(start, len(blocks)):
             block = blocks[i]
-            attn_module = getattr(block, "self_attn", None) or getattr(block, "linear_attn", None)
+            attn_module = getattr(block, "self_attn", None)
             if attn_module is not None:
                 hook = attn_module.register_forward_hook(self._make_hook(i))
                 self._hooks.append(hook)
 
     def _make_hook(self, layer_idx: int):
-        def hook(module, input, output):
+        def hook(module, args, output):
             if isinstance(output, tuple) and len(output) > 1:
                 attn_weights = output[1]
-                last_token_idx = -1
-                stored = attn_weights[last_token_idx].detach().cpu()
-                self._stored_weights[layer_idx] = stored
+                if attn_weights is not None:
+                    stored = attn_weights[-1].detach().cpu()
+                    self._stored_weights[layer_idx] = stored
 
         return hook
 
@@ -150,7 +134,6 @@ class AttentionAnalyzer:
         user_message: str,
         max_tokens: int | None = None,
     ) -> Tuple[str, "TokenUsage"]:
-        """Generate a completion using the loaded transformers model."""
         from extractor.provider import TokenUsage
 
         messages = [
@@ -173,7 +156,6 @@ class AttentionAnalyzer:
             do_sample=True,
             temperature=0.7,
             top_p=0.9,
-            output_attentions=True,
             return_dict_in_generate=True,
             use_cache=True,
         )
