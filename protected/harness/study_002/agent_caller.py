@@ -142,9 +142,8 @@ def _get_provider():
     _inst = get_analyzer()
     if _inst is not None:
         return _inst
-    raise RuntimeError(
-        "No model loaded. Set TRANSFORMERS_MODEL_PATH env var so AttentionAnalyzer loads."
-    )
+    from extractor.provider import LlamaCppProvider
+    return LlamaCppProvider()
 
 
 def _parse_response(raw: str) -> dict:

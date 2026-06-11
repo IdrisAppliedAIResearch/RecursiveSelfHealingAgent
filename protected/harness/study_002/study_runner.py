@@ -9,10 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
-from protected.attention.analyzer import AttentionAnalyzer, AttentionResult
-from protected.attention.segmenter import segment_abstract, align_tokens
-from protected.attention.scorer import RoutingScore, compute_routing_score
-from protected.harness.shared.analyzer_registry import set_analyzer, get_analyzer
+from protected.attention.scorer import RoutingScore
 from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.artifact_writer import (
     append_metrics,
@@ -48,13 +45,6 @@ from protected.scorer import score_corpus
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
 N_ITERATIONS = 20
-
-# Shared analyzer instance for both attention analysis and completions
-_analyzer_instance: "AttentionAnalyzer | None" = None
-
-
-class StudyAlreadyComplete(Exception):
-    pass
 
 
 def _load_probe_set() -> list[str]:
@@ -217,39 +207,38 @@ def _read_system_prompt() -> str:
     return prompt
 
 
-async def _run_attention_pass(
-    analyzer: AttentionAnalyzer,
-    abstract_ids: list[str],
-    system_prompt: str,
-) -> list[RoutingScore]:
-    scores = []
-    for aid in abstract_ids:
-        abstract_text = _load_abstract_text(aid)
-        result = analyzer.forward_pass(
-            abstract_text=abstract_text,
-            system_prompt=system_prompt,
-            abstract_id=aid,
+def _run_attention_subprocess(study_id: str, iteration_n: int) -> list[dict]:
+    output_path = PROJECT_ROOT / "experiments" / study_id / f"attention_scores_{iteration_n}.json"
+    cmd = [
+        sys.executable, "-m", "protected.attention.forward_pass_runner",
+        "--study", study_id,
+        "--iteration", str(iteration_n),
+        "--output", str(output_path),
+    ]
+    print(f"  [attention] Running subprocess: {' '.join(cmd)}", flush=True)
+    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+    if result.returncode != 0:
+        raise RuntimeError(f"Attention subprocess exited with code {result.returncode}")
+
+    data = json.loads(output_path.read_text(encoding="utf-8"))
+    return data["scores"]
+
+
+def _dicts_to_routing_scores(score_dicts: list[dict]) -> list[RoutingScore]:
+    return [
+        RoutingScore(
+            abstract_id=s["abstract_id"],
+            score=s.get("score"),
+            results_attention_fraction=s.get("results_attention_fraction", 0.0),
+            methods_attention_fraction=s.get("methods_attention_fraction", 0.0),
+            background_attention_fraction=s.get("background_attention_fraction", 0.0),
+            n_results_tokens=s.get("n_results_tokens", 0),
+            n_methods_tokens=s.get("n_methods_tokens", 0),
+            n_background_tokens=s.get("n_background_tokens", 0),
+            n_layers_used=s.get("n_layers_used", 0),
         )
-
-        segments = segment_abstract(abstract_text)
-        align_tokens(segments, analyzer.tokenizer, abstract_text)
-
-        score = compute_routing_score(result, segments, analyzer.tokenizer, system_prompt)
-        if score.score is None:
-            log_anomaly(
-                STUDY_ID, -1,
-                "routing_score_null",
-                {"abstract_id": aid},
-            )
-        elif score.n_results_tokens == 0 and score.n_methods_tokens == 0:
-            log_anomaly(
-                STUDY_ID, -1,
-                "no_results_sentences",
-                {"abstract_id": aid},
-            )
-        scores.append(score)
-
-    return scores
+        for s in score_dicts
+    ]
 
 
 def _check_code_changes(edits) -> bool:
@@ -302,7 +291,7 @@ def _pre_run_checks(study_id: str) -> None:
                 except json.JSONDecodeError:
                     pass
         if count >= 21:
-            raise StudyAlreadyComplete(
+            raise RuntimeError(
                 f"Study {study_id} already complete ({count} metrics entries). "
                 f"Delete experiments/{study_id}/ to re-run."
             )
@@ -322,7 +311,7 @@ def _pre_run_checks(study_id: str) -> None:
         )
 
 
-async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> None:
+async def _run_baseline(study_id: str) -> None:
     ground_truth = _load_ground_truth()
     probe_ids = _load_probe_set()
 
@@ -354,21 +343,18 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}", flush=True)
 
-    system_prompt = _read_system_prompt()
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
+    pre_agg = None
+    post_agg = None
 
-    if analyzer is not None:
-        print("  Running attention analysis on control abstracts...", flush=True)
-        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
-        pre_agg = 0.0
-        post_agg = (
-            sum(s.score for s in post_scores if s.score is not None)
-            / max(1, len(post_scores))
-        )
-    else:
-        pre_agg = None
-        post_agg = None
+    print("  Running attention analysis on control abstracts (subprocess)...", flush=True)
+    score_dicts = _run_attention_subprocess(study_id, 0)
+    post_scores = _dicts_to_routing_scores(score_dicts)
+    post_agg = (
+        sum(s.score for s in post_scores if s.score is not None)
+        / max(1, len(post_scores))
+    )
 
     metrics = _make_metrics_base(0)
     metrics["scanned"] = True
@@ -405,7 +391,6 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
 async def _run_iteration(
     iteration_n: int,
     study_id: str,
-    analyzer: AttentionAnalyzer | None,
 ) -> str | None:
     prior_output, prior_iter = _load_prior_output(study_id)
     if not prior_output:
@@ -550,53 +535,50 @@ async def _run_iteration(
         metrics["repair_prompt_tokens"] = repair_prompt_tokens
         metrics["repair_completion_tokens"] = repair_completion_tokens
 
-    system_prompt = _read_system_prompt()
-    probe_ids = _load_probe_set()
-
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
     pre_agg = None
     post_agg = None
     routing_delta = None
 
-    if analyzer is not None:
-        print("  Running POST-MODIFICATION attention pass on control abstracts...")
-        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
+    print(f"  Running POST-MODIFICATION attention pass (subprocess)...")
+    score_dicts = _run_attention_subprocess(study_id, iteration_n)
+    post_scores = _dicts_to_routing_scores(score_dicts)
 
-        routing_history = load_routing(study_id)
-        if routing_history:
-            last_entry = routing_history[-1]
-            last_post = last_entry.get("post_scores", [])
-            pre_scores = post_scores
-            prev_scores_map = {s["abstract_id"]: s for s in last_post}
-            pre_agg_list = []
-            post_agg_list = []
-            control_improved = 0
-            control_declined = 0
-            for s in post_scores:
-                prev = prev_scores_map.get(s.abstract_id, {})
-                prev_score = prev.get("score")
-                if prev_score is not None and s.score is not None:
-                    pre_agg_list.append(prev_score)
-                    post_agg_list.append(s.score)
-                    d = s.score - prev_score
-                    if d > 0.02:
-                        control_improved += 1
-                    elif d < -0.02:
-                        control_declined += 1
+    routing_history = load_routing(study_id)
+    if routing_history:
+        last_entry = routing_history[-1]
+        last_post = last_entry.get("post_scores", [])
+        pre_scores = post_scores
+        prev_scores_map = {s["abstract_id"]: s for s in last_post}
+        pre_agg_list = []
+        post_agg_list = []
+        control_improved = 0
+        control_declined = 0
+        for s in post_scores:
+            prev = prev_scores_map.get(s.abstract_id, {})
+            prev_score = prev.get("score")
+            if prev_score is not None and s.score is not None:
+                pre_agg_list.append(prev_score)
+                post_agg_list.append(s.score)
+                d = s.score - prev_score
+                if d > 0.02:
+                    control_improved += 1
+                elif d < -0.02:
+                    control_declined += 1
 
-            pre_agg = sum(pre_agg_list) / len(pre_agg_list) if pre_agg_list else None
-            post_agg = sum(post_agg_list) / len(post_agg_list) if post_agg_list else None
-            routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
-            metrics["control_abstracts_improved"] = control_improved
-            metrics["control_abstracts_declined"] = control_declined
-        else:
-            pre_agg = (
-                sum(s.score for s in post_scores if s.score is not None)
-                / max(1, len(post_scores))
-            )
-            post_agg = pre_agg
-            pre_scores = post_scores
+        pre_agg = sum(pre_agg_list) / len(pre_agg_list) if pre_agg_list else None
+        post_agg = sum(post_agg_list) / len(post_agg_list) if post_agg_list else None
+        routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
+        metrics["control_abstracts_improved"] = control_improved
+        metrics["control_abstracts_declined"] = control_declined
+    else:
+        pre_agg = (
+            sum(s.score for s in post_scores if s.score is not None)
+            / max(1, len(post_scores))
+        )
+        post_agg = pre_agg
+        pre_scores = post_scores
 
     snapshot_playground(iteration_n, study_id)
 
@@ -683,46 +665,22 @@ async def _run_iteration(
 
 
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
-    global _analyzer_instance
-
     _pre_run_checks(study_id)
 
     last = last_committed_iteration(study_id)
     start_iter = last + 1
 
-    analyzer = None
-    try:
-        model_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
-        if model_path:
-            print("  Loading AttentionAnalyzer model...")
-            analyzer = AttentionAnalyzer(model_path)
-            analyzer.load()
-            _analyzer_instance = analyzer
-            set_analyzer(analyzer)
-            print("  AttentionAnalyzer loaded successfully.")
-        else:
-            raise RuntimeError("TRANSFORMERS_MODEL_PATH not set. The model must be loaded for the study to run.")
-    except Exception as e:
-        print(f"  AttentionAnalyzer failed to load: {e}")
-        log_anomaly(study_id, -1, "transformers_load_failure", {"error": str(e)})
-        raise RuntimeError(f"Study cannot run without the model loaded: {e}") from e
-
     if start_iter == 0:
         print(f"[{study_id}] Running baseline (iteration 0)...", flush=True)
-        await _run_baseline(study_id, analyzer)
+        await _run_baseline(study_id)
         commit_iteration(0, study_id, "Baseline run")
         start_iter = 1
 
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
-        rationale = await _run_iteration(i, study_id, analyzer)
+        rationale = await _run_iteration(i, study_id)
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
-
-    if analyzer is not None:
-        analyzer.close()
-        _analyzer_instance = None
-        set_analyzer(None)
 
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
     summarize(study_id)

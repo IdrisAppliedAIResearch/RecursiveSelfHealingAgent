@@ -119,6 +119,8 @@ class AttentionAnalyzer:
         system_prompt: str,
         abstract_id: str = "",
     ) -> AttentionResult:
+        import gc
+
         self._stored_weights.clear()
 
         messages = [
@@ -129,17 +131,32 @@ class AttentionAnalyzer:
             messages, add_generation_prompt=False, tokenize=False
         )
         enc = self.tokenizer(
-            chat_text, return_tensors="pt", truncation=True, max_length=65536
+            chat_text, return_tensors="pt", truncation=True, max_length=4096
         )
         input_ids = enc["input_ids"].to(self.model.device)
         attention_mask = enc["attention_mask"].to(self.model.device)
 
-        with torch.no_grad():
-            _ = self.model(
+        # Remove hooks before generate — they interfere with cache management
+        for hook in self._hooks:
+            hook.remove()
+        self._hooks.clear()
+
+        try:
+            generated = self.model.generate(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                use_cache=False,
+                max_new_tokens=1,
+                do_sample=False,
+                return_dict_in_generate=True,
+                use_cache=True,
             )
+            del generated
+        finally:
+            # Always re-register hooks after
+            self._register_hooks()
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
         return AttentionResult(
             abstract_id=abstract_id,
