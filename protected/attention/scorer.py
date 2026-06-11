@@ -35,7 +35,12 @@ def compute_routing_score(
     chat_text = tokenizer.apply_chat_template(
         messages, add_generation_prompt=False, tokenize=False
     )
-    full_enc = tokenizer(chat_text, return_offsets_mapping=True)
+    full_enc = tokenizer(
+        chat_text,
+        return_offsets_mapping=True,
+        truncation=True,
+        max_length=4096,
+    )
     full_offsets = full_enc["offset_mapping"]
 
     # Find character position of abstract text in chat template output

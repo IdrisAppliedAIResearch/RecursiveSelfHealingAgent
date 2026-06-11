@@ -136,30 +136,24 @@ def segment_abstract(abstract_text: str) -> list[Sentence]:
 def align_tokens(sentences: list[Sentence], tokenizer, abstract_text: str) -> None:
     encoding = tokenizer(abstract_text, return_offsets_mapping=True)
     offsets = encoding["offset_mapping"]
-    token_to_char = []
-    for (start, end) in offsets:
-        token_to_char.append(start)
 
     for sent in sentences:
-        sent_char_start = sent.char_start
-        sent_char_end = sent.char_end
-        first_token = 0
+        first_token = None
         last_token = 0
+
         for idx, (t_start, t_end) in enumerate(offsets):
-            if t_start >= sent_char_end:
+            if t_start >= sent.char_end:
                 break
-            if t_end > sent_char_start:
-                if first_token == 0 and t_start >= sent_char_start:
+            if t_end > sent.char_start:
+                if first_token is None and t_start >= sent.char_start:
                     first_token = idx
                 last_token = idx + 1
 
-        if first_token == 0:
+        if first_token is None:
             for idx, (t_start, t_end) in enumerate(offsets):
-                if t_start >= sent_char_start:
+                if t_start >= sent.char_start:
                     first_token = idx
                     break
-            else:
-                first_token = 0
 
-        sent.token_start = first_token
+        sent.token_start = first_token if first_token is not None else 0
         sent.token_end = last_token
