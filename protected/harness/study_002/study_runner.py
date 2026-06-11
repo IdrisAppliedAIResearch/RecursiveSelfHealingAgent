@@ -141,7 +141,6 @@ def _load_prior_output(study_id: str) -> tuple[list[dict], int]:
     for rec in records:
         prior_output.append({
             "abstract_id": rec["abstract_id"],
-            "abstract_text": rec.get("abstract_text", ""),
             "predicted_claims": rec.get("predicted_claims", []),
         })
     return prior_output, best_iter
