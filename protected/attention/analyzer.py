@@ -178,6 +178,22 @@ class AttentionAnalyzer:
             hook.remove()
         self._hooks.clear()
 
+        # Switch attention backend for cheaper generation — hooks are
+        # already removed so eager attention capture is not needed.
+        original_attn = self.model.config._attn_implementation_internal
+        gen_attn = original_attn
+        try:
+            self.model.set_attn_implementation("flash_attention_2")
+            gen_attn = "flash_attention_2"
+        except Exception:
+            try:
+                self.model.set_attn_implementation("sdpa")
+                gen_attn = "sdpa"
+            except Exception:
+                gen_attn = f"fallback ({original_attn})"
+
+        print(f"  [generate] attention={gen_attn} ctx={prompt_len}", flush=True)
+
         try:
             with torch.no_grad():
                 output_sequences = self.model.generate(
@@ -195,6 +211,7 @@ class AttentionAnalyzer:
             torch.cuda.empty_cache()
 
         finally:
+            self.model.set_attn_implementation(original_attn)
             self._register_hooks()
 
         text = self.tokenizer.decode(output_ids, skip_special_tokens=True)
