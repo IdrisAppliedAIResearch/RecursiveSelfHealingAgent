@@ -187,18 +187,22 @@ class AttentionAnalyzer:
             hook.remove()
         self._hooks.clear()
 
-        try:
+         try:
+            gen_kwargs = {
+                "input_ids": input_ids,
+                "max_new_tokens": max_tokens or 4096,
+                "do_sample": True,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "return_dict_in_generate": True,
+                "use_cache": True,
+            }
+            think_id = self.tokenizer.convert_tokens_to_ids("<|think|>")
+            if think_id is not None:
+                gen_kwargs["suppress_tokens"] = [think_id]
+
             with torch.no_grad():
-                generated = self.model.generate(
-                    input_ids=input_ids,
-                    max_new_tokens=max_tokens or 4096,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    return_dict_in_generate=True,
-                    use_cache=True,
-                    suppress_tokens=[self.tokenizer.convert_tokens_to_ids("<|think|>")],
-                )
+                generated = self.model.generate(**gen_kwargs)
 
             output_ids = generated.sequences[0][prompt_len:].clone()
             del generated  # ← free VRAM immediately
