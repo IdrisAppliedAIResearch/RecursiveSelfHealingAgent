@@ -157,7 +157,7 @@ class AttentionAnalyzer:
             attention_weights=captured,
         )
 
-    def complete_with_usage(self, system_prompt, user_message, max_tokens=None, max_input_length=8192):
+    def complete_with_usage(self, system_prompt, user_message, max_tokens=None, max_input_length=6656):
         import gc
         from extractor.provider import TokenUsage
 

@@ -12,7 +12,7 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_AGENT_MAX_TOKENS = 4096
+_AGENT_MAX_TOKENS = 2048
 _REPAIR_MAX_TOKENS = 1024
 
 OBJECTIVE = (
