@@ -157,14 +157,7 @@ class AttentionAnalyzer:
             attention_weights=captured,
         )
 
-    def complete_with_usage(
-        self,
-        system_prompt: str,
-        user_message: str,
-        max_tokens: int | None = None,
-        *,
-        max_input_length: int = 32768,
-    ) -> Tuple[str, "TokenUsage"]:
+    def complete_with_usage(self, system_prompt, user_message, max_tokens=None, max_input_length=4096):
         import gc
         from extractor.provider import TokenUsage
 
@@ -173,7 +166,7 @@ class AttentionAnalyzer:
             {"role": "user", "content": user_message},
         ]
         chat_text = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, enable_thinking=False, tokenize=False
+            messages, add_generation_prompt=True, tokenize=False
         )
         enc = self.tokenizer(
             chat_text, return_tensors="pt", truncation=True, max_length=max_input_length
@@ -181,50 +174,40 @@ class AttentionAnalyzer:
         input_ids = enc["input_ids"].to(self.model.device)
         prompt_len = input_ids.shape[1]
 
-        # Temporarily remove hooks — generate() doesn't need them and
-        # they fire on every token step, thrashing CPU memory for nothing
         for hook in self._hooks:
             hook.remove()
         self._hooks.clear()
 
         try:
-            gen_kwargs = {
-                "input_ids": input_ids,
-                "max_new_tokens": max_tokens or 4096,
-                "do_sample": True,
-                "temperature": 0.7,
-                "top_p": 0.9,
-                "return_dict_in_generate": True,
-                "use_cache": True,
-            }
-            think_id = self.tokenizer.convert_tokens_to_ids("<|think|>")
-            if think_id is not None:
-                gen_kwargs["suppress_tokens"] = [think_id]
-
             with torch.no_grad():
-                generated = self.model.generate(**gen_kwargs)
+                output_sequences = self.model.generate(
+                    input_ids=input_ids,
+                    max_new_tokens=max_tokens or 1024,
+                    do_sample=True,
+                    temperature=0.7,
+                    top_p=0.9,
+                    use_cache=True,
+                )
 
-            output_ids = generated.sequences[0][prompt_len:].clone()
-            del generated  # ← free VRAM immediately
+            output_ids = output_sequences[0][prompt_len:].clone()
+            del output_sequences
             gc.collect()
             torch.cuda.empty_cache()
 
         finally:
-            # Always restore hooks even if generation fails
             self._register_hooks()
 
         text = self.tokenizer.decode(output_ids, skip_special_tokens=True)
         completion_tokens = len(output_ids)
         total_tokens = prompt_len + completion_tokens
 
-        token_usage = TokenUsage(
+        return text, TokenUsage(
             prompt_tokens=prompt_len,
             completion_tokens=completion_tokens,
             total_tokens=total_tokens,
             tokens_per_second=0.0,
             context_window=131072,
         )
-        return text, token_usage
 
     def close(self) -> None:
         for hook in self._hooks:
