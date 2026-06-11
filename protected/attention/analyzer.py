@@ -13,7 +13,7 @@ class AttentionResult:
 
 
 class AttentionAnalyzer:
-    def __init__(self, model_path: str, n_last_layers: int = 5):
+    def __init__(self, model_path: str, n_last_layers: int = 6):
         self.model_path = self._resolve_model_path(model_path)
         self.n_last_layers = n_last_layers
         self._stored_weights: dict[int, torch.Tensor | None] = {}
@@ -193,6 +193,8 @@ class AttentionAnalyzer:
                 gen_attn = f"fallback ({original_attn})"
 
         print(f"  [generate] attention={gen_attn} ctx={prompt_len}", flush=True)
+        gc.collect()
+        torch.cuda.empty_cache()
 
         try:
             with torch.no_grad():
