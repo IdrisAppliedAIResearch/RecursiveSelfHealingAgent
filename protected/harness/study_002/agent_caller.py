@@ -193,6 +193,13 @@ async def invoke(
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
 
+    print(f"\n{'='*80}", flush=True)
+    print(f"RAW AGENT OUTPUT:", flush=True)
+    print(f"{'='*80}", flush=True)
+    print(raw, flush=True)
+    print(f"{'='*80}", flush=True)
+    print(f"END RAW AGENT OUTPUT\n", flush=True)
+
     try:
         data = _parse_response(raw)
     except ValueError as e:
@@ -248,6 +255,13 @@ async def invoke_repair(
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
+
+    print(f"\n{'='*80}", flush=True)
+    print(f"RAW REPAIR OUTPUT (attempt {attempt_number}):", flush=True)
+    print(f"{'='*80}", flush=True)
+    print(raw, flush=True)
+    print(f"{'='*80}", flush=True)
+    print(f"END RAW REPAIR OUTPUT\n", flush=True)
 
     try:
         data = _parse_response(raw)
