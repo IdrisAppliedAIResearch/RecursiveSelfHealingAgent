@@ -9,7 +9,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
+from protected.attention.analyzer import AttentionAnalyzer
 from protected.attention.scorer import RoutingScore
+from protected.harness.shared.analyzer_registry import set_analyzer, get_analyzer
 from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.artifact_writer import (
     append_metrics,
@@ -670,6 +672,16 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
     last = last_committed_iteration(study_id)
     start_iter = last + 1
 
+    # Load model for agent completions only — forward pass runs in subprocess
+    print("  Loading AttentionAnalyzer model for agent calls...")
+    model_path = os.environ.get("TRANSFORMERS_MODEL_PATH", "")
+    if not model_path:
+        raise RuntimeError("TRANSFORMERS_MODEL_PATH not set")
+    analyzer = AttentionAnalyzer(model_path)
+    analyzer.load()
+    set_analyzer(analyzer)
+    print("  AttentionAnalyzer loaded.")
+
     if start_iter == 0:
         print(f"[{study_id}] Running baseline (iteration 0)...", flush=True)
         await _run_baseline(study_id)
@@ -682,6 +694,8 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
+    analyzer.close()
+    set_analyzer(None)
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
     summarize(study_id)
 

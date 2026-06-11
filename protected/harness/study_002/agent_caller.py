@@ -142,12 +142,7 @@ def _get_provider():
     _inst = get_analyzer()
     if _inst is not None:
         return _inst
-    # Fallback to llama-server with defaults
-    import os
-    os.environ.setdefault("LLAMA_CPP_BASE_URL", "http://localhost:8080/v1")
-    os.environ.setdefault("LLAMA_CPP_API_KEY", "no-key")
-    from extractor.provider import LlamaCppProvider
-    return LlamaCppProvider()
+    raise RuntimeError("No model loaded. TRANSFORMERS_MODEL_PATH must be set.")
 
 
 def _parse_response(raw: str) -> dict:
