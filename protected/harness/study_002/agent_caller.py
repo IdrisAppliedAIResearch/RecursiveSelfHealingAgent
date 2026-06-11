@@ -12,8 +12,8 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_AGENT_MAX_TOKENS = 28672
-_REPAIR_MAX_TOKENS = 4096
+_AGENT_MAX_TOKENS = 4096
+_REPAIR_MAX_TOKENS = 1024
 
 OBJECTIVE = (
     "Improve the precision and recall of the scientific claim extractor by "

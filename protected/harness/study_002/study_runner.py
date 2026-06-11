@@ -683,6 +683,10 @@ async def _run_iteration(
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
     _pre_run_checks(study_id)
 
+    import torch
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+
     last = last_committed_iteration(study_id)
     start_iter = last + 1
 

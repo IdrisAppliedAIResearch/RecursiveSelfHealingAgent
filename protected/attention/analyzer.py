@@ -173,7 +173,7 @@ class AttentionAnalyzer:
             {"role": "user", "content": user_message},
         ]
         chat_text = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, tokenize=False
+            messages, add_generation_prompt=True, enable_thinking=False, tokenize=False
         )
         enc = self.tokenizer(
             chat_text, return_tensors="pt", truncation=True, max_length=max_input_length
@@ -191,15 +191,16 @@ class AttentionAnalyzer:
             with torch.no_grad():
                 generated = self.model.generate(
                     input_ids=input_ids,
-                    max_new_tokens=max_tokens or 1024,
+                    max_new_tokens=max_tokens or 4096,
                     do_sample=True,
                     temperature=0.7,
                     top_p=0.9,
                     return_dict_in_generate=True,
                     use_cache=True,
+                    suppress_tokens=[self.tokenizer.convert_tokens_to_ids("<|think|>")],
                 )
 
-            output_ids = generated.sequences[0][prompt_len:].clone()  # ← clone before del
+            output_ids = generated.sequences[0][prompt_len:].clone()
             del generated  # ← free VRAM immediately
             gc.collect()
             torch.cuda.empty_cache()
