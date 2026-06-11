@@ -136,24 +136,17 @@ class AttentionAnalyzer:
         input_ids = enc["input_ids"].to(self.model.device)
         attention_mask = enc["attention_mask"].to(self.model.device)
 
-        # Remove hooks before generate — they interfere with cache management
-        for hook in self._hooks:
-            hook.remove()
-        self._hooks.clear()
-
-        try:
-            generated = self.model.generate(
+        # Hooks stay registered — they fire during the forward pass below
+        with torch.no_grad():                         # ← prevents gradient graph
+            self.model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                max_new_tokens=1,
-                do_sample=False,
-                return_dict_in_generate=True,
-                use_cache=True,
+                use_cache=False,                      # ← no KV cache allocation
+                output_attentions=False,              # hooks handle capture
             )
-            del generated
-        finally:
-            # Always re-register hooks after
-            self._register_hooks()
+
+        captured = dict(self._stored_weights)
+        self._stored_weights.clear()
 
         gc.collect()
         torch.cuda.empty_cache()
@@ -161,7 +154,7 @@ class AttentionAnalyzer:
         return AttentionResult(
             abstract_id=abstract_id,
             abstract_text=abstract_text,
-            attention_weights=dict(self._stored_weights),
+            attention_weights=captured,
         )
 
     def complete_with_usage(
@@ -169,7 +162,10 @@ class AttentionAnalyzer:
         system_prompt: str,
         user_message: str,
         max_tokens: int | None = None,
+        *,
+        max_input_length: int = 32768,
     ) -> Tuple[str, "TokenUsage"]:
+        import gc
         from extractor.provider import TokenUsage
 
         messages = [
@@ -180,29 +176,41 @@ class AttentionAnalyzer:
             messages, add_generation_prompt=True, tokenize=False
         )
         enc = self.tokenizer(
-            chat_text, return_tensors="pt", truncation=True, max_length=65536
+            chat_text, return_tensors="pt", truncation=True, max_length=max_input_length
         )
         input_ids = enc["input_ids"].to(self.model.device)
         prompt_len = input_ids.shape[1]
 
-        self._stored_weights.clear()
-        generated = self.model.generate(
-            input_ids=input_ids,
-            max_new_tokens=max_tokens or 1024,
-            do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
-            return_dict_in_generate=True,
-            use_cache=True,
-        )
+        # Temporarily remove hooks — generate() doesn't need them and
+        # they fire on every token step, thrashing CPU memory for nothing
+        for hook in self._hooks:
+            hook.remove()
+        self._hooks.clear()
 
-        output_ids = generated.sequences[0][prompt_len:]
+        try:
+            with torch.no_grad():
+                generated = self.model.generate(
+                    input_ids=input_ids,
+                    max_new_tokens=max_tokens or 1024,
+                    do_sample=True,
+                    temperature=0.7,
+                    top_p=0.9,
+                    return_dict_in_generate=True,
+                    use_cache=True,
+                )
+
+            output_ids = generated.sequences[0][prompt_len:].clone()  # ← clone before del
+            del generated  # ← free VRAM immediately
+            gc.collect()
+            torch.cuda.empty_cache()
+
+        finally:
+            # Always restore hooks even if generation fails
+            self._register_hooks()
+
         text = self.tokenizer.decode(output_ids, skip_special_tokens=True)
-
         completion_tokens = len(output_ids)
         total_tokens = prompt_len + completion_tokens
-
-        self._stored_weights.clear()
 
         token_usage = TokenUsage(
             prompt_tokens=prompt_len,

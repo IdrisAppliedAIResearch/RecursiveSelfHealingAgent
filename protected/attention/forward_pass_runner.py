@@ -87,8 +87,7 @@ def _run_forward_pass(model, tokenizer, abstract_text: str, system_prompt: str, 
         return hook
 
     for i in range(start, len(blocks)):
-        block = blocks[i]
-        attn_module = getattr(block, "self_attn", None)
+        attn_module = getattr(blocks[i], "self_attn", None)
         if attn_module is not None:
             hooks.append(attn_module.register_forward_hook(make_hook(i)))
 
@@ -99,34 +98,21 @@ def _run_forward_pass(model, tokenizer, abstract_text: str, system_prompt: str, 
     chat_text = tokenizer.apply_chat_template(
         messages, add_generation_prompt=False, tokenize=False
     )
-    enc = tokenizer(
-        chat_text, return_tensors="pt", truncation=True, max_length=4096
-    )
+    enc = tokenizer(chat_text, return_tensors="pt", truncation=True, max_length=4096)
     input_ids = enc["input_ids"].to(model.device)
     attention_mask = enc["attention_mask"].to(model.device)
 
-    for hook in hooks:
-        hook.remove()
-
     try:
-        generated = model.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            max_new_tokens=1,
-            do_sample=False,
-            return_dict_in_generate=True,
-            use_cache=True,
-        )
-        del generated
+        with torch.no_grad():          # ← no gradient graph
+            model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                use_cache=False,       # ← no KV cache spike
+                output_attentions=False,
+            )
     finally:
-        for i in range(start, len(blocks)):
-            block = blocks[i]
-            attn_module = getattr(block, "self_attn", None)
-            if attn_module is not None:
-                hooks.append(attn_module.register_forward_hook(make_hook(i)))
-
-    gc.collect()
-    torch.cuda.empty_cache()
+        for hook in hooks:
+            hook.remove()
 
     return stored_weights
 

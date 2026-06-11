@@ -7,6 +7,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import torch
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 from protected.attention.analyzer import AttentionAnalyzer
@@ -209,7 +211,7 @@ def _read_system_prompt() -> str:
     return prompt
 
 
-def _run_attention_subprocess(study_id: str, iteration_n: int) -> list[dict]:
+def _run_attention_subprocess(study_id: str, iteration_n: int, analyzer: AttentionAnalyzer) -> list[dict]:
     output_path = PROJECT_ROOT / "experiments" / study_id / f"attention_scores_{iteration_n}.json"
     cmd = [
         sys.executable, "-m", "protected.attention.forward_pass_runner",
@@ -217,10 +219,20 @@ def _run_attention_subprocess(study_id: str, iteration_n: int) -> list[dict]:
         "--iteration", str(iteration_n),
         "--output", str(output_path),
     ]
-    print(f"  [attention] Running subprocess: {' '.join(cmd)}", flush=True)
-    result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError(f"Attention subprocess exited with code {result.returncode}")
+
+    print(f"  [attention] Releasing main-process VRAM before subprocess...", flush=True)
+    analyzer.close()
+    torch.cuda.empty_cache()
+
+    try:
+        print(f"  [attention] Running subprocess: {' '.join(cmd)}", flush=True)
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Attention subprocess exited with code {result.returncode}")
+    finally:
+        print(f"  [attention] Reloading model after subprocess...", flush=True)
+        analyzer.load()
+        set_analyzer(analyzer)
 
     data = json.loads(output_path.read_text(encoding="utf-8"))
     return data["scores"]
@@ -351,7 +363,8 @@ async def _run_baseline(study_id: str) -> None:
     post_agg = None
 
     print("  Running attention analysis on control abstracts (subprocess)...", flush=True)
-    score_dicts = _run_attention_subprocess(study_id, 0)
+    analyzer = get_analyzer()
+    score_dicts = _run_attention_subprocess(study_id, 0, analyzer)
     post_scores = _dicts_to_routing_scores(score_dicts)
     post_agg = (
         sum(s.score for s in post_scores if s.score is not None)
@@ -544,7 +557,8 @@ async def _run_iteration(
     routing_delta = None
 
     print(f"  Running POST-MODIFICATION attention pass (subprocess)...")
-    score_dicts = _run_attention_subprocess(study_id, iteration_n)
+    analyzer = get_analyzer()
+    score_dicts = _run_attention_subprocess(study_id, iteration_n, analyzer)
     post_scores = _dicts_to_routing_scores(score_dicts)
 
     routing_history = load_routing(study_id)
