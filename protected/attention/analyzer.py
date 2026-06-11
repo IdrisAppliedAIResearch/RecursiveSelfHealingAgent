@@ -187,7 +187,7 @@ class AttentionAnalyzer:
             hook.remove()
         self._hooks.clear()
 
-         try:
+        try:
             gen_kwargs = {
                 "input_ids": input_ids,
                 "max_new_tokens": max_tokens or 4096,
