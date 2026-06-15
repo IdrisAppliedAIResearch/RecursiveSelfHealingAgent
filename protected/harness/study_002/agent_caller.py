@@ -13,9 +13,12 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_DECISION_MAX_TOKENS = 8192
+_DECISION_MAX_TOKENS = 4096
+_DECISION_MAX_INPUT = 13107
 _DIAGNOSTIC_MAX_TOKENS = 1024
+_DIAGNOSTIC_MAX_INPUT = 13107
 _REPAIR_MAX_TOKENS = 1024
+_REPAIR_MAX_INPUT = 13107
 
 ASSESSMENT_SCHEMA = """
 ASSESSMENT SCHEMA (output only this JSON, no other text):
@@ -60,6 +63,17 @@ EXAMPLE RESPONSE (OUTPUT ONLY THIS JSON, NO OTHER TEXT):
 """
 
 
+def _summarize_prior_output(prior_output: list[dict]) -> list[dict]:
+    """Strip abstract_text and keep only ID + claims for diagnostic context."""
+    result = []
+    for rec in prior_output[-10:]:
+        result.append({
+            "abstract_id": rec["abstract_id"],
+            "predicted_claims": rec.get("predicted_claims", []),
+        })
+    return result
+
+
 def _build_diagnostic_prompt(
     prior_output: list[dict],
     prior_output_iteration: int,
@@ -71,35 +85,40 @@ def _build_diagnostic_prompt(
         "You are an autonomous research system analyzing your own performance "
         "trajectory. You must produce a structured JSON assessment of what you "
         "observe. Do NOT propose edits in this call.\n\n"
-    )
-
-    if prior_episodes:
-        system += (
-            "EPISODIC MEMORY (prior iterations):\n"
-            f"{json.dumps(prior_episodes, indent=2)}\n\n"
-        )
-    else:
-        system += "This is your first iteration. You have no prior episodes.\n\n"
-
-    if routing_history_text:
-        system += f"{routing_history_text}\n\n"
-
-    if routing_delta_text:
-        system += f"ROUTING DELTA:\n{routing_delta_text}\n\n"
-
-    system += (
-        "PRIOR EXTRACTION OUTPUT (from iteration "
-        f"{prior_output_iteration}):\n{json.dumps(prior_output, indent=2)}\n\n"
-    )
-
-    system += f"RESPONSE SCHEMA:\n{ASSESSMENT_SCHEMA}\n"
-    system += (
-        "\nCRITICAL: Your entire response must be ONLY the JSON object. "
+        f"RESPONSE SCHEMA:\n{ASSESSMENT_SCHEMA}\n\n"
+        "CRITICAL: Your entire response must be ONLY the JSON object. "
         "Do NOT include any analysis, reasoning, explanation, or markdown "
         "before or after the JSON."
     )
 
-    user = "Analyze your current situation and produce a structured assessment."
+    user_parts = []
+
+    if prior_episodes:
+        user_parts.append(
+            "EPISODIC MEMORY (prior iterations):\n"
+            f"{json.dumps(prior_episodes, indent=2)}"
+        )
+    else:
+        user_parts.append("This is your first iteration. You have no prior episodes.")
+
+    if routing_history_text:
+        user_parts.append(routing_history_text)
+
+    if routing_delta_text:
+        user_parts.append(f"ROUTING DELTA:\n{routing_delta_text}")
+
+    summary = _summarize_prior_output(prior_output)
+    user_parts.append(
+        f"PRIOR EXTRACTION OUTPUT (from iteration {prior_output_iteration}, "
+        f"last {len(summary)} of {len(prior_output)} entries):\n"
+        f"{json.dumps(summary, indent=2)}"
+    )
+
+    user_parts.append(
+        "\nNow produce your JSON assessment. Output ONLY the JSON object, "
+        "no other text."
+    )
+    user = "\n\n".join(user_parts)
 
     return system, user
 
@@ -116,41 +135,41 @@ def _build_decision_prompt(
         "You are an autonomous extractor modifying its own system. "
         "You have access to a Python playground and a set of prompt files. "
         "You must respond with a JSON object matching the response schema exactly.\n\n"
-    )
-
-    system += f"BASELINE CORRECTION:\n{compose_baseline_correction()}\n\n"
-
-    if assessment:
-        system += (
-            "YOUR CURRENT ASSESSMENT\n\n"
-            f"Routing trend: {assessment.routing_trend}\n\n"
-            f"Effect of last action: {assessment.last_action_effect}\n\n"
-            f"Pattern observed: {assessment.pattern_observed}\n\n"
-            f"Hypothesis: {assessment.hypothesis}\n\n"
-        )
-    else:
-        system += (
-            "Assessment unavailable for this iteration due to a processing "
-            "error. Proceed based on your current file state and the baseline "
-            "correction guidance above.\n\n"
-        )
-
-    system += "CURRENT FILE CONTENTS:\n"
-    for filepath, content in sorted(current_files.items()):
-        system += f"\n--- {filepath} ---\n{content}\n"
-
-    system += f"\n\nRESPONSE SCHEMA:\n{RESPONSE_SCHEMA}\n"
-    system += (
-        "\n\nCRITICAL: Your entire response must be ONLY the JSON object. "
+        f"RESPONSE SCHEMA:\n{RESPONSE_SCHEMA}\n\n"
+        f"BASELINE CORRECTION:\n{compose_baseline_correction()}\n\n"
+        "CRITICAL: Your entire response must be ONLY the JSON object. "
         "Do NOT include any analysis, reasoning, explanation, or markdown "
         "before or after the JSON. Put all reasoning inside the episode and "
         "rationale fields of the JSON."
     )
 
-    user = (
-        "Based on your assessment and the current file contents, "
-        "decide what to modify and produce edit instructions."
+    user_parts = []
+
+    if assessment:
+        user_parts.append(
+            "YOUR CURRENT ASSESSMENT\n\n"
+            f"Routing trend: {assessment.routing_trend}\n\n"
+            f"Effect of last action: {assessment.last_action_effect}\n\n"
+            f"Pattern observed: {assessment.pattern_observed}\n\n"
+            f"Hypothesis: {assessment.hypothesis}"
+        )
+    else:
+        user_parts.append(
+            "Assessment unavailable for this iteration due to a processing "
+            "error. Proceed based on your current file state and the baseline "
+            "correction guidance."
+        )
+
+    user_parts.append("CURRENT FILE CONTENTS:")
+    for filepath, content in sorted(current_files.items()):
+        user_parts.append(f"--- {filepath} ---\n{content}")
+
+    user_parts.append(
+        "\nBased on your assessment and the current file contents, "
+        "decide what to modify and produce edit instructions. "
+        "Output ONLY the JSON object, no other text."
     )
+    user = "\n\n".join(user_parts)
 
     return system, user
 
@@ -165,26 +184,29 @@ def _build_repair_prompt(
         "Python error. You must propose repair edits to fix the broken "
         "playground code. Respond with a JSON object containing only an "
         "\"edits\" array.\n\n"
-        f"ERROR:\n{error_message}\n\n"
-        "CURRENT FILE CONTENTS:\n"
-    )
-    for filepath, content in sorted(current_files.items()):
-        system += f"\n--- {filepath} ---\n{content}\n"
-
-    system += (
-        "\n\nREPAIR RESPONSE SCHEMA:\n"
+        "REPAIR RESPONSE SCHEMA:\n"
         '{\n  "edits": [\n    {\n      "file_path": "string",\n      '
         '"operation": "replace_string | replace_file | create_file | delete_file",\n      '
         '"old_string": "string or null",\n      "new_string": "string or null",\n      '
-        '"new_content": "string or null"\n    }\n  ]\n}\n'
+        '"new_content": "string or null"\n    }\n  ]\n}\n\n'
+        "CRITICAL: Your entire response must be ONLY the JSON object. "
+        "Do NOT include any other text."
     )
 
+    user_parts = [
+        f"ERROR:\n{error_message}",
+        "CURRENT FILE CONTENTS:",
+    ]
+    for filepath, content in sorted(current_files.items()):
+        user_parts.append(f"--- {filepath} ---\n{content}")
+
     remaining = 3 - attempt_number
-    user = (
-        f"This is repair attempt {attempt_number} of 3. "
+    user_parts.append(
+        f"\nThis is repair attempt {attempt_number} of 3. "
         f"You have {remaining} remaining attempt(s) after this one.\n"
-        "Fix the error and return only the edits array."
+        "Fix the error. Output ONLY the JSON object, no other text."
     )
+    user = "\n\n".join(user_parts)
 
     return system, user
 
@@ -314,6 +336,7 @@ async def invoke_diagnostic(
             system_prompt,
             user_message,
             _DIAGNOSTIC_MAX_TOKENS,
+            _DIAGNOSTIC_MAX_INPUT,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
@@ -383,6 +406,7 @@ async def invoke_decision(
             system_prompt,
             user_message,
             _DECISION_MAX_TOKENS,
+            _DECISION_MAX_INPUT,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
@@ -420,6 +444,7 @@ async def invoke_repair(
             system_prompt,
             user_message,
             _REPAIR_MAX_TOKENS,
+            _REPAIR_MAX_INPUT,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
