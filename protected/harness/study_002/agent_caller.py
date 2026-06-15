@@ -12,7 +12,7 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_AGENT_MAX_TOKENS = 2048
+_AGENT_MAX_TOKENS = 8192
 _REPAIR_MAX_TOKENS = 1024
 
 OBJECTIVE = (
@@ -24,21 +24,26 @@ OBJECTIVE = (
 )
 
 RESPONSE_SCHEMA = """
+EDITS SCHEMA (use the correct fields for each operation):
+- replace_string: requires file_path, old_string, new_string
+- replace_file: requires file_path, new_content (full file content)
+- create_file: requires file_path, new_content
+- delete_file: requires file_path only
+
+EXAMPLE RESPONSE (OUTPUT ONLY THIS JSON, NO OTHER TEXT):
 {
   "episode": {
-    "observation": "What you noticed in the prior iteration's extraction output",
-    "hypothesis": "What you think is wrong or could improve",
-    "action": "What you changed and why",
-    "expectation": "What you expect to see in the next iteration's output"
+    "observation": "What you noticed",
+    "hypothesis": "What could improve",
+    "action": "What you changed",
+    "expectation": "Expected result"
   },
-  "rationale": "Free-form reasoning about your changes",
+  "rationale": "Reasoning",
   "edits": [
     {
-      "file_path": "playground/extractor.py",
-      "operation": "replace_string | replace_file | create_file | delete_file",
-      "old_string": "string or null",
-      "new_string": "string or null",
-      "new_content": "string or null"
+      "file_path": "prompts/system_prompt.md",
+      "operation": "replace_file",
+      "new_content": "Full file content here"
     }
   ]
 }
@@ -93,6 +98,12 @@ def _build_invoke_prompt(
         system += f"\n--- {filepath} ---\n{content}\n"
 
     system += f"\n\nRESPONSE SCHEMA:\n{RESPONSE_SCHEMA}\n"
+    system += (
+        "\n\nCRITICAL: Your entire response must be ONLY the JSON object. "
+        "Do NOT include any analysis, reasoning, explanation, or markdown "
+        "before or after the JSON. Put all reasoning inside the episode and "
+        "rationale fields of the JSON."
+    )
 
     user = (
         f"PRIOR EXTRACTION OUTPUT (from iteration {prior_output_iteration}):\n"
@@ -147,13 +158,63 @@ def _get_provider():
 
 def _parse_response(raw: str) -> dict:
     raw = raw.strip()
-    m = re.search(r'\{.*\}', raw, re.DOTALL)
-    if m:
-        raw = m.group(0)
+    # Try direct parse first
     try:
         return json.loads(raw)
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON response: {e}") from e
+    except json.JSONDecodeError:
+        pass
+
+    # Strip markdown code fences if present
+    m = re.search(r'```(?:json)?\s*(\{.*?)\s*```', raw, re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            pass
+
+    # Find all valid JSON objects, prioritize ones with "episode" or "edits"
+    candidates = []
+    for m in re.finditer(r'\{', raw):
+        start = m.start()
+        depth = 0
+        in_string = False
+        escape_next = False
+        for i in range(start, len(raw)):
+            ch = raw[i]
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == '\\':
+                escape_next = True
+                continue
+            if ch == '"' and not escape_next:
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    candidate = raw[start:i+1]
+                    try:
+                        obj = json.loads(candidate)
+                        if isinstance(obj, dict):
+                            candidates.append(obj)
+                    except json.JSONDecodeError:
+                        continue
+
+    # Prioritize candidates with "episode" or "edits" keys
+    for c in candidates:
+        if "episode" in c or "edits" in c:
+            return c
+
+    # Fallback: last valid JSON object
+    if candidates:
+        return candidates[-1]
+
+    raise json.JSONDecodeError("No valid JSON found", raw[:200], 0)
 
 
 async def invoke(
@@ -217,13 +278,19 @@ async def invoke(
         edits_data = data.get("edits", [])
         edits = []
         for ed in edits_data:
+            op = str(ed.get("operation", ""))
+            nc = ed.get("new_content")
+            ns = ed.get("new_string")
+            # Fallback: agent may use new_string for replace_file/create_file
+            if op in ("replace_file", "create_file") and nc is None and ns is not None:
+                nc = ns
             edits.append(
                 Edit(
                     file_path=str(ed.get("file_path", "")),
-                    operation=str(ed.get("operation", "")),
+                    operation=op,
                     old_string=ed.get("old_string"),
-                    new_string=ed.get("new_string"),
-                    new_content=ed.get("new_content"),
+                    new_string=ns,
+                    new_content=nc,
                 )
             )
 
@@ -272,13 +339,18 @@ async def invoke_repair(
         edits_data = data.get("edits", [])
         edits = []
         for ed in edits_data:
+            op = str(ed.get("operation", ""))
+            nc = ed.get("new_content")
+            ns = ed.get("new_string")
+            if op in ("replace_file", "create_file") and nc is None and ns is not None:
+                nc = ns
             edits.append(
                 Edit(
                     file_path=str(ed.get("file_path", "")),
-                    operation=str(ed.get("operation", "")),
+                    operation=op,
                     old_string=ed.get("old_string"),
-                    new_string=ed.get("new_string"),
-                    new_content=ed.get("new_content"),
+                    new_string=ns,
+                    new_content=nc,
                 )
             )
         return RepairResponse(edits=edits, token_usage=token_usage)

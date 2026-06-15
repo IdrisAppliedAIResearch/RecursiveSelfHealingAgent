@@ -3,6 +3,328 @@ from typing import Tuple
 
 import torch
 
+from protected.attention.scorer import RoutingScore, compute_routing_score
+from protected.attention.segmenter import map_sentences_to_tokens
+
+
+def _resolve_hf_cache_path(path: str) -> str:
+    """Resolve HuggingFace cache refs to the actual snapshot directory."""
+    from pathlib import Path
+    p = Path(path)
+    if p.joinpath("config.json").exists():
+        return str(p)
+    refs_dir = p / "refs"
+    if refs_dir.exists():
+        main_ref = refs_dir / "main"
+        if main_ref.exists():
+            commit = main_ref.read_text(encoding="utf-8").strip()
+            snapshot = p / "snapshots" / commit
+            if snapshot.joinpath("config.json").exists():
+                return str(snapshot)
+    return str(p)
+
+
+def load_attention_model(model_path: str):
+    """
+    Load Qwen3 27B base model for attention analysis.
+    model_path: local path to the base model (HuggingFace format, not GGUF).
+    """
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+    resolved_path = _resolve_hf_cache_path(model_path)
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+    )
+
+    model = AutoModelForCausalLM.from_pretrained(
+        resolved_path,
+        quantization_config=quantization_config,
+        attn_implementation="eager",
+        device_map="auto",
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
+        local_files_only=True,
+    )
+    model.eval()
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        resolved_path, trust_remote_code=True, use_fast=False, local_files_only=True
+    )
+
+    return model, tokenizer
+
+
+def build_input(
+    tokenizer,
+    system_prompt: str,
+    abstract_text: str,
+    device: str = "cuda",
+) -> dict:
+    """
+    Build tokenized input matching the extraction model's chat format.
+    Returns dict with input_ids, attention_mask, and abstract_start_token_idx.
+    """
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": abstract_text},
+    ]
+
+    prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+    inputs = tokenizer(
+        prompt,
+        return_tensors="pt",
+        return_offsets_mapping=True,
+        truncation=True,
+        max_length=4096,
+    )
+
+    # Find where abstract text starts in the rendered prompt
+    abstract_char_start = prompt.find(abstract_text)
+    offsets = inputs["offset_mapping"][0]
+    system_len = 0
+    for i, (s, e) in enumerate(offsets):
+        if s >= abstract_char_start:
+            system_len = i
+            break
+
+    return {
+        "input_ids": inputs["input_ids"].to(device),
+        "attention_mask": inputs["attention_mask"].to(device),
+        "abstract_start_token_idx": system_len,
+        "total_seq_len": inputs["input_ids"].shape[1],
+    }
+
+
+def run_prefill(model, input_dict: dict) -> tuple:
+    """
+    Single forward pass. No generation. Returns attention weights from last 6 layers.
+    Returns: tuple of 6 tensors, each shape [1, num_heads, seq_len, seq_len]
+    """
+    with torch.no_grad():
+        outputs = model(
+            input_ids=input_dict["input_ids"],
+            attention_mask=input_dict["attention_mask"],
+            output_attentions=True,
+            use_cache=False,
+            return_dict=True,
+        )
+
+    last_6_layers = outputs.attentions[-6:]
+
+    del outputs
+    torch.cuda.empty_cache()
+
+    return last_6_layers
+
+
+def extract_last_token_attention(
+    last_6_layers: tuple,
+    abstract_start_token_idx: int,
+    total_seq_len: int,
+) -> torch.Tensor:
+    """
+    Extracts the last token's attention distribution over abstract tokens.
+
+    Returns: 1D tensor of length (total_seq_len - abstract_start_token_idx)
+    """
+    layer_attns = []
+
+    for layer_attn in last_6_layers:
+        last_token_attn = layer_attn[:, :, -1, :]
+        avg_over_heads = last_token_attn.mean(dim=1)
+        layer_attns.append(avg_over_heads.squeeze(0))
+
+    avg_over_layers = torch.stack(layer_attns, dim=0).mean(dim=0)
+    abstract_attn = avg_over_layers[abstract_start_token_idx:]
+
+    return abstract_attn.cpu().float()
+
+
+def analyze_abstract(
+    model,
+    tokenizer,
+    system_prompt: str,
+    abstract_id: str,
+    abstract_text: str,
+    device: str = "cuda",
+) -> RoutingScore:
+    """
+    Full pipeline: input -> forward pass -> attention extraction -> routing score.
+    Runs on a single abstract. Call in a loop for the probe set.
+    Cleans up GPU memory after each call.
+    """
+    input_dict = None
+
+    try:
+        input_dict = build_input(tokenizer, system_prompt, abstract_text, device)
+        last_6_layers = run_prefill(model, input_dict)
+
+        abstract_attn = extract_last_token_attention(
+            last_6_layers,
+            input_dict["abstract_start_token_idx"],
+            input_dict["total_seq_len"],
+        )
+
+        del last_6_layers
+        torch.cuda.empty_cache()
+
+        sentence_map = map_sentences_to_tokens(
+            abstract_text,
+            tokenizer,
+            input_dict["abstract_start_token_idx"],
+        )
+
+        score_dict = compute_routing_score(abstract_attn, sentence_map)
+
+        return RoutingScore(
+            abstract_id=abstract_id,
+            score=score_dict["routing_score"],
+            results_attention_fraction=score_dict["results_fraction"],
+            methods_attention_fraction=score_dict["methods_fraction"],
+            background_attention_fraction=score_dict["background_fraction"],
+            n_results_tokens=score_dict["n_results_tokens"],
+            n_methods_tokens=score_dict["n_methods_tokens"],
+            n_background_tokens=score_dict["n_background_tokens"],
+            n_layers_used=6,
+        )
+
+    except torch.cuda.OutOfMemoryError as e:
+        torch.cuda.empty_cache()
+        seq_len = input_dict["total_seq_len"] if input_dict else "unknown"
+        raise RuntimeError(
+            f"OOM during attention analysis of abstract {abstract_id}. "
+            f"Sequence length: {seq_len}. "
+            f"Consider reducing max_length in build_input."
+        ) from e
+
+
+def verify_attention_pipeline(model, tokenizer, sample_abstract: str) -> None:
+    """
+    Diagnostic verification of the full attention pipeline.
+    Call once at study startup before any iteration runs.
+    """
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parent.parent.parent
+    system_prompt = (project_root / "prompts" / "system_prompt.md").read_text(
+        encoding="utf-8"
+    )
+
+    print("=== Attention Pipeline Verification ===")
+    print(f"Model layers: {model.config.num_hidden_layers}")
+    print(f"Num attention heads (Q): {model.config.num_attention_heads}")
+    print(f"Num KV heads: {model.config.num_key_value_heads}")
+
+    result = analyze_abstract(
+        model, tokenizer,
+        system_prompt=system_prompt,
+        abstract_id="verification_sample",
+        abstract_text=sample_abstract,
+    )
+
+    print(f"\nSample abstract routing score: {result.score:.4f}")
+    print(f"Results attention fraction:    {result.results_attention_fraction:.4f}")
+    print(f"Methods attention fraction:    {result.methods_attention_fraction:.4f}")
+    print(f"Background attention fraction: {result.background_attention_fraction:.4f}")
+    print(f"Results tokens: {result.n_results_tokens}")
+    print(f"Methods tokens: {result.n_methods_tokens}")
+    print(f"Background tokens: {result.n_background_tokens}")
+
+    total = (
+        result.results_attention_fraction
+        + result.methods_attention_fraction
+        + result.background_attention_fraction
+    )
+    print(f"\nFraction sum (should be ~1.0): {total:.4f}")
+    assert abs(total - 1.0) < 0.05, f"Fractions do not sum to 1.0: {total}"
+
+    results_only = (
+        "Bilateral hippocampal activation increased significantly during "
+        "encoding compared to baseline. Left prefrontal cortex showed "
+        "greater activation for novel than repeated stimuli (p < 0.001). "
+        "Memory performance correlated positively with hippocampal BOLD signal."
+    )
+    score_results = analyze_abstract(
+        model, tokenizer,
+        system_prompt=system_prompt,
+        abstract_id="synthetic_results",
+        abstract_text=results_only,
+    )
+    print(f"\nSynthetic results-only score: {score_results.score:.4f} (expect > 0.5)")
+
+    methods_only = (
+        "Fifteen healthy volunteers were recruited. fMRI was performed on a "
+        "3T scanner with TR=2000ms and TE=30ms. Voxel size was 3x3x3mm. "
+        "Statistical maps were thresholded at p<0.001 uncorrected."
+    )
+    score_methods = analyze_abstract(
+        model, tokenizer,
+        system_prompt=system_prompt,
+        abstract_id="synthetic_methods",
+        abstract_text=methods_only,
+    )
+    print(f"Synthetic methods-only score:  {score_methods.score:.4f} (expect < 0.3)")
+
+    assert score_results.score > score_methods.score, (
+        f"Directional check failed: results score ({score_results.score:.4f}) "
+        f"should exceed methods score ({score_methods.score:.4f})"
+    )
+
+    print("\n=== Verification passed ===")
+
+
+def verify_sensitivity_to_prompt_change(
+    model,
+    tokenizer,
+    abstract_id: str,
+    abstract_text: str,
+) -> None:
+    """
+    Confirms routing score responds to prompt changes.
+    Run once after the first iteration applies an edit.
+    """
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parent.parent.parent
+    prompt_v1 = (project_root / "prompts" / "system_prompt.md").read_text(
+        encoding="utf-8"
+    )
+
+    score_before = analyze_abstract(
+        model, tokenizer,
+        system_prompt=prompt_v1,
+        abstract_id=abstract_id,
+        abstract_text=abstract_text,
+    )
+
+    test_prompt = prompt_v1 + "\nFocus exclusively on activation findings."
+
+    score_after = analyze_abstract(
+        model, tokenizer,
+        system_prompt=test_prompt,
+        abstract_id=abstract_id,
+        abstract_text=abstract_text,
+    )
+
+    print(f"Score before prompt change: {score_before.score:.4f}")
+    print(f"Score after prompt change:  {score_after.score:.4f}")
+    print(f"Delta: {score_after.score - score_before.score:+.4f}")
+
+    if abs(score_after.score - score_before.score) < 0.001:
+        print("WARNING: Routing score did not respond to prompt change.")
+        print("Check that system_prompt is being passed correctly to build_input.")
+    else:
+        print("Sensitivity confirmed — routing score responds to prompt changes.")
+
 
 @dataclass
 class AttentionResult:

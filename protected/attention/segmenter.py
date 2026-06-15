@@ -157,3 +157,45 @@ def align_tokens(sentences: list[Sentence], tokenizer, abstract_text: str) -> No
 
         sent.token_start = first_token if first_token is not None else 0
         sent.token_end = last_token
+
+
+def map_sentences_to_tokens(
+    abstract_text: str,
+    tokenizer,
+    abstract_start_token_idx: int,
+) -> list[dict]:
+    """
+    Returns list of dicts:
+    {
+        "text": sentence text,
+        "label": "RESULTS" | "METHODS" | "BACKGROUND",
+        "token_positions": list of int (positions within abstract token range)
+    }
+    """
+    sentences = _split_sentences(abstract_text)
+    result = []
+
+    for sent_text, char_start, char_end in sentences:
+        label = _classify_sentence(sent_text)
+
+        prefix_before = tokenizer(
+            abstract_text[:char_start],
+            add_special_tokens=False
+        )["input_ids"]
+        prefix_after = tokenizer(
+            abstract_text[:char_end],
+            add_special_tokens=False
+        )["input_ids"]
+
+        token_start = len(prefix_before)
+        token_end = len(prefix_after)
+        token_positions = list(range(token_start, token_end))
+
+        if token_positions:
+            result.append({
+                "text": sent_text,
+                "label": label,
+                "token_positions": token_positions,
+            })
+
+    return result

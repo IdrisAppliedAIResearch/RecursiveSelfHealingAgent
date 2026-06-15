@@ -15,7 +15,10 @@ Guidelines:
 - CRITICAL: Exclude meta-conclusions, negative mechanistic claims (e.g., "is not due to", "cannot be attributed to", "persists when controlled"), and statements summarizing broader implications or theoretical consistency. Report ONLY the direct neural observation.
 - CRITICAL: Discard interpretive conclusions attached to empirical observations. If a sentence states "X activates Y, suggesting/indicating/implying Z", extract ONLY "X activates Y" and discard the interpretive clause.
 
-Respond with a raw JSON object in this exact format:
-{"claims": ["claim one", "claim two"]}
+Respond with ONLY a raw JSON object. The key "claims" maps to an array of strings, where each string is one extracted claim.
 
-If no claims are present, return: {"claims": []}
+Example response for an abstract about fMRI activation:
+{"claims": ["The left inferior frontal gyrus and anterior insula showed increased BOLD signal during pain compared to baseline.", "Pain intensity ratings were higher in the experimental condition."]}
+
+If the abstract contains no extractable claims, return an empty array:
+{"claims": []}
