@@ -48,7 +48,7 @@ from protected.scorer import score_corpus
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
-N_ITERATIONS = 20
+N_ITERATIONS = 25
 
 
 def _load_probe_set() -> list[str]:
