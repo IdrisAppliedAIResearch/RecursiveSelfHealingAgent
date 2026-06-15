@@ -142,27 +142,9 @@ def format_for_agent(
             cur_agg = sum(cur_vals) / len(cur_vals) if cur_vals else None
             if cur_agg is not None:
                 delta = cur_agg - prev_agg
-                improved = 0
-                declined = 0
-                largest_inc = 0.0
-                largest_dec = 0.0
-                largest_inc_aid = ""
-                largest_dec_aid = ""
-                for aid in abstract_ids:
-                    prev_val = iter_scores[aid].get(prev_iter)
-                    cur_val = current_scores.get(aid)
-                    if prev_val is not None and cur_val is not None:
-                        d = cur_val - prev_val
-                        if d > 0.02:
-                            improved += 1
-                            if d > largest_inc:
-                                largest_inc = d
-                                largest_inc_aid = aid
-                        elif d < -0.02:
-                            declined += 1
-                            if d < largest_dec:
-                                largest_dec = d
-                                largest_dec_aid = aid
+                prev_map = {aid: {"score": iter_scores[aid].get(prev_iter)} for aid in abstract_ids}
+                curr_map = {aid: {"score": current_scores[aid]} for aid in abstract_ids if aid in current_scores}
+                improved, _, largest_inc, largest_dec, largest_inc_aid, largest_dec_aid = _compute_delta_stats(prev_map, curr_map)
 
                 lines.append("")
                 lines.append(f"Current iteration routing signal:")
@@ -208,3 +190,71 @@ def format_for_agent(
                             )
 
     return "\n".join(lines)
+
+
+def _compute_delta_stats(
+    prev_map: dict, curr_map: dict
+) -> tuple:
+    """Return (improved, deltas, largest_inc, largest_dec, largest_inc_aid, largest_dec_aid)."""
+    improved = 0
+    deltas = []
+    largest_inc = 0.0
+    largest_dec = 0.0
+    largest_inc_aid = ""
+    largest_dec_aid = ""
+    for aid in curr_map:
+        prev_score = prev_map.get(aid, {}).get("score")
+        curr_score = curr_map.get(aid, {}).get("score")
+        if prev_score is not None and curr_score is not None:
+            d = curr_score - prev_score
+            deltas.append(d)
+            if d > 0.02:
+                improved += 1
+                if d > largest_inc:
+                    largest_inc = d
+                    largest_inc_aid = aid
+            elif d < -0.02:
+                if d < largest_dec:
+                    largest_dec = d
+                    largest_dec_aid = aid
+    return improved, deltas, largest_inc, largest_dec, largest_inc_aid, largest_dec_aid
+
+
+def format_routing_delta(study_id: str, iteration_n: int) -> str:
+    if iteration_n <= 1:
+        return "No prior modification has been made."
+
+    history = load_all(study_id)
+    if len(history) < 2:
+        return "No prior modification has been made."
+
+    prev = history[-2]
+    curr = history[-1]
+    prev_post = prev.get("post_scores", [])
+    curr_post = curr.get("post_scores", [])
+
+    prev_map = {s["abstract_id"]: s for s in prev_post}
+    curr_map = {s["abstract_id"]: s for s in curr_post}
+
+    improved, deltas, largest_inc, largest_dec, largest_inc_aid, largest_dec_aid = _compute_delta_stats(prev_map, curr_map)
+
+    total = len(deltas)
+    agg_delta = sum(deltas) / len(deltas) if deltas else 0.0
+    prev_iter_n = prev.get("iteration_n", iteration_n - 1)
+
+    parts = [
+        f"After your iteration {prev_iter_n} modification, routing toward results "
+        f"sentence{'s' if improved != 1 else ''} "
+        f"increased on {improved} of {total} control abstracts "
+        f"(aggregate delta: {agg_delta:+.2f})."
+    ]
+    if largest_inc_aid:
+        parts.append(
+            f"The largest increase was on abstract {largest_inc_aid} (+{largest_inc:.2f})."
+        )
+    if largest_dec_aid:
+        parts.append(
+            f"The largest decrease was on abstract {largest_dec_aid} ({largest_dec:+.2f})."
+        )
+
+    return "\n".join(parts)

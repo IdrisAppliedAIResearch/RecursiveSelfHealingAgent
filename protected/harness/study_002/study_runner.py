@@ -16,6 +16,7 @@ from protected.attention.scorer import RoutingScore
 from protected.harness.shared.analyzer_registry import set_analyzer, get_analyzer
 from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.artifact_writer import (
+    append_assessment,
     append_metrics,
     append_rationale,
     snapshot_playground,
@@ -23,7 +24,7 @@ from protected.harness.shared.artifact_writer import (
 )
 from protected.harness.shared.corpus_runner import run_corpus
 from protected.harness.shared.edit_applier import apply_edits
-from protected.harness.shared.edit_protocol import AgentFailure
+from protected.harness.shared.edit_protocol import AgentFailure, AssessmentResult
 from protected.harness.shared.episode_store import append as append_episode
 from protected.harness.shared.episode_store import load_all as load_episodes
 from protected.harness.shared.git_ops import (
@@ -36,10 +37,11 @@ from protected.harness.shared.git_ops import (
 )
 from protected.harness.shared.interface_validator import validate_interface
 from protected.harness.shared.model_performance import append_after_iteration, summarize
-from protected.harness.study_002.agent_caller import invoke, invoke_repair
+from protected.harness.study_002.agent_caller import invoke_diagnostic, invoke_decision, invoke_repair
 from protected.harness.study_002.routing_history import (
     append as append_routing,
     format_for_agent,
+    format_routing_delta,
     load_all as load_routing,
 )
 from protected.harness.shared.allowlist import ALLOWED_FILE_EXACT
@@ -141,6 +143,7 @@ def _load_prior_output(study_id: str) -> tuple[list[dict], int]:
     for rec in records:
         prior_output.append({
             "abstract_id": rec["abstract_id"],
+            "abstract_text": rec.get("abstract_text", ""),
             "predicted_claims": rec.get("predicted_claims", []),
         })
     return prior_output, best_iter
@@ -183,6 +186,14 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "agent_total_tokens": None,
         "agent_tokens_per_second": None,
         "agent_context_window": None,
+        "assessment_available": None,
+        "assessment_routing_trend": None,
+        "call_1_prompt_tokens": None,
+        "call_1_completion_tokens": None,
+        "call_1_tokens_per_second": None,
+        "call_2_prompt_tokens": None,
+        "call_2_completion_tokens": None,
+        "call_2_tokens_per_second": None,
         "corpus_total_prompt_tokens": None,
         "corpus_total_completion_tokens": None,
         "corpus_avg_tokens_per_abstract": None,
@@ -419,39 +430,80 @@ async def _run_iteration(
 
     routing_history = load_routing(study_id)
     routing_history_text = format_for_agent(routing_history)
-
-    print(f"  Calling agent (output from iteration {prior_iter}, {len(prior_episodes)} prior episodes)...")
-    agent_result = await invoke(
-        prior_output=prior_output,
-        prior_output_iteration=prior_iter,
-        current_files=current_files,
-        prior_episodes=prior_episodes,
-        routing_history_text=routing_history_text,
-    )
+    routing_delta_text = format_routing_delta(study_id, iteration_n)
 
     metrics = _make_metrics_base(iteration_n)
 
+    # b1 — Diagnostic Assessment (Call 1)
+    print(f"  [Call 1] Diagnostic assessment (output from iteration {prior_iter}, {len(prior_episodes)} prior episodes)...")
+    assessment = await invoke_diagnostic(
+        prior_output=prior_output,
+        prior_output_iteration=prior_iter,
+        routing_history_text=routing_history_text,
+        routing_delta_text=routing_delta_text,
+        prior_episodes=prior_episodes,
+    )
+
+    if isinstance(assessment, AgentFailure):
+        print(f"  [Call 1] Assessment FAILED: {assessment.reason}")
+        log_anomaly(
+            study_id, iteration_n,
+            "assessment_malformed",
+            {"reason": assessment.reason},
+        )
+        metrics["assessment_available"] = False
+        assessment = None
+
+    if assessment is not None:
+        metrics["assessment_available"] = True
+        metrics["assessment_routing_trend"] = assessment.routing_trend
+        trend = assessment.routing_trend
+        if trend not in ("improving", "declining", "flat"):
+            log_anomaly(
+                study_id, iteration_n,
+                "assessment_field_invalid",
+                {"field": "routing_trend", "value": trend},
+            )
+        append_assessment(iteration_n, study_id, assessment)
+        if assessment.token_usage is not None:
+            tu1 = assessment.token_usage
+            metrics["call_1_prompt_tokens"] = tu1.prompt_tokens
+            metrics["call_1_completion_tokens"] = tu1.completion_tokens
+            metrics["call_1_tokens_per_second"] = tu1.tokens_per_second
+
+    # b2 — Modification Decision (Call 2)
+    print(f"  [Call 2] Modification decision...")
+    agent_result = await invoke_decision(
+        assessment=assessment,
+        current_files=current_files,
+    )
+
     if isinstance(agent_result, AgentFailure):
-        print(f"  Agent FAILED: {agent_result.reason}")
+        print(f"  [Call 2] Agent FAILED: {agent_result.reason}")
         log_anomaly(
             study_id, iteration_n,
             "agent_response_malformed",
             {"reason": agent_result.reason},
         )
         metrics["anomaly"] = True
+        metrics["scanned"] = False
         append_metrics(iteration_n, study_id, metrics)
         return None
 
+    if agent_result.token_usage:
+        tu2 = agent_result.token_usage
+        metrics["call_2_prompt_tokens"] = tu2.prompt_tokens
+        metrics["call_2_completion_tokens"] = tu2.completion_tokens
+        metrics["call_2_tokens_per_second"] = tu2.tokens_per_second
+
+        metrics["agent_prompt_tokens"] = tu2.prompt_tokens
+        metrics["agent_completion_tokens"] = tu2.completion_tokens
+        metrics["agent_total_tokens"] = tu2.total_tokens
+        metrics["agent_tokens_per_second"] = tu2.tokens_per_second
+        metrics["agent_context_window"] = tu2.context_window
+
     metrics["agent_edits_proposed"] = len(agent_result.edits)
     metrics["code_changes_attempted"] = _check_code_changes(agent_result.edits)
-
-    if agent_result.token_usage:
-        tu = agent_result.token_usage
-        metrics["agent_prompt_tokens"] = tu.prompt_tokens
-        metrics["agent_completion_tokens"] = tu.completion_tokens
-        metrics["agent_total_tokens"] = tu.total_tokens
-        metrics["agent_tokens_per_second"] = tu.tokens_per_second
-        metrics["agent_context_window"] = tu.context_window
 
     print(f"  Agent: hypothesis={agent_result.episode.hypothesis[:100]}...")
     print(f"  Agent: expectation={agent_result.episode.expectation[:100]}...")

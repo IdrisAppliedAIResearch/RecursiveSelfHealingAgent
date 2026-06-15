@@ -1,8 +1,12 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from protected.harness.shared.corpus_runner import CorpusRunResult
+
+if TYPE_CHECKING:
+    from protected.harness.shared.edit_protocol import AssessmentResult
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -127,3 +131,24 @@ def append_metrics_study_002(
     }
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
+
+
+def append_assessment(
+    iteration_n: int,
+    study_id: str,
+    assessment: "AssessmentResult",
+) -> None:
+
+    path = _study_dir(study_id) / "assessments.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "iteration_n": iteration_n,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "routing_trend": assessment.routing_trend,
+        "last_action_effect": assessment.last_action_effect,
+        "pattern_observed": assessment.pattern_observed,
+        "hypothesis": assessment.hypothesis,
+        "raw_response": assessment.raw_response,
+    }
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")

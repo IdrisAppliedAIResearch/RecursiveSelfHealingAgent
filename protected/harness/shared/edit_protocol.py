@@ -41,3 +41,13 @@ class RepairResponse:
 class AgentFailure:
     reason: str
     raw_response: str | None = None
+
+
+@dataclass
+class AssessmentResult:
+    routing_trend: str
+    last_action_effect: str
+    pattern_observed: str
+    hypothesis: str
+    raw_response: str
+    token_usage: TokenUsage | None = None

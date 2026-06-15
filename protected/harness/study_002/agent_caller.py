@@ -6,22 +6,32 @@ from pathlib import Path
 from protected.harness.shared.edit_protocol import (
     AgentFailure,
     AgentResponse,
+    AssessmentResult,
     Edit,
     Episode,
     RepairResponse,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_AGENT_MAX_TOKENS = 8192
+_DECISION_MAX_TOKENS = 8192
+_DIAGNOSTIC_MAX_TOKENS = 1024
 _REPAIR_MAX_TOKENS = 1024
 
-OBJECTIVE = (
-    "Improve the precision and recall of the scientific claim extractor by "
-    "modifying its Python code and/or prompt files. You receive the prior "
-    "iteration's extraction output (per-abstract predicted claims). You cannot "
-    "see scores, ground truth, or evaluation metrics. Reason from the extraction "
-    "output to decide what to change."
-)
+ASSESSMENT_SCHEMA = """
+ASSESSMENT SCHEMA (output only this JSON, no other text):
+{
+  "routing_trend": "improving | declining | flat",
+  "last_action_effect": "string",
+  "pattern_observed": "string",
+  "hypothesis": "string"
+}
+
+FIELD DEFINITIONS:
+- routing_trend: "improving" if aggregate routing score has net increased across the last 3 iterations (or all available if fewer than 3). "declining" if net decreased. "flat" if movement within +/-0.02. If first iteration with no prior data, value must be "flat".
+- last_action_effect: Plain language description of what the prior modification did to routing scores, referencing specific control abstracts where movement was notable. If first iteration, value must be: "No prior modification has been made. This is the first iteration."
+- pattern_observed: What you see across your episode history and routing trajectory taken together. Identify whether your modification strategy has been working, whether routing scores are responding to changes, and whether any systematic pattern is visible.
+- hypothesis: What you think should change and why, based on the pattern observed. This is a forward-looking statement, not an edit instruction. Describe a direction ("the prompt needs to be more specific about X") rather than specific file changes.
+"""
 
 RESPONSE_SCHEMA = """
 EDITS SCHEMA (use the correct fields for each operation):
@@ -50,37 +60,18 @@ EXAMPLE RESPONSE (OUTPUT ONLY THIS JSON, NO OTHER TEXT):
 """
 
 
-def _read_current_files() -> dict[str, str]:
-    files = {}
-    for directory in ["playground", "prompts"]:
-        dirpath = PROJECT_ROOT / directory
-        if not dirpath.exists():
-            continue
-        for f in dirpath.rglob("*"):
-            if f.is_file():
-                rel = str(f.relative_to(PROJECT_ROOT))
-                files[rel] = f.read_text(encoding="utf-8", errors="replace")
-    return files
-
-
-def _build_invoke_prompt(
+def _build_diagnostic_prompt(
     prior_output: list[dict],
     prior_output_iteration: int,
-    current_files: dict[str, str],
-    objective: str,
-    prior_episodes: list[dict],
     routing_history_text: str,
-    baseline_correction: str,
+    routing_delta_text: str,
+    prior_episodes: list[dict],
 ) -> tuple[str, str]:
     system = (
-        "You are an autonomous AI researcher modifying a scientific claim "
-        "extractor to improve its precision and recall. You have access to a "
-        "Python playground and a set of prompt files. You must respond with a "
-        "JSON object matching the response schema exactly.\n\n"
-        f"OBJECTIVE:\n{objective}\n\n"
+        "You are an autonomous research system analyzing your own performance "
+        "trajectory. You must produce a structured JSON assessment of what you "
+        "observe. Do NOT propose edits in this call.\n\n"
     )
-
-    system += f"BASELINE CORRECTION:\n{baseline_correction}\n\n"
 
     if prior_episodes:
         system += (
@@ -88,10 +79,61 @@ def _build_invoke_prompt(
             f"{json.dumps(prior_episodes, indent=2)}\n\n"
         )
     else:
-        system += "This is your first iteration; you have no prior episodes.\n\n"
+        system += "This is your first iteration. You have no prior episodes.\n\n"
 
     if routing_history_text:
         system += f"{routing_history_text}\n\n"
+
+    if routing_delta_text:
+        system += f"ROUTING DELTA:\n{routing_delta_text}\n\n"
+
+    system += (
+        "PRIOR EXTRACTION OUTPUT (from iteration "
+        f"{prior_output_iteration}):\n{json.dumps(prior_output, indent=2)}\n\n"
+    )
+
+    system += f"RESPONSE SCHEMA:\n{ASSESSMENT_SCHEMA}\n"
+    system += (
+        "\nCRITICAL: Your entire response must be ONLY the JSON object. "
+        "Do NOT include any analysis, reasoning, explanation, or markdown "
+        "before or after the JSON."
+    )
+
+    user = "Analyze your current situation and produce a structured assessment."
+
+    return system, user
+
+
+def _build_decision_prompt(
+    assessment: AssessmentResult | None,
+    current_files: dict[str, str],
+) -> tuple[str, str]:
+    from protected.harness.study_002.baseline_correction import (
+        compose_baseline_correction,
+    )
+
+    system = (
+        "You are an autonomous extractor modifying its own system. "
+        "You have access to a Python playground and a set of prompt files. "
+        "You must respond with a JSON object matching the response schema exactly.\n\n"
+    )
+
+    system += f"BASELINE CORRECTION:\n{compose_baseline_correction()}\n\n"
+
+    if assessment:
+        system += (
+            "YOUR CURRENT ASSESSMENT\n\n"
+            f"Routing trend: {assessment.routing_trend}\n\n"
+            f"Effect of last action: {assessment.last_action_effect}\n\n"
+            f"Pattern observed: {assessment.pattern_observed}\n\n"
+            f"Hypothesis: {assessment.hypothesis}\n\n"
+        )
+    else:
+        system += (
+            "Assessment unavailable for this iteration due to a processing "
+            "error. Proceed based on your current file state and the baseline "
+            "correction guidance above.\n\n"
+        )
 
     system += "CURRENT FILE CONTENTS:\n"
     for filepath, content in sorted(current_files.items()):
@@ -106,8 +148,8 @@ def _build_invoke_prompt(
     )
 
     user = (
-        f"PRIOR EXTRACTION OUTPUT (from iteration {prior_output_iteration}):\n"
-        f"{json.dumps(prior_output, indent=2)}"
+        "Based on your assessment and the current file contents, "
+        "decide what to modify and produce edit instructions."
     )
 
     return system, user
@@ -172,7 +214,7 @@ def _parse_response(raw: str) -> dict:
         except json.JSONDecodeError:
             pass
 
-    # Find all valid JSON objects, prioritize ones with "episode" or "edits"
+    # Find all valid JSON objects, prioritize ones with target keys
     candidates = []
     for m in re.finditer(r'\{', raw):
         start = m.start()
@@ -217,31 +259,53 @@ def _parse_response(raw: str) -> dict:
     raise json.JSONDecodeError("No valid JSON found", raw[:200], 0)
 
 
-async def invoke(
+def _parse_assessment_response(raw: str) -> AssessmentResult | AgentFailure:
+    raw = raw.strip()
+    # Try direct parse first
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        # Strip markdown code fences
+        m = re.search(r'```(?:json)?\s*(\{.*?)\s*```', raw, re.DOTALL)
+        if m:
+            try:
+                data = json.loads(m.group(1))
+            except json.JSONDecodeError:
+                return AgentFailure(reason="Malformed assessment JSON", raw_response=raw)
+        else:
+            return AgentFailure(reason="Malformed assessment JSON", raw_response=raw)
+
+    required = ["routing_trend", "last_action_effect", "pattern_observed", "hypothesis"]
+    for field in required:
+        if field not in data or not str(data[field]).strip():
+            return AgentFailure(
+                reason=f"Missing or empty required field: {field}",
+                raw_response=raw,
+            )
+
+    result = AssessmentResult(
+        routing_trend=str(data["routing_trend"]),
+        last_action_effect=str(data["last_action_effect"]),
+        pattern_observed=str(data["pattern_observed"]),
+        hypothesis=str(data["hypothesis"]),
+        raw_response=raw,
+    )
+    return result
+
+
+async def invoke_diagnostic(
     prior_output: list[dict],
     prior_output_iteration: int,
-    current_files: dict[str, str],
-    objective: str = OBJECTIVE,
-    prior_episodes: list[dict] | None = None,
-    routing_history_text: str = "",
-) -> AgentResponse | AgentFailure:
-    if prior_episodes is None:
-        prior_episodes = []
-
-    from protected.harness.study_002.baseline_correction import (
-        compose_baseline_correction,
-    )
-
-    baseline_text = compose_baseline_correction()
-
-    system_prompt, user_message = _build_invoke_prompt(
+    routing_history_text: str,
+    routing_delta_text: str,
+    prior_episodes: list[dict],
+) -> AssessmentResult | AgentFailure:
+    system_prompt, user_message = _build_diagnostic_prompt(
         prior_output,
         prior_output_iteration,
-        current_files,
-        objective,
-        prior_episodes,
         routing_history_text,
-        baseline_text,
+        routing_delta_text,
+        prior_episodes,
     )
 
     try:
@@ -249,23 +313,27 @@ async def invoke(
             _get_provider().complete_with_usage,
             system_prompt,
             user_message,
-            _AGENT_MAX_TOKENS,
+            _DIAGNOSTIC_MAX_TOKENS,
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")
 
     print(f"\n{'='*80}", flush=True)
-    print(f"RAW AGENT OUTPUT:", flush=True)
+    print(f"RAW DIAGNOSTIC OUTPUT (Call 1):", flush=True)
     print(f"{'='*80}", flush=True)
     print(raw, flush=True)
     print(f"{'='*80}", flush=True)
-    print(f"END RAW AGENT OUTPUT\n", flush=True)
+    print(f"END RAW DIAGNOSTIC OUTPUT\n", flush=True)
 
-    try:
-        data = _parse_response(raw)
-    except ValueError as e:
-        return AgentFailure(reason=f"Malformed response: {e}", raw_response=raw)
+    assessment = _parse_assessment_response(raw)
 
+    if isinstance(assessment, AssessmentResult):
+        assessment.token_usage = token_usage
+
+    return assessment
+
+
+def _parse_episode_and_edits(data: dict, raw: str) -> AgentResponse | AgentFailure:
     try:
         episode_data = data.get("episode", {})
         episode = Episode(
@@ -281,7 +349,6 @@ async def invoke(
             op = str(ed.get("operation", ""))
             nc = ed.get("new_content")
             ns = ed.get("new_string")
-            # Fallback: agent may use new_string for replace_file/create_file
             if op in ("replace_file", "create_file") and nc is None and ns is not None:
                 nc = ns
             edits.append(
@@ -293,15 +360,49 @@ async def invoke(
                     new_content=nc,
                 )
             )
-
         return AgentResponse(
             episode=episode,
             rationale=rationale,
             edits=edits,
-            token_usage=token_usage,
         )
     except Exception as e:
         return AgentFailure(reason=f"Schema validation failed: {e}", raw_response=raw)
+
+
+async def invoke_decision(
+    assessment: AssessmentResult | None,
+    current_files: dict[str, str],
+) -> AgentResponse | AgentFailure:
+    system_prompt, user_message = _build_decision_prompt(
+        assessment, current_files
+    )
+
+    try:
+        raw, token_usage = await asyncio.to_thread(
+            _get_provider().complete_with_usage,
+            system_prompt,
+            user_message,
+            _DECISION_MAX_TOKENS,
+        )
+    except Exception as e:
+        return AgentFailure(reason=f"Provider call failed: {e}")
+
+    print(f"\n{'='*80}", flush=True)
+    print(f"RAW DECISION OUTPUT (Call 2):", flush=True)
+    print(f"{'='*80}", flush=True)
+    print(raw, flush=True)
+    print(f"{'='*80}", flush=True)
+    print(f"END RAW DECISION OUTPUT\n", flush=True)
+
+    try:
+        data = _parse_response(raw)
+    except ValueError as e:
+        return AgentFailure(reason=f"Malformed response: {e}", raw_response=raw)
+
+    resp = _parse_episode_and_edits(data, raw)
+    if isinstance(resp, AgentResponse):
+        resp.token_usage = token_usage
+    return resp
 
 
 async def invoke_repair(
