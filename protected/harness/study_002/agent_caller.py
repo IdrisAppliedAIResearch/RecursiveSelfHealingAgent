@@ -118,6 +118,7 @@ def _build_diagnostic_prompt(
         "\nNow produce your JSON assessment. Output ONLY the JSON object, "
         "no other text."
     )
+    user_parts.append("/no_think")
     user = "\n\n".join(user_parts)
 
     return system, user

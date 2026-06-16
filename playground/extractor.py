@@ -1,6 +1,4 @@
 from protected.schema import Claim, ExtractionResult
-from playground.preprocessor import filter_to_results
-from playground.validator import validate_claims
 import json
 import re
 from pathlib import Path
@@ -9,15 +7,12 @@ _provider = None
 
 
 async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
-    # Preprocess: filter to results-focused sentences
-    processed_text = filter_to_results(abstract_text)
-    
     prompts_dir = Path(__file__).parent.parent / "prompts"
     system_prompt = (prompts_dir / "system_prompt.md").read_text(encoding="utf-8")
     examples = (prompts_dir / "examples.md").read_text(encoding="utf-8").strip()
     if examples:
         system_prompt = system_prompt + "\n\n" + examples
-    raw = _provider.complete_with_usage(system_prompt, processed_text)[0]
+    raw = _provider.complete_with_usage(system_prompt, abstract_text)[0]
     data = {"claims": []}
 
     # Try direct parse
@@ -78,8 +73,5 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
         text = c.strip()
         if text and not placeholder_re.match(text):
             claims.append(Claim(claim_text=text))
-    
-    # Post-process: validate claims are not methodology descriptions
-    claims = validate_claims(claims)
-    
+
     return ExtractionResult(abstract_id=abstract_id, claims=claims)

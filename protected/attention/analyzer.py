@@ -77,6 +77,7 @@ def build_input(
         messages,
         tokenize=False,
         add_generation_prompt=True,
+        enable_thinking=False,
     )
 
     inputs = tokenizer(
@@ -223,6 +224,18 @@ def verify_attention_pipeline(model, tokenizer, sample_abstract: str) -> None:
     print(f"Model layers: {model.config.num_hidden_layers}")
     print(f"Num attention heads (Q): {model.config.num_attention_heads}")
     print(f"Num KV heads: {model.config.num_key_value_heads}")
+
+    # Verify last token is NOT a thinking token
+    test_input = build_input(tokenizer, system_prompt, sample_abstract)
+    last_token_id = test_input["input_ids"][0, -1].item()
+    last_token_str = tokenizer.decode([last_token_id])
+    print(f"Last token: '{last_token_str}' (id={last_token_id})")
+    if "think" in last_token_str.lower():
+        raise AssertionError(
+            f"Thinking mode is still active — last token is '{last_token_str}'. "
+            f"Pass enable_thinking=False to apply_chat_template."
+        )
+    print("Confirmed: thinking mode disabled, last token is content-generation token.")
 
     result = analyze_abstract(
         model, tokenizer,
