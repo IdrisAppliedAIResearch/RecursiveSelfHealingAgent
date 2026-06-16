@@ -13,7 +13,7 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_DECISION_MAX_TOKENS = 4096
+_DECISION_MAX_TOKENS = 8192
 _DECISION_MAX_INPUT = 13107
 _DIAGNOSTIC_MAX_TOKENS = 4096
 _DIAGNOSTIC_MAX_INPUT = 13107
