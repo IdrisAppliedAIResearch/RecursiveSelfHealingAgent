@@ -10,9 +10,16 @@ A scientific claim is a declarative sentence asserting a specific, testable find
 Do NOT include:
 - Background context or prior work references
 - Study objectives, hypotheses, or aims
-- Methodological details (sample sizes, scanner parameters, statistical thresholds, acquisition protocols)
+- Methodological details (sample sizes, scanner parameters, statistical thresholds, acquisition protocols, equipment specifications)
 - Demographic descriptions or participant counts
 - General statements about the field or broad implications
+- Sentences that describe HOW the study was conducted rather than WHAT it found
+- Sentences that describe WHAT WAS DONE rather than WHAT WAS OBSERVED
+- Recruitment criteria, inclusion/exclusion criteria, consent procedures
+- Statistical analysis methods (ANOVA, regression, correction methods)
+- Study design descriptions (randomized, cross-sectional, longitudinal)
+
+CRITICAL DISTINCTION: A claim reports a finding ("X showed activation in Y region"). A method describes a procedure ("We used fMRI to scan 20 participants"). Only extract findings.
 
 Guidelines:
 - Prioritize neural/imaging findings (activation, deactivation, connectivity, volume changes).
