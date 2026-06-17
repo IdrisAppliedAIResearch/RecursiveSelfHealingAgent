@@ -7,12 +7,19 @@ _provider = None
 
 
 async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
+    from playground.preprocessor import filter_to_results
+    from playground.validator import validate_claims
+
     prompts_dir = Path(__file__).parent.parent / "prompts"
     system_prompt = (prompts_dir / "system_prompt.md").read_text(encoding="utf-8")
     examples = (prompts_dir / "examples.md").read_text(encoding="utf-8").strip()
     if examples:
         system_prompt = system_prompt + "\n\n" + examples
-    raw = _provider.complete_with_usage(system_prompt, abstract_text)[0]
+
+    # Preprocess: filter to results-focused sentences to improve routing
+    processed_text = filter_to_results(abstract_text)
+
+    raw = _provider.complete_with_usage(system_prompt, processed_text)[0]
     data = {"claims": []}
 
     # Try direct parse
@@ -68,10 +75,13 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
         r'|insert\s*claim|claim\s*here|no\s*claims|none'
         r'|not\s*applicable|n\.?a\.?)$', re.IGNORECASE
     )
-    claims = []
+    raw_claims = []
     for c in data.get("claims", []):
         text = c.strip()
         if text and not placeholder_re.match(text):
-            claims.append(Claim(claim_text=text))
+            raw_claims.append(text)
+
+    # Post-process: validate claims to remove methodology descriptions
+    claims = [Claim(claim_text=c) for c in validate_claims(raw_claims)]
 
     return ExtractionResult(abstract_id=abstract_id, claims=claims)
