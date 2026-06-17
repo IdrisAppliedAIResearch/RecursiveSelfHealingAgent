@@ -7,7 +7,6 @@ _provider = None
 
 
 async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
-    from playground.preprocessor import filter_to_results
     from playground.validator import validate_claims
 
     prompts_dir = Path(__file__).parent.parent / "prompts"
@@ -16,10 +15,8 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
     if examples:
         system_prompt = system_prompt + "\n\n" + examples
 
-    # Preprocess: filter to results-focused sentences to improve routing
-    processed_text = filter_to_results(abstract_text)
-
-    raw = _provider.complete_with_usage(system_prompt, processed_text)[0]
+    # Pass full abstract text to the model
+    raw = _provider.complete_with_usage(system_prompt, abstract_text)[0]
     data = {"claims": []}
 
     # Try direct parse
