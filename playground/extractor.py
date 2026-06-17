@@ -6,9 +6,43 @@ from pathlib import Path
 _provider = None
 
 
+# Patterns that indicate a sentence is reporting a result/finding
+RESULT_PATTERNS = [
+    r'\b(showed?|demonstrated?|revealed?|found|observed|indicated|suggested|detected|identified)\b',
+    r'\b(significantly|greater than|less than|increased|decreased|enhanced|reduced|elevated)\b',
+    r'\b(activation|deactivation|correlation|enhancement|reduction|modulation)\b',
+    r'\b(connected|connectivity)\b',
+    r'\b(associated with|correlated with|predicts|mediated)\b',
+    r'\b(p\s*[<>=]\s*0\.\d+|t\s*\(\d+|F\s*\(\d+|p\s*<\s*0\.\d+|p\s*=\s*0\.\d+)\b',
+    r'\b(no difference|not significant|did not differ|failed to show)\b',
+    r'\b(activation in|deactivation in|recruited|engaged|involved in)\b',
+]
+
+
+def extract_sentences(text: str) -> list:
+    """Split text into sentences and return list."""
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    return [s.strip() for s in sentences if len(s.strip()) > 20]
+
+
+def is_result_sentence(sentence: str) -> bool:
+    """Check if a sentence appears to report a finding."""
+    lower = sentence.lower()
+    for pattern in RESULT_PATTERNS:
+        if re.search(pattern, lower, re.IGNORECASE):
+            return True
+    return False
+
+
+def fallback_extract_sentences(abstract_text: str) -> list:
+    """Fallback: extract sentences that look like results."""
+    sentences = extract_sentences(abstract_text)
+    results = [s for s in sentences if is_result_sentence(s)]
+    return results
+
+
 async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
     from playground.validator import validate_claims
-    from playground.preprocessor import filter_to_results
 
     prompts_dir = Path(__file__).parent.parent / "prompts"
     system_prompt = (prompts_dir / "system_prompt.md").read_text(encoding="utf-8")
@@ -16,19 +50,11 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
     if examples:
         system_prompt = system_prompt + "\n\n" + examples
 
-    # Preprocess: filter abstract to results-focused sentences only
-    filtered_text = filter_to_results(abstract_text)
-    
-    # Fallback: if preprocessor filtered everything out, use original text
-    # This prevents empty input which causes empty claim extraction
-    if not filtered_text.strip() or len(filtered_text) < len(abstract_text) * 0.1:
-        filtered_text = abstract_text
-    
-    # Pass text to the model for claim extraction
-    raw = _provider.complete_with_usage(system_prompt, filtered_text)[0]
+    # Pass full abstract text to model (no preprocessing)
+    raw = _provider.complete_with_usage(system_prompt, abstract_text)[0]
     data = {"claims": []}
 
-    # Try direct parse
+    # Try direct JSON parse
     try:
         data = json.loads(raw.strip())
     except json.JSONDecodeError:
@@ -86,6 +112,10 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
         text = c.strip()
         if text and not placeholder_re.match(text):
             raw_claims.append(text)
+
+    # CRITICAL FALLBACK: If JSON parsing produced no claims, extract result sentences directly
+    if not raw_claims:
+        raw_claims = fallback_extract_sentences(abstract_text)
 
     # Post-process: validate claims to remove methodology descriptions
     claims = [Claim(claim_text=c) for c in validate_claims(raw_claims)]
