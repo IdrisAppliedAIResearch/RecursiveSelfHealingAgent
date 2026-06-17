@@ -17,10 +17,14 @@ async def extract(abstract_id: str, abstract_text: str) -> ExtractionResult:
         system_prompt = system_prompt + "\n\n" + examples
 
     # Preprocess: filter abstract to results-focused sentences only
-    # This improves routing by removing methodology/background noise
     filtered_text = filter_to_results(abstract_text)
     
-    # Pass filtered text to the model for claim extraction
+    # Fallback: if preprocessor filtered everything out, use original text
+    # This prevents empty input which causes empty claim extraction
+    if not filtered_text.strip() or len(filtered_text) < len(abstract_text) * 0.1:
+        filtered_text = abstract_text
+    
+    # Pass text to the model for claim extraction
     raw = _provider.complete_with_usage(system_prompt, filtered_text)[0]
     data = {"claims": []}
 
