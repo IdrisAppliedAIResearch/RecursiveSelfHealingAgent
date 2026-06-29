@@ -16,6 +16,7 @@ from protected.harness.shared.edit_protocol import (
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _STUDY_ID = "study_002"
 _DECISION_MAX_INPUT = 13107
+_DIAGNOSTIC_MAX_INPUT = 13107
 _REPAIR_MAX_TOKENS = 4096
 _REPAIR_MAX_INPUT = 13107
 _FIELD_MAX_TOKENS = 512
