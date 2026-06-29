@@ -88,6 +88,9 @@ def main():
         scores.append({
             "abstract_id": score.abstract_id,
             "score": score.score,
+            "score_start": score.score_start,
+            "score_end": score.score_end,
+            "intra_generation_delta": score.intra_generation_delta,
             "results_attention_fraction": score.results_attention_fraction,
             "methods_attention_fraction": score.methods_attention_fraction,
             "background_attention_fraction": score.background_attention_fraction,

@@ -25,6 +25,9 @@ def append(
             result.append({
                 "abstract_id": s.abstract_id,
                 "score": s.score,
+                "score_start": s.score_start,
+                "score_end": s.score_end,
+                "intra_generation_delta": s.intra_generation_delta,
                 "results_attention_fraction": s.results_attention_fraction,
                 "methods_attention_fraction": s.methods_attention_fraction,
                 "background_attention_fraction": s.background_attention_fraction,
@@ -74,8 +77,14 @@ def format_for_agent(
     abstract_ids = sorted(abstract_ids)
 
     iter_scores: dict[str, dict[int, float | None]] = {}
+    iter_starts: dict[str, dict[int, float | None]] = {}
+    iter_ends: dict[str, dict[int, float | None]] = {}
+    iter_intras: dict[str, dict[int, float | None]] = {}
     for aid in abstract_ids:
         iter_scores[aid] = {}
+        iter_starts[aid] = {}
+        iter_ends[aid] = {}
+        iter_intras[aid] = {}
 
     for entry in history:
         it = entry.get("iteration_n", 0)
@@ -83,18 +92,27 @@ def format_for_agent(
             aid = s["abstract_id"]
             if aid in iter_scores:
                 iter_scores[aid][it] = s.get("score")
+                iter_starts[aid][it] = s.get("score_start")
+                iter_ends[aid][it] = s.get("score_end")
+                iter_intras[aid][it] = s.get("intra_generation_delta")
 
     max_iter = max(entry.get("iteration_n", 0) for entry in history)
 
     current_scores: dict[str, float | None] = {}
+    current_starts: dict[str, float | None] = {}
+    current_ends: dict[str, float | None] = {}
+    current_intras: dict[str, float | None] = {}
     if current_pre_scores:
         for s in current_pre_scores:
             current_scores[s.abstract_id] = s.score
+            current_starts[s.abstract_id] = s.score_start
+            current_ends[s.abstract_id] = s.score_end
+            current_intras[s.abstract_id] = s.intra_generation_delta
 
     lines = []
     lines.append("ROUTING HISTORY — Attention to Results Sentences\n")
 
-    header = f"{'Abstract':<14}"
+    header = f"{'Abstract':<14} | Start | End   | Intra Δ"
     for it in range(max_iter + 1):
         header += f" | Iter {it}"
     if current_pre_scores:
@@ -107,8 +125,16 @@ def format_for_agent(
             return "  N/A"
         return f"  {v:.2f}"
 
+    def _fmt_delta(v: float | None) -> str:
+        if v is None:
+            return "    N/A"
+        return f"  {v:+.2f}"
+
     for aid in abstract_ids:
-        row = f"{aid:<14}"
+        start_avg = (sum(iter_starts[aid].values()) / len(iter_starts[aid]) if iter_starts[aid] else None)
+        end_avg = (sum(iter_ends[aid].values()) / len(iter_ends[aid]) if iter_ends[aid] else None)
+        intra_avg = (sum(iter_intras[aid].values()) / len(iter_intras[aid]) if iter_intras[aid] else None)
+        row = f"{aid:<14} | {_fmt(start_avg)} | {_fmt(end_avg)} | {_fmt_delta(intra_avg)}"
         for it in range(max_iter + 1):
             val = iter_scores[aid].get(it)
             row += f" | {_fmt(val)}"
@@ -117,15 +143,33 @@ def format_for_agent(
         lines.append(row)
 
     agg_scores = []
+    agg_starts = []
+    agg_ends = []
+    agg_intras = []
     for it in range(max_iter + 1):
         vals = []
+        start_vals = []
+        end_vals = []
+        intra_vals = []
         for aid in abstract_ids:
             v = iter_scores[aid].get(it)
             if v is not None:
                 vals.append(v)
+            sv = iter_starts[aid].get(it)
+            if sv is not None:
+                start_vals.append(sv)
+            ev = iter_ends[aid].get(it)
+            if ev is not None:
+                end_vals.append(ev)
+            iv = iter_intras[aid].get(it)
+            if iv is not None:
+                intra_vals.append(iv)
         agg_scores.append(sum(vals) / len(vals) if vals else None)
+        agg_starts.append(sum(start_vals) / len(start_vals) if start_vals else None)
+        agg_ends.append(sum(end_vals) / len(end_vals) if end_vals else None)
+        agg_intras.append(sum(intra_vals) / len(intra_vals) if intra_vals else None)
 
-    agg_row = f"{'AGGREGATE':<14}"
+    agg_row = f"{'AGGREGATE':<14} | {_fmt(agg_starts[-1] if agg_starts else None)} | {_fmt(agg_ends[-1] if agg_ends else None)} | {_fmt_delta(agg_intras[-1] if agg_intras else None)}"
     for it in range(max_iter + 1):
         agg_row += f" | {_fmt(agg_scores[it])}"
     if current_pre_scores:
@@ -133,6 +177,14 @@ def format_for_agent(
         cur_agg = sum(cur_vals) / len(cur_vals) if cur_vals else None
         agg_row += f" | {_fmt(cur_agg)}"
     lines.append(agg_row)
+
+    lines.append("")
+    lines.append("Interpretation notes:")
+    lines.append("- Start score: where the model's attention is grounded before generating")
+    lines.append("- End score: where it is grounded as it completes generation")
+    lines.append("- Intra Δ: positive means attention improved during generation;")
+    lines.append("            negative means it drifted away from results content")
+    lines.append("- Iter delta: change from prior iteration's end score to this iteration's")
 
     if max_iter >= 0:
         prev_iter = max_iter

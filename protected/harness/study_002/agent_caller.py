@@ -3,6 +3,7 @@ import json
 import re
 from pathlib import Path
 
+from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.edit_protocol import (
     AgentFailure,
     AgentResponse,
@@ -13,58 +14,51 @@ from protected.harness.shared.edit_protocol import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_DECISION_MAX_TOKENS = 8192
+_STUDY_ID = "study_002"
 _DECISION_MAX_INPUT = 13107
-_DIAGNOSTIC_MAX_TOKENS = 4096
-_DIAGNOSTIC_MAX_INPUT = 13107
 _REPAIR_MAX_TOKENS = 4096
 _REPAIR_MAX_INPUT = 13107
+_FIELD_MAX_TOKENS = 512
+_EDITS_MAX_TOKENS = 4096
 
-ASSESSMENT_SCHEMA = """
-ASSESSMENT SCHEMA (output only this JSON, no other text):
-{
-  "routing_trend": "improving | declining | flat",
-  "last_action_effect": "string",
-  "pattern_observed": "string",
-  "hypothesis": "string"
-}
+FEW_SHOT_EXAMPLES = """
+ROUTING SIGNAL INTERPRETATION EXAMPLES:
 
-FIELD DEFINITIONS:
-- routing_trend: "improving" if aggregate routing score has net increased across the last 3 iterations (or all available if fewer than 3). "declining" if net decreased. "flat" if movement within +/-0.02. If first iteration with no prior data, value must be "flat".
-- last_action_effect: Plain language description of what the prior modification did to routing scores, referencing specific control abstracts where movement was notable. If first iteration, value must be: "No prior modification has been made. This is the first iteration."
-- pattern_observed: What you see across your episode history and routing trajectory taken together. Identify whether your modification strategy has been working, whether routing scores are responding to changes, and whether any systematic pattern is visible.
-- hypothesis: What you think should change and why, based on the pattern observed. This is a forward-looking statement, not an edit instruction. Describe a direction ("the prompt needs to be more specific about X") rather than specific file changes.
-"""
+Example 1 — Positive routing delta with correct interpretation:
+  Scenario: routing_score_start=0.12, routing_score_end=0.31,
+            intra_delta=+0.19, iter_delta=+0.08
+  Correct interpretation: The model begins generation attending weakly to
+  results content but strengthens that grounding during generation.
+  Inter-iteration improvement suggests the last prompt change moved
+  attention toward results sentences. The improvement is real but modest —
+  further changes should reinforce what worked rather than overhaul the
+  approach.
 
-RESPONSE_SCHEMA = """
-EDITS SCHEMA (use the correct fields for each operation):
-- replace_string: requires file_path, old_string, new_string
-- replace_file: requires file_path, new_content (full file content)
-- create_file: requires file_path, new_content
-- delete_file: requires file_path only
+Example 2 — Flat routing with intra-generation drift:
+  Scenario: routing_score_start=0.28, routing_score_end=0.11,
+            intra_delta=-0.17, iter_delta=+0.01
+  Correct interpretation: The model starts with reasonable results grounding
+  but loses it during generation — it begins writing anchored to findings
+  but drifts toward background or methodology as the response extends.
+  The aggregate score is misleadingly flat. The real problem is sustained
+  attention, not initial focus. Changes should address how the model
+  maintains grounding through extended generation, not where it starts.
 
-EXAMPLE RESPONSE (OUTPUT ONLY THIS JSON, NO OTHER TEXT):
-{
-  "episode": {
-    "observation": "What you noticed",
-    "hypothesis": "What could improve",
-    "action": "What you changed",
-    "expectation": "Expected result"
-  },
-  "rationale": "Reasoning",
-  "edits": [
-    {
-      "file_path": "prompts/system_prompt.md",
-      "operation": "replace_file",
-      "new_content": "Full file content here"
-    }
-  ]
-}
+Example 3 — Zero extraction with low scores:
+  Scenario: routing_score_start=0.07, routing_score_end=0.08,
+            intra_delta=+0.01, iter_delta=0.00, predicted_claims=[]
+  Correct interpretation: The model is not attending to results content at
+  any point during generation. Empty output is a consequence of this, not
+  the cause. Changes to the extraction prompt alone will not fix this —
+  the model's attention needs to be redirected toward results sentences
+  before it will extract them. Architectural preprocessing or structural
+  prompt changes are likely needed.
+
+Note: All numeric values above are illustrative examples, not thresholds.
 """
 
 
 def _summarize_prior_output(prior_output: list[dict]) -> list[dict]:
-    """Strip abstract_text and keep only ID + claims for diagnostic context."""
     result = []
     for rec in prior_output[-10:]:
         result.append({
@@ -74,80 +68,211 @@ def _summarize_prior_output(prior_output: list[dict]) -> list[dict]:
     return result
 
 
-def _build_diagnostic_prompt(
+def _build_diagnostic_context(
     prior_output: list[dict],
     prior_output_iteration: int,
     routing_history_text: str,
     routing_delta_text: str,
     prior_episodes: list[dict],
-) -> tuple[str, str]:
-    system = (
-        "You are an autonomous research system analyzing your own performance "
-        "trajectory. You must produce a structured JSON assessment of what you "
-        "observe. Do NOT propose edits in this call.\n\n"
-        f"RESPONSE SCHEMA:\n{ASSESSMENT_SCHEMA}\n\n"
-        "CRITICAL: Your entire response must be ONLY the JSON object. "
-        "Do NOT include any analysis, reasoning, explanation, or markdown "
-        "before or after the JSON."
-    )
-
-    user_parts = []
+) -> str:
+    parts = []
 
     if prior_episodes:
-        user_parts.append(
+        parts.append(
             "EPISODIC MEMORY (prior iterations):\n"
             f"{json.dumps(prior_episodes, indent=2)}"
         )
     else:
-        user_parts.append("This is your first iteration. You have no prior episodes.")
+        parts.append("This is your first iteration. You have no prior episodes.")
 
     if routing_history_text:
-        user_parts.append(routing_history_text)
+        parts.append(routing_history_text)
 
     if routing_delta_text:
-        user_parts.append(f"ROUTING DELTA:\n{routing_delta_text}")
+        parts.append(f"ROUTING DELTA:\n{routing_delta_text}")
 
     summary = _summarize_prior_output(prior_output)
-    user_parts.append(
+    parts.append(
         f"PRIOR EXTRACTION OUTPUT (from iteration {prior_output_iteration}, "
         f"last {len(summary)} of {len(prior_output)} entries):\n"
         f"{json.dumps(summary, indent=2)}"
     )
 
-    user_parts.append(
-        "\nNow produce your JSON assessment. Output ONLY the JSON object, "
-        "no other text."
+    return "\n\n".join(parts)
+
+
+def _build_field_system_prompt(include_few_shot: bool = False) -> str:
+    base = (
+        "You are an autonomous research system analyzing your own performance "
+        "trajectory. You must analyze routing scores, episode history, and "
+        "extraction output to guide system self-modification."
     )
-    user_parts.append("/no_think")
-    user = "\n\n".join(user_parts)
+    if include_few_shot:
+        base += "\n\n" + FEW_SHOT_EXAMPLES
+    return base
 
-    return system, user
+
+async def _invoke_field(
+    field_name: str,
+    system_prompt: str,
+    user_instruction: str,
+    context: str,
+    max_tokens: int = _FIELD_MAX_TOKENS,
+    max_input: int = _DIAGNOSTIC_MAX_INPUT,
+    default_value: str = "[not available — call failed]",
+) -> tuple[str, int]:
+    full_user = context + "\n\n" + user_instruction + "\n/no_think"
+    try:
+        raw, token_usage = await asyncio.to_thread(
+            _get_provider().complete_with_usage,
+            system_prompt,
+            full_user,
+            max_tokens,
+            max_input,
+        )
+        tokens = token_usage.total_tokens if token_usage else 0
+        return raw.strip(), tokens
+    except Exception as e:
+        log_anomaly(_STUDY_ID, -1, "field_call_failed", {
+            "field": field_name,
+            "error": str(e),
+        })
+        return default_value, 0
 
 
-def _build_decision_prompt(
-    assessment: AssessmentResult | None,
-    current_files: dict[str, str],
-) -> tuple[str, str]:
+def _get_provider():
+    from protected.harness.shared.analyzer_registry import get_analyzer
+    _inst = get_analyzer()
+    if _inst is not None:
+        return _inst
+    raise RuntimeError("No model loaded. TRANSFORMERS_MODEL_PATH must be set.")
+
+
+async def invoke_diagnostic_routing_trend(context: str) -> tuple[str, int]:
+    system = _build_field_system_prompt(include_few_shot=True)
+    instruction = (
+        "Based on the routing history and data above, determine the overall "
+        "trend. Respond with exactly one word: improving, declining, or flat."
+    )
+    return await _invoke_field(
+        "routing_trend", system, instruction, context,
+        default_value="flat",
+    )
+
+
+async def invoke_diagnostic_last_action_effect(context: str) -> tuple[str, int]:
+    system = _build_field_system_prompt(include_few_shot=True)
+    instruction = (
+        "Respond with one paragraph describing what the prior modification did "
+        "to routing scores, referencing specific abstracts where scores moved notably."
+    )
+    return await _invoke_field("last_action_effect", system, instruction, context)
+
+
+async def invoke_diagnostic_pattern_observed(context: str) -> tuple[str, int]:
+    system = _build_field_system_prompt(include_few_shot=True)
+    instruction = (
+        "Respond with one paragraph describing the pattern you observe across "
+        "your episode history and routing trajectory combined."
+    )
+    return await _invoke_field("pattern_observed", system, instruction, context)
+
+
+async def invoke_diagnostic_hypothesis(context: str) -> tuple[str, int]:
+    system = _build_field_system_prompt(include_few_shot=True)
+    instruction = (
+        "Respond with one paragraph describing what direction you think "
+        "the system should move, without naming specific file changes."
+    )
+    return await _invoke_field("hypothesis", system, instruction, context)
+
+
+async def invoke_diagnostic(
+    prior_output: list[dict],
+    prior_output_iteration: int,
+    routing_history_text: str,
+    routing_delta_text: str,
+    prior_episodes: list[dict],
+) -> AssessmentResult | AgentFailure:
+    context = _build_diagnostic_context(
+        prior_output, prior_output_iteration,
+        routing_history_text, routing_delta_text, prior_episodes,
+    )
+
+    field_failures = []
+    tasks = [
+        ("routing_trend", invoke_diagnostic_routing_trend(context)),
+        ("last_action_effect", invoke_diagnostic_last_action_effect(context)),
+        ("pattern_observed", invoke_diagnostic_pattern_observed(context)),
+        ("hypothesis", invoke_diagnostic_hypothesis(context)),
+    ]
+
+    results = {}
+    total_tokens = 0
+    for field_name, coro in tasks:
+        try:
+            value, tokens = await coro
+            results[field_name] = value
+            total_tokens += tokens
+        except Exception as e:
+            log_anomaly(_STUDY_ID, -1, "field_call_failed", {
+                "field": field_name,
+                "error": str(e),
+            })
+            if field_name == "routing_trend":
+                results[field_name] = "flat"
+            else:
+                results[field_name] = "[not available — call failed]"
+            field_failures.append(field_name)
+
+    for field_name, value in results.items():
+        if value in ("[not available — call failed]", ""):
+            if field_name not in field_failures:
+                field_failures.append(field_name)
+
+    result = AssessmentResult(
+        routing_trend=results.get("routing_trend", "flat"),
+        last_action_effect=results.get("last_action_effect", "[not available — call failed]"),
+        pattern_observed=results.get("pattern_observed", "[not available — call failed]"),
+        hypothesis=results.get("hypothesis", "[not available — call failed]"),
+        raw_response=json.dumps(results, indent=2),
+        field_failures=field_failures,
+    )
+    result._field_call_total_tokens = total_tokens
+    return result
+
+
+def _build_decision_system_prompt(assessment: AssessmentResult | None) -> str:
     from protected.harness.study_002.baseline_correction import (
         compose_baseline_correction,
     )
 
-    system = (
+    base = (
         "You are an autonomous extractor modifying its own system. "
         "You have access to a Python playground and a set of prompt files. "
-        "You must respond with a JSON object matching the response schema exactly.\n\n"
-        f"RESPONSE SCHEMA:\n{RESPONSE_SCHEMA}\n\n"
-        f"BASELINE CORRECTION:\n{compose_baseline_correction()}\n\n"
-        "CRITICAL: Your entire response must be ONLY the JSON object. "
-        "Do NOT include any analysis, reasoning, explanation, or markdown "
-        "before or after the JSON. Put all reasoning inside the episode and "
-        "rationale fields of the JSON."
+        "Use your assessment to guide your modification decisions."
     )
-
-    user_parts = []
-
     if assessment:
-        user_parts.append(
+        base += (
+            f"\n\nYOUR CURRENT ASSESSMENT:\n"
+            f"Routing trend: {assessment.routing_trend}\n\n"
+            f"Effect of last action: {assessment.last_action_effect}\n\n"
+            f"Pattern observed: {assessment.pattern_observed}\n\n"
+            f"Hypothesis: {assessment.hypothesis}"
+        )
+    else:
+        base += (
+            "\n\nAssessment unavailable for this iteration due to a processing "
+            "error. Proceed based on your current file state."
+        )
+    base += f"\n\nBASELINE CORRECTION:\n{compose_baseline_correction()}"
+    return base
+
+
+def _build_decision_context(assessment: AssessmentResult | None, current_files: dict[str, str], prior_episodes: list[dict] | None = None) -> str:
+    parts = []
+    if assessment:
+        parts.append(
             "YOUR CURRENT ASSESSMENT\n\n"
             f"Routing trend: {assessment.routing_trend}\n\n"
             f"Effect of last action: {assessment.last_action_effect}\n\n"
@@ -155,31 +280,256 @@ def _build_decision_prompt(
             f"Hypothesis: {assessment.hypothesis}"
         )
     else:
-        user_parts.append(
+        parts.append(
             "Assessment unavailable for this iteration due to a processing "
             "error. Proceed based on your current file state and the baseline "
             "correction guidance."
         )
 
-    user_parts.append("CURRENT FILE CONTENTS:")
+    if prior_episodes:
+        parts.append(
+            f"EPISODIC MEMORY (last {len(prior_episodes)} episodes):\n"
+            f"{json.dumps(prior_episodes, indent=2)}"
+        )
+
+    parts.append("CURRENT FILE CONTENTS:")
     for filepath, content in sorted(current_files.items()):
-        user_parts.append(f"--- {filepath} ---\n{content}")
+        parts.append(f"--- {filepath} ---\n{content}")
 
-    user_parts.append(
-        "\nBased on your assessment and the current file contents, "
-        "decide what to modify and produce edit instructions. "
-        "Output ONLY the JSON object, no other text."
+    return "\n\n".join(parts)
+
+
+async def invoke_episode_observation(context: str) -> tuple[str, int]:
+    system = (
+        "You are an autonomous extractor analyzing your own behavior. "
+        "Produce a concise observation based on the iteration data."
     )
-    user = "\n\n".join(user_parts)
+    instruction = (
+        "Respond with one paragraph describing what you observed in this "
+        "iteration's routing signal and extraction output."
+    )
+    return await _invoke_field("observation", system, instruction, context,
+                               max_input=_DECISION_MAX_INPUT)
 
-    return system, user
+
+async def invoke_episode_hypothesis(context: str) -> tuple[str, int]:
+    system = (
+        "You are an autonomous extractor analyzing your own behavior. "
+        "Produce a concise hypothesis based on the iteration data."
+    )
+    instruction = (
+        "Respond with one paragraph describing your hypothesis about "
+        "what is causing the current pattern."
+    )
+    return await _invoke_field("episode_hypothesis", system, instruction, context,
+                               max_input=_DECISION_MAX_INPUT)
 
 
-def _build_repair_prompt(
+async def invoke_episode_action(context: str) -> tuple[str, int]:
+    system = (
+        "You are an autonomous extractor planning modifications. "
+        "Describe your planned action concisely."
+    )
+    instruction = (
+        "Respond with one paragraph describing what you will change and why."
+    )
+    return await _invoke_field("action", system, instruction, context,
+                               max_input=_DECISION_MAX_INPUT)
+
+
+async def invoke_episode_expectation(context: str) -> tuple[str, int]:
+    system = (
+        "You are an autonomous extractor setting expectations. "
+        "Describe what you expect to observe next."
+    )
+    instruction = (
+        "Respond with one paragraph describing what you expect to observe "
+        "in the next iteration as a result of your changes."
+    )
+    return await _invoke_field("expectation", system, instruction, context,
+                               max_input=_DECISION_MAX_INPUT)
+
+
+def _parse_edits_array(raw: str) -> list[dict]:
+    raw = raw.strip()
+    try:
+        data = json.loads(raw)
+        if isinstance(data, list):
+            return data
+    except json.JSONDecodeError:
+        pass
+
+    m = re.search(r'\[.*\]', raw, re.DOTALL)
+    if m:
+        try:
+            data = json.loads(m.group(0))
+            if isinstance(data, list):
+                return data
+        except json.JSONDecodeError:
+            pass
+
+    try:
+        obj = json.loads(raw)
+        if isinstance(obj, dict) and "edits" in obj:
+            return obj["edits"]
+    except json.JSONDecodeError:
+        pass
+
+    raise json.JSONDecodeError("Could not parse edits array", raw[:200], 0)
+
+
+async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit], list[dict] | None]:
+    system = (
+        "You are an autonomous extractor proposing file edits. "
+        "You must output ONLY a valid JSON array of edit objects."
+    )
+    instruction = (
+        "Respond with ONLY a valid JSON array of edit objects. No other text. "
+        "No markdown. Raw JSON array only.\n"
+        "Schema: [{\"file_path\": \"...\", \"operation\": \"replace_string|replace_file|create_file|delete_file\", "
+        "\"old_string\": \"...\", \"new_string\": \"...\", \"new_content\": \"...\"}]\n"
+        "Each operation requires specific fields:\n"
+        "- replace_string: file_path, old_string, new_string\n"
+        "- replace_file: file_path, new_content\n"
+        "- create_file: file_path, new_content\n"
+        "- delete_file: file_path only"
+    )
+    full_user = context + "\n\n" + instruction + "\n/no_think"
+
+    for attempt in range(3):
+        try:
+            raw, token_usage = await asyncio.to_thread(
+                _get_provider().complete_with_usage,
+                system,
+                full_user,
+                _EDITS_MAX_TOKENS,
+                _DECISION_MAX_INPUT,
+            )
+
+            print(f"\n{'='*80}", flush=True)
+            print(f"RAW EDITS OUTPUT (attempt {attempt + 1}):", flush=True)
+            print(f"{'='*80}", flush=True)
+            print(raw, flush=True)
+            print(f"{'='*80}", flush=True)
+
+            edits_data = _parse_edits_array(raw)
+            edits = []
+            for ed in edits_data:
+                op = str(ed.get("operation", ""))
+                nc = ed.get("new_content")
+                ns = ed.get("new_string")
+                if op in ("replace_file", "create_file") and nc is None and ns is not None:
+                    nc = ns
+                edits.append(
+                    Edit(
+                        file_path=str(ed.get("file_path", "")),
+                        operation=op,
+                        old_string=ed.get("old_string"),
+                        new_string=ns,
+                        new_content=nc,
+                    )
+                )
+            return edits, token_usage
+
+        except (json.JSONDecodeError, Exception) as e:
+            log_anomaly(_STUDY_ID, iteration_n, "field_call_failed", {
+                "field": "edits",
+                "error": str(e),
+                "attempt": attempt + 1,
+            })
+            if attempt < 2:
+                full_user = (
+                    context + "\n\n"
+                    f"Previous edit output was malformed: {e}\n\n"
+                    "Respond with ONLY a valid JSON array of edit objects. "
+                    "No other text. No markdown. Raw JSON array only.\n"
+                    "Schema: [{\"file_path\": \"...\", \"operation\": \"...\", ...}]\n/no_think"
+                )
+            else:
+                raise
+
+    return [], None
+
+
+async def invoke_decision(
+    assessment: AssessmentResult | None,
+    current_files: dict[str, str],
+    prior_episodes: list[dict] | None = None,
+) -> AgentResponse | AgentFailure:
+    field_failures = []
+    context = _build_decision_context(assessment, current_files, prior_episodes)
+    total_tokens = 0
+
+    observation, tok = await invoke_episode_observation(context)
+    total_tokens += tok
+    if observation == "[not available — call failed]":
+        field_failures.append("observation")
+
+    hypothesis, tok = await invoke_episode_hypothesis(context)
+    total_tokens += tok
+    if hypothesis == "[not available — call failed]":
+        field_failures.append("episode_hypothesis")
+
+    action, tok = await invoke_episode_action(context)
+    total_tokens += tok
+    if action == "[not available — call failed]":
+        field_failures.append("action")
+
+    expectation, tok = await invoke_episode_expectation(context)
+    total_tokens += tok
+    if expectation == "[not available — call failed]":
+        field_failures.append("expectation")
+
+    try:
+        edits, edits_token_usage = await invoke_edits(context)
+        if edits_token_usage:
+            total_tokens += edits_token_usage.total_tokens
+    except Exception as e:
+        log_anomaly(_STUDY_ID, -1, "field_call_failed", {
+            "field": "edits",
+            "error": str(e),
+        })
+        field_failures.append("edits")
+        edits = []
+        edits_token_usage = None
+
+    episode = Episode(
+        observation=observation,
+        hypothesis=hypothesis,
+        action=action,
+        expectation=expectation,
+        field_failures=field_failures,
+    )
+
+    rationale = (
+        f"Observation: {observation}\n"
+        f"Hypothesis: {hypothesis}\n"
+        f"Action: {action}\n"
+        f"Expectation: {expectation}"
+    )
+
+    # Construct a synthetic TokenUsage for aggregate tracking
+    class _SyntheticTokenUsage:
+        def __init__(self):
+            self.total_tokens = total_tokens
+            self.prompt_tokens = 0
+            self.completion_tokens = 0
+            self.tokens_per_second = 0.0
+            self.context_window = 0
+
+    return AgentResponse(
+        episode=episode,
+        rationale=rationale,
+        edits=edits,
+        token_usage=_SyntheticTokenUsage(),
+    )
+
+
+async def invoke_repair(
     error_message: str,
     current_files: dict[str, str],
     attempt_number: int,
-) -> tuple[str, str]:
+) -> RepairResponse | AgentFailure:
     system = (
         "Your previous edits to the scientific claim extractor produced a "
         "Python error. You must propose repair edits to fix the broken "
@@ -209,241 +559,11 @@ def _build_repair_prompt(
     )
     user = "\n\n".join(user_parts)
 
-    return system, user
-
-
-def _get_provider():
-    from protected.harness.shared.analyzer_registry import get_analyzer
-
-    _inst = get_analyzer()
-    if _inst is not None:
-        return _inst
-    raise RuntimeError("No model loaded. TRANSFORMERS_MODEL_PATH must be set.")
-
-
-def _parse_response(raw: str) -> dict:
-    raw = raw.strip()
-    # Try direct parse first
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        pass
-
-    # Strip markdown code fences if present
-    m = re.search(r'```(?:json)?\s*(\{.*?)\s*```', raw, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    # Find all valid JSON objects, prioritize ones with target keys
-    candidates = []
-    for m in re.finditer(r'\{', raw):
-        start = m.start()
-        depth = 0
-        in_string = False
-        escape_next = False
-        for i in range(start, len(raw)):
-            ch = raw[i]
-            if escape_next:
-                escape_next = False
-                continue
-            if ch == '\\':
-                escape_next = True
-                continue
-            if ch == '"' and not escape_next:
-                in_string = not in_string
-                continue
-            if in_string:
-                continue
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    candidate = raw[start:i+1]
-                    try:
-                        obj = json.loads(candidate)
-                        if isinstance(obj, dict):
-                            candidates.append(obj)
-                    except json.JSONDecodeError:
-                        continue
-
-    # Prioritize candidates with "episode" or "edits" keys
-    for c in candidates:
-        if "episode" in c or "edits" in c:
-            return c
-
-    # Fallback: last valid JSON object
-    if candidates:
-        return candidates[-1]
-
-    raise json.JSONDecodeError("No valid JSON found", raw[:200], 0)
-
-
-def _parse_assessment_response(raw: str) -> AssessmentResult | AgentFailure:
-    raw = raw.strip()
-    # Try direct parse first
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        # Strip markdown code fences
-        m = re.search(r'```(?:json)?\s*(\{.*?)\s*```', raw, re.DOTALL)
-        if m:
-            try:
-                data = json.loads(m.group(1))
-            except json.JSONDecodeError:
-                return AgentFailure(reason="Malformed assessment JSON", raw_response=raw)
-        else:
-            return AgentFailure(reason="Malformed assessment JSON", raw_response=raw)
-
-    required = ["routing_trend", "last_action_effect", "pattern_observed", "hypothesis"]
-    for field in required:
-        if field not in data or not str(data[field]).strip():
-            return AgentFailure(
-                reason=f"Missing or empty required field: {field}",
-                raw_response=raw,
-            )
-
-    result = AssessmentResult(
-        routing_trend=str(data["routing_trend"]),
-        last_action_effect=str(data["last_action_effect"]),
-        pattern_observed=str(data["pattern_observed"]),
-        hypothesis=str(data["hypothesis"]),
-        raw_response=raw,
-    )
-    return result
-
-
-async def invoke_diagnostic(
-    prior_output: list[dict],
-    prior_output_iteration: int,
-    routing_history_text: str,
-    routing_delta_text: str,
-    prior_episodes: list[dict],
-) -> AssessmentResult | AgentFailure:
-    system_prompt, user_message = _build_diagnostic_prompt(
-        prior_output,
-        prior_output_iteration,
-        routing_history_text,
-        routing_delta_text,
-        prior_episodes,
-    )
-
     try:
         raw, token_usage = await asyncio.to_thread(
             _get_provider().complete_with_usage,
-            system_prompt,
-            user_message,
-            _DIAGNOSTIC_MAX_TOKENS,
-            _DIAGNOSTIC_MAX_INPUT,
-        )
-    except Exception as e:
-        return AgentFailure(reason=f"Provider call failed: {e}")
-
-    print(f"\n{'='*80}", flush=True)
-    print(f"RAW DIAGNOSTIC OUTPUT (Call 1):", flush=True)
-    print(f"{'='*80}", flush=True)
-    print(raw, flush=True)
-    print(f"{'='*80}", flush=True)
-    print(f"END RAW DIAGNOSTIC OUTPUT\n", flush=True)
-
-    assessment = _parse_assessment_response(raw)
-
-    if isinstance(assessment, AssessmentResult):
-        assessment.token_usage = token_usage
-
-    return assessment
-
-
-def _parse_episode_and_edits(data: dict, raw: str) -> AgentResponse | AgentFailure:
-    try:
-        episode_data = data.get("episode", {})
-        episode = Episode(
-            observation=str(episode_data.get("observation", "")),
-            hypothesis=str(episode_data.get("hypothesis", "")),
-            action=str(episode_data.get("action", "")),
-            expectation=str(episode_data.get("expectation", "")),
-        )
-        rationale = str(data.get("rationale", ""))
-        edits_data = data.get("edits", [])
-        edits = []
-        for ed in edits_data:
-            op = str(ed.get("operation", ""))
-            nc = ed.get("new_content")
-            ns = ed.get("new_string")
-            if op in ("replace_file", "create_file") and nc is None and ns is not None:
-                nc = ns
-            edits.append(
-                Edit(
-                    file_path=str(ed.get("file_path", "")),
-                    operation=op,
-                    old_string=ed.get("old_string"),
-                    new_string=ns,
-                    new_content=nc,
-                )
-            )
-        return AgentResponse(
-            episode=episode,
-            rationale=rationale,
-            edits=edits,
-        )
-    except Exception as e:
-        return AgentFailure(reason=f"Schema validation failed: {e}", raw_response=raw)
-
-
-async def invoke_decision(
-    assessment: AssessmentResult | None,
-    current_files: dict[str, str],
-) -> AgentResponse | AgentFailure:
-    system_prompt, user_message = _build_decision_prompt(
-        assessment, current_files
-    )
-
-    try:
-        raw, token_usage = await asyncio.to_thread(
-            _get_provider().complete_with_usage,
-            system_prompt,
-            user_message,
-            _DECISION_MAX_TOKENS,
-            _DECISION_MAX_INPUT,
-        )
-    except Exception as e:
-        return AgentFailure(reason=f"Provider call failed: {e}")
-
-    print(f"\n{'='*80}", flush=True)
-    print(f"RAW DECISION OUTPUT (Call 2):", flush=True)
-    print(f"{'='*80}", flush=True)
-    print(raw, flush=True)
-    print(f"{'='*80}", flush=True)
-    print(f"END RAW DECISION OUTPUT\n", flush=True)
-
-    try:
-        data = _parse_response(raw)
-    except ValueError as e:
-        return AgentFailure(reason=f"Malformed response: {e}", raw_response=raw)
-
-    resp = _parse_episode_and_edits(data, raw)
-    if isinstance(resp, AgentResponse):
-        resp.token_usage = token_usage
-    return resp
-
-
-async def invoke_repair(
-    error_message: str,
-    current_files: dict[str, str],
-    attempt_number: int,
-) -> RepairResponse | AgentFailure:
-    system_prompt, user_message = _build_repair_prompt(
-        error_message, current_files, attempt_number
-    )
-
-    try:
-        raw, token_usage = await asyncio.to_thread(
-            _get_provider().complete_with_usage,
-            system_prompt,
-            user_message,
+            system,
+            user,
             _REPAIR_MAX_TOKENS,
             _REPAIR_MAX_INPUT,
         )
@@ -458,9 +578,17 @@ async def invoke_repair(
     print(f"END RAW REPAIR OUTPUT\n", flush=True)
 
     try:
-        data = _parse_response(raw)
-    except ValueError as e:
-        return AgentFailure(reason=f"Malformed response: {e}", raw_response=raw)
+        raw = raw.strip()
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        m = re.search(r'```(?:json)?\s*(\{.*?)\s*```', raw, re.DOTALL)
+        if m:
+            try:
+                data = json.loads(m.group(1))
+            except json.JSONDecodeError:
+                return AgentFailure(reason="Malformed repair JSON", raw_response=raw)
+        else:
+            return AgentFailure(reason="Malformed repair JSON", raw_response=raw)
 
     try:
         edits_data = data.get("edits", [])

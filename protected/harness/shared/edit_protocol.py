@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -21,6 +21,8 @@ class Episode:
     hypothesis: str
     action: str
     expectation: str
+    edits_applied: bool = False
+    field_failures: list = field(default_factory=list)
 
 
 @dataclass
@@ -51,3 +53,4 @@ class AssessmentResult:
     hypothesis: str
     raw_response: str
     token_usage: TokenUsage | None = None
+    field_failures: list = field(default_factory=list)

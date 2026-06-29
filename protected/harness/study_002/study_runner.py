@@ -35,7 +35,7 @@ from protected.harness.shared.git_ops import (
     rollback_playground,
     verify_no_remote_push,
 )
-from protected.harness.shared.interface_validator import validate_interface
+from protected.harness.shared.interface_validator import validate_interface, run_smoke_test
 from protected.harness.shared.model_performance import append_after_iteration, summarize
 from protected.harness.study_002.agent_caller import invoke_diagnostic, invoke_decision, invoke_repair
 from protected.harness.study_002.routing_history import (
@@ -207,6 +207,12 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "control_abstracts_improved": 0,
         "control_abstracts_declined": 0,
         "code_changes_attempted": False,
+        "avg_routing_score_start": None,
+        "avg_routing_score_end": None,
+        "avg_intra_generation_delta": None,
+        "field_failure_count": 0,
+        "smoke_test_passed": None,
+        "smoke_test_claim_count": None,
     }
 
 
@@ -252,7 +258,10 @@ def _dicts_to_routing_scores(score_dicts: list[dict]) -> list[RoutingScore]:
     return [
         RoutingScore(
             abstract_id=s["abstract_id"],
-            score=s.get("score"),
+            score=s.get("score", 0.0),
+            score_start=s.get("score_start", 0.0),
+            score_end=s.get("score_end", 0.0),
+            intra_generation_delta=s.get("intra_generation_delta", 0.0),
             results_attention_fraction=s.get("results_attention_fraction", 0.0),
             methods_attention_fraction=s.get("methods_attention_fraction", 0.0),
             background_attention_fraction=s.get("background_attention_fraction", 0.0),
@@ -278,6 +287,61 @@ def _check_code_changes(edits) -> bool:
     return False
 
 
+def _verify_baseline_state(study_id: str) -> None:
+    import hashlib
+    locked_hash = "c6c43f5f32bf647fd563711ad3407eb6ee3d5097fc3105dd4f8e402392f6fef7"
+
+    prompt_path = PROJECT_ROOT / "prompts" / "system_prompt.md"
+    actual_hash = hashlib.sha256(prompt_path.read_bytes()).hexdigest()
+    if actual_hash != locked_hash:
+        log_anomaly(study_id, -1, "baseline_state_invalid", {
+            "check": "prompt_hash",
+            "expected": locked_hash,
+            "actual": actual_hash,
+        })
+        raise RuntimeError(
+            f"Baseline prompt hash mismatch. Expected {locked_hash}, got {actual_hash}. "
+            f"Restore prompts/system_prompt.md to the original naive prompt."
+        )
+
+    examples_path = PROJECT_ROOT / "prompts" / "examples.md"
+    if examples_path.exists():
+        content = examples_path.read_text(encoding="utf-8").strip()
+        if content:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "examples_empty",
+                "actual_size": len(content),
+            })
+            raise RuntimeError(
+                "prompts/examples.md is not empty. Restore to zero-byte file."
+            )
+
+    playground_dir = PROJECT_ROOT / "playground"
+    if playground_dir.exists():
+        pg_files = {f.name for f in playground_dir.iterdir() if f.is_file()}
+        expected = {"__init__.py", "extractor.py"}
+        extra = pg_files - expected
+        if extra:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "playground_inventory",
+                "extra_files": list(extra),
+            })
+            raise RuntimeError(
+                f"Extra files in playground/: {extra}. Only __init__.py and extractor.py allowed."
+            )
+
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if metrics_path.exists():
+        content = metrics_path.read_text(encoding="utf-8").strip()
+        if content:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "metrics_empty",
+            })
+            raise RuntimeError(
+                "experiments/study_002/metrics.jsonl is not empty. Clear prior run data."
+            )
+
+
 def _pre_run_checks(study_id: str) -> None:
     pre_reg = PROJECT_ROOT / "experiments" / study_id / "pre-registration.md"
     if not pre_reg.exists():
@@ -299,6 +363,8 @@ def _pre_run_checks(study_id: str) -> None:
         full = PROJECT_ROOT / fp
         if not full.exists():
             raise RuntimeError(f"Required file missing: {fp}")
+
+    _verify_baseline_state(study_id)
 
     branch_name = f"experiment/{study_id}"
     ensure_branch(branch_name)
@@ -465,17 +531,21 @@ async def _run_iteration(
                 {"field": "routing_trend", "value": trend},
             )
         append_assessment(iteration_n, study_id, assessment)
+        field_tokens = getattr(assessment, "_field_call_total_tokens", 0)
+        metrics["call_1_field_total_tokens"] = field_tokens
         if assessment.token_usage is not None:
             tu1 = assessment.token_usage
             metrics["call_1_prompt_tokens"] = tu1.prompt_tokens
             metrics["call_1_completion_tokens"] = tu1.completion_tokens
             metrics["call_1_tokens_per_second"] = tu1.tokens_per_second
 
-    # b2 — Modification Decision (Call 2)
-    print(f"  [Call 2] Modification decision...")
+    # b2 — Modification Decision (Call 2, last 5 episodes only)
+    windowed_episodes = prior_episodes[-5:] if len(prior_episodes) > 5 else prior_episodes
+    print(f"  [Call 2] Modification decision (windowed to {len(windowed_episodes)} episodes)...")
     agent_result = await invoke_decision(
         assessment=assessment,
         current_files=current_files,
+        prior_episodes=windowed_episodes,
     )
 
     if isinstance(agent_result, AgentFailure):
@@ -509,6 +579,12 @@ async def _run_iteration(
     print(f"  Agent: expectation={agent_result.episode.expectation[:100]}...")
     print(f"  Agent proposed {len(agent_result.edits)} edits")
 
+    agent_result.episode.edits_applied = False
+    agent_result.episode.field_failures = getattr(agent_result.episode, "field_failures", [])
+    metrics["field_failure_count"] = len(agent_result.episode.field_failures)
+    append_episode(study_id, iteration_n, agent_result.episode)
+    metrics["episode_persisted"] = True
+
     apply_result = apply_edits(agent_result.edits)
     if not apply_result.applied:
         print(f"  Edits REJECTED: {apply_result.reason} ({apply_result.offending_path})")
@@ -528,35 +604,48 @@ async def _run_iteration(
     repair_attempts = 0
     repair_prompt_tokens = 0
     repair_completion_tokens = 0
-    validation_ok = False
+
     for attempt in range(1, 4):
+        smoke_result = await run_smoke_test()
+        metrics["smoke_test_passed"] = smoke_result.smoke_test_passed
+        metrics["smoke_test_claim_count"] = smoke_result.smoke_test_claim_count
+        if smoke_result.smoke_test_passed:
+            print(f"  [smoke] PASSED ({smoke_result.smoke_test_claim_count} claims)")
+        else:
+            print(f"  [smoke] FAILED: {smoke_result.error}")
+            log_anomaly(study_id, iteration_n, "interface_smoke_test_failed", {
+                "error": smoke_result.error,
+                "attempt": attempt,
+            })
+
         val_result = await validate_interface()
         if val_result.valid:
-            validation_ok = True
-            if attempt > 1:
-                print(f"  Interface valid after repair attempt {attempt}")
-            break
+            print(f"  Interface valid")
+        else:
+            print(f"  Interface INVALID (attempt {attempt}): {val_result.error}")
+            log_anomaly(
+                study_id, iteration_n,
+                "interface_validation_failed",
+                {"error": val_result.error, "attempt": attempt},
+            )
 
-        print(f"  Interface INVALID (attempt {attempt}): {val_result.error}")
-        log_anomaly(
-            study_id, iteration_n,
-            "interface_validation_failed",
-            {"error": val_result.error, "attempt": attempt},
-        )
+        if smoke_result.smoke_test_passed and val_result.valid:
+            agent_result.episode.edits_applied = True
+            break
 
         if attempt == 3:
             rollback_playground()
             log_anomaly(study_id, iteration_n, "repair_exhausted", {})
-            log_anomaly(study_id, iteration_n, "episode_discarded", {})
             metrics["repair_attempts"] = 3
             metrics["anomaly"] = True
             append_metrics(iteration_n, study_id, metrics)
             return None
 
+        error_msg = smoke_result.error or (val_result.error or "Validation failed")
         repair_files = _current_files()
         print(f"  Repair attempt {attempt}: calling agent...")
         repair_result = await invoke_repair(
-            error_message=val_result.error or "Validation failed",
+            error_message=error_msg,
             current_files=repair_files,
             attempt_number=attempt,
         )
@@ -590,7 +679,7 @@ async def _run_iteration(
             append_metrics(iteration_n, study_id, metrics)
             return None
 
-    if not validation_ok:
+    if not agent_result.episode.edits_applied:
         rollback_playground()
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
@@ -639,6 +728,34 @@ async def _run_iteration(
         routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
         metrics["control_abstracts_improved"] = control_improved
         metrics["control_abstracts_declined"] = control_declined
+
+        pre_start_list = []
+        post_start_list = []
+        pre_end_list = []
+        post_end_list = []
+        pre_intra_list = []
+        post_intra_list = []
+        for s in post_scores:
+            prev = prev_scores_map.get(s.abstract_id, {})
+            if prev.get("score_start") is not None:
+                pre_start_list.append(prev.get("score_start", 0.0))
+                post_start_list.append(s.score_start)
+            if prev.get("score_end") is not None:
+                pre_end_list.append(prev.get("score_end", 0.0))
+                post_end_list.append(s.score_end)
+            if prev.get("intra_generation_delta") is not None:
+                pre_intra_list.append(prev.get("intra_generation_delta", 0.0))
+                post_intra_list.append(s.intra_generation_delta)
+
+        metrics["avg_routing_score_start"] = (
+            sum(post_start_list) / len(post_start_list) if post_start_list else None
+        )
+        metrics["avg_routing_score_end"] = (
+            sum(post_end_list) / len(post_end_list) if post_end_list else None
+        )
+        metrics["avg_intra_generation_delta"] = (
+            sum(post_intra_list) / len(post_intra_list) if post_intra_list else None
+        )
     else:
         pre_agg = (
             sum(s.score for s in post_scores if s.score is not None)
@@ -646,6 +763,18 @@ async def _run_iteration(
         )
         post_agg = pre_agg
         pre_scores = post_scores
+        start_vals = [s.score_start for s in post_scores if s.score_start is not None]
+        end_vals = [s.score_end for s in post_scores if s.score_end is not None]
+        intra_vals = [s.intra_generation_delta for s in post_scores if s.intra_generation_delta is not None]
+        metrics["avg_routing_score_start"] = (
+            sum(start_vals) / len(start_vals) if start_vals else None
+        )
+        metrics["avg_routing_score_end"] = (
+            sum(end_vals) / len(end_vals) if end_vals else None
+        )
+        metrics["avg_intra_generation_delta"] = (
+            sum(intra_vals) / len(intra_vals) if intra_vals else None
+        )
 
     snapshot_playground(iteration_n, study_id)
 
@@ -661,7 +790,9 @@ async def _run_iteration(
         print(f"  Corpus TIMEOUT after {time.time()-t0:.0f}s")
         rollback_playground()
         log_anomaly(study_id, iteration_n, "iteration_timeout", {})
-        log_anomaly(study_id, iteration_n, "episode_discarded", {})
+        agent_result.episode.edits_applied = False
+        append_episode(study_id, iteration_n, agent_result.episode)
+        metrics["episode_persisted"] = True
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
         return None
@@ -673,7 +804,9 @@ async def _run_iteration(
             "scan_failure",
             {"error": str(e)},
         )
-        log_anomaly(study_id, iteration_n, "episode_discarded", {})
+        agent_result.episode.edits_applied = False
+        append_episode(study_id, iteration_n, agent_result.episode)
+        metrics["episode_persisted"] = True
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
         return None
@@ -684,9 +817,6 @@ async def _run_iteration(
     ground_truth = _load_ground_truth()
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
-
-    append_episode(study_id, iteration_n, agent_result.episode)
-    metrics["episode_persisted"] = True
 
     metrics["scanned"] = True
     metrics["macro_precision"] = score_result["macro_precision"]

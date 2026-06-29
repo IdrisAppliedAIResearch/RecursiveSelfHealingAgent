@@ -1,6 +1,20 @@
 import json
 from pathlib import Path
 
+# Registered anomaly types:
+# - field_call_failed: A field-by-field agent call failed and returned default
+# - interface_smoke_test_failed: Smoke test of extract() on test abstract failed
+# - baseline_state_invalid: Baseline verification check failed before study start
+# - assessment_malformed: Call 1 diagnostic assessment returned invalid JSON
+# - agent_response_malformed: Call 2 decision returned invalid JSON
+# - repair_exhausted: All 3 repair attempts failed
+# - episode_discarded: Episode was not persisted (legacy — deprecated in A003)
+# - iteration_timeout: Corpus run timed out
+# - scan_failure: Corpus run raised an exception
+# - interface_validation_failed: Interface validation failed (triggers repair)
+# - repair_agent_failure: Repair call returned AgentFailure
+# - no_prior_output: No prior iteration output found
+
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 

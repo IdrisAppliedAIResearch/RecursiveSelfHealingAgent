@@ -8,6 +8,9 @@ import torch
 class RoutingScore:
     abstract_id: str
     score: float
+    score_start: float
+    score_end: float
+    intra_generation_delta: float
     results_attention_fraction: float
     methods_attention_fraction: float
     background_attention_fraction: float
@@ -17,22 +20,13 @@ class RoutingScore:
     n_layers_used: int
 
 
-def compute_routing_score(
+def _compute_attention_fractions(
     abstract_attn: torch.Tensor,
     sentence_map: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """
-    Returns routing score dict:
-    {
-        "routing_score": float,
-        "results_fraction": float,
-        "methods_fraction": float,
-        "background_fraction": float,
-        "n_results_tokens": int,
-        "n_methods_tokens": int,
-        "n_background_tokens": int,
-        "total_abstract_tokens": int,
-    }
+    Compute attention fractions from a single attention tensor.
+    Returns dict with routing_score, fractions, and token counts.
     """
     total_attn = abstract_attn.sum().item()
 
@@ -80,4 +74,35 @@ def compute_routing_score(
         "n_methods_tokens": n_methods,
         "n_background_tokens": n_background,
         "total_abstract_tokens": len(abstract_attn),
+    }
+
+
+def compute_routing_score(
+    start_attn: torch.Tensor,
+    end_attn: torch.Tensor,
+    sentence_map: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Compute routing scores from start and end attention tensors.
+    Returns dict with all three scores plus fractions from end attention.
+    """
+    start_dict = _compute_attention_fractions(start_attn, sentence_map)
+    end_dict = _compute_attention_fractions(end_attn, sentence_map)
+
+    score_start = start_dict["routing_score"]
+    score_end = end_dict["routing_score"]
+    intra_delta = score_end - score_start
+
+    return {
+        "routing_score": score_end,
+        "score_start": score_start,
+        "score_end": score_end,
+        "intra_generation_delta": intra_delta,
+        "results_fraction": end_dict["results_fraction"],
+        "methods_fraction": end_dict["methods_fraction"],
+        "background_fraction": end_dict["background_fraction"],
+        "n_results_tokens": end_dict["n_results_tokens"],
+        "n_methods_tokens": end_dict["n_methods_tokens"],
+        "n_background_tokens": end_dict["n_background_tokens"],
+        "total_abstract_tokens": end_dict["total_abstract_tokens"],
     }

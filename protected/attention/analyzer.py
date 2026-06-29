@@ -88,7 +88,6 @@ def build_input(
         max_length=4096,
     )
 
-    # Find where abstract text starts in the rendered prompt
     abstract_char_start = prompt.find(abstract_text)
     offsets = inputs["offset_mapping"][0]
     system_len = 0
@@ -108,7 +107,7 @@ def build_input(
 def run_prefill(model, input_dict: dict) -> tuple:
     """
     Single forward pass. No generation. Returns attention weights from last 6 layers.
-    Returns: tuple of 6 tensors, each shape [1, num_heads, seq_len, seq_len]
+    DEPRECATED: Use run_generation_attention instead. Kept for backward compat.
     """
     with torch.no_grad():
         outputs = model(
@@ -134,8 +133,7 @@ def extract_last_token_attention(
 ) -> torch.Tensor:
     """
     Extracts the last token's attention distribution over abstract tokens.
-
-    Returns: 1D tensor of length (total_seq_len - abstract_start_token_idx)
+    DEPRECATED: Use run_generation_attention instead. Kept for backward compat.
     """
     layer_attns = []
 
@@ -150,6 +148,95 @@ def extract_last_token_attention(
     return abstract_attn.cpu().float()
 
 
+def run_generation_attention(
+    model,
+    tokenizer,
+    input_dict: dict,
+    max_new_tokens: int = 20,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Runs minimal generation and captures attention at first and last
+    generated tokens.
+
+    Returns:
+        start_attn: [seq_len] tensor — last-6-layer averaged attention
+                    at the first generated token, over abstract tokens
+        end_attn:   [seq_len] tensor — same, at the last generated token
+    """
+    with torch.no_grad():
+        prefill_out = model(
+            input_ids=input_dict["input_ids"],
+            attention_mask=input_dict["attention_mask"],
+            use_cache=True,
+            output_attentions=False,
+            return_dict=True,
+        )
+
+    past_key_values = prefill_out.past_key_values
+    next_token = prefill_out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+    del prefill_out
+    torch.cuda.empty_cache()
+
+    start_attn_raw = None
+    end_attn_raw = None
+
+    for step in range(max_new_tokens):
+        with torch.no_grad():
+            step_out = model(
+                input_ids=next_token,
+                past_key_values=past_key_values,
+                use_cache=True,
+                output_attentions=True,
+                return_dict=True,
+            )
+
+        if step == 0:
+            start_attn_raw = step_out.attentions[-6:]
+
+        past_key_values = step_out.past_key_values
+        next_token = step_out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+
+        if next_token.item() == tokenizer.eos_token_id:
+            end_attn_raw = step_out.attentions[-6:]
+            del step_out
+            break
+
+        end_attn_raw = step_out.attentions[-6:]
+        del step_out
+        torch.cuda.empty_cache()
+
+    start_attn = _extract_abstract_attn(
+        start_attn_raw,
+        input_dict["abstract_start_token_idx"],
+    )
+    end_attn = _extract_abstract_attn(
+        end_attn_raw,
+        input_dict["abstract_start_token_idx"],
+    )
+
+    return start_attn, end_attn
+
+
+def _extract_abstract_attn(
+    layer_attns: tuple,
+    abstract_start_token_idx: int,
+) -> torch.Tensor:
+    """
+    Average attention across last 6 layers and all heads.
+    Slice to abstract token range.
+    Returns 1D tensor over abstract tokens.
+    """
+    averaged = []
+    for layer_attn in layer_attns:
+        averaged.append(layer_attn.squeeze(0))
+
+    avg_over_layers = torch.stack(averaged).mean(dim=0)
+    avg_over_heads = avg_over_layers.mean(dim=0)
+    avg_over_queries = avg_over_heads.mean(dim=0)
+    abstract_attn = avg_over_queries[abstract_start_token_idx:]
+    return abstract_attn.cpu().float()
+
+
 def analyze_abstract(
     model,
     tokenizer,
@@ -159,24 +246,17 @@ def analyze_abstract(
     device: str = "cuda",
 ) -> RoutingScore:
     """
-    Full pipeline: input -> forward pass -> attention extraction -> routing score.
+    Full pipeline: input -> generation attention -> routing score.
     Runs on a single abstract. Call in a loop for the probe set.
-    Cleans up GPU memory after each call.
     """
     input_dict = None
 
     try:
         input_dict = build_input(tokenizer, system_prompt, abstract_text, device)
-        last_6_layers = run_prefill(model, input_dict)
 
-        abstract_attn = extract_last_token_attention(
-            last_6_layers,
-            input_dict["abstract_start_token_idx"],
-            input_dict["total_seq_len"],
+        start_attn, end_attn = run_generation_attention(
+            model, tokenizer, input_dict, max_new_tokens=20
         )
-
-        del last_6_layers
-        torch.cuda.empty_cache()
 
         sentence_map = map_sentences_to_tokens(
             abstract_text,
@@ -184,11 +264,14 @@ def analyze_abstract(
             input_dict["abstract_start_token_idx"],
         )
 
-        score_dict = compute_routing_score(abstract_attn, sentence_map)
+        score_dict = compute_routing_score(start_attn, end_attn, sentence_map)
 
         return RoutingScore(
             abstract_id=abstract_id,
             score=score_dict["routing_score"],
+            score_start=score_dict["score_start"],
+            score_end=score_dict["score_end"],
+            intra_generation_delta=score_dict["intra_generation_delta"],
             results_attention_fraction=score_dict["results_fraction"],
             methods_attention_fraction=score_dict["methods_fraction"],
             background_attention_fraction=score_dict["background_fraction"],
@@ -225,7 +308,6 @@ def verify_attention_pipeline(model, tokenizer, sample_abstract: str) -> None:
     print(f"Num attention heads (Q): {model.config.num_attention_heads}")
     print(f"Num KV heads: {model.config.num_key_value_heads}")
 
-    # Verify last token is NOT a thinking token
     test_input = build_input(tokenizer, system_prompt, sample_abstract)
     last_token_id = test_input["input_ids"][0, -1].item()
     last_token_str = tokenizer.decode([last_token_id])
@@ -245,6 +327,9 @@ def verify_attention_pipeline(model, tokenizer, sample_abstract: str) -> None:
     )
 
     print(f"\nSample abstract routing score: {result.score:.4f}")
+    print(f"  score_start: {result.score_start:.4f}")
+    print(f"  score_end: {result.score_end:.4f}")
+    print(f"  intra_generation_delta: {result.intra_generation_delta:+.4f}")
     print(f"Results attention fraction:    {result.results_attention_fraction:.4f}")
     print(f"Methods attention fraction:    {result.methods_attention_fraction:.4f}")
     print(f"Background attention fraction: {result.background_attention_fraction:.4f}")
@@ -471,13 +556,12 @@ class AttentionAnalyzer:
         input_ids = enc["input_ids"].to(self.model.device)
         attention_mask = enc["attention_mask"].to(self.model.device)
 
-        # Hooks stay registered — they fire during the forward pass below
-        with torch.no_grad():                         # ← prevents gradient graph
+        with torch.no_grad():
             self.model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                use_cache=False,                      # ← no KV cache allocation
-                output_attentions=False,              # hooks handle capture
+                use_cache=False,
+                output_attentions=False,
             )
 
         captured = dict(self._stored_weights)
@@ -513,8 +597,6 @@ class AttentionAnalyzer:
             hook.remove()
         self._hooks.clear()
 
-        # Switch attention backend for cheaper generation — hooks are
-        # already removed so eager attention capture is not needed.
         original_attn = self.model.config._attn_implementation_internal
         gen_attn = original_attn
         try:
