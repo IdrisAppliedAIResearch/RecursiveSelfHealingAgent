@@ -1,0 +1,1 @@
+{"iteration_n": -1, "anomaly_type": "field_call_failed", "details": {"field": "edits", "error": "Could not parse edits array: line 1 column 1 (char 0)", "attempt": 1}}
