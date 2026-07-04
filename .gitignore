@@ -4,3 +4,4 @@
 *.pyo
 experiments/
 protected/experiments/
+.plan-*.md

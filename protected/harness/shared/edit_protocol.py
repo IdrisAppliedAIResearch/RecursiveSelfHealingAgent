@@ -14,6 +14,14 @@ class Edit:
     new_string: str | None
     new_content: str | None
 
+    def __post_init__(self):
+        # A004-5: normalize path separators to POSIX before any allowlist or
+        # filesystem operation. The model sometimes emits Windows-style
+        # separators (playground\extractor.py), which the POSIX-slash allowlist
+        # would otherwise reject as a false violation.
+        if self.file_path:
+            self.file_path = self.file_path.replace("\\", "/")
+
 
 @dataclass
 class Episode:

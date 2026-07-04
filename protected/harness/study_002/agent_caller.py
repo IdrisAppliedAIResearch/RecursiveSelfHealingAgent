@@ -13,14 +13,17 @@ from protected.harness.shared.edit_protocol import (
     RepairResponse,
 )
 
+from protected.attention.analyzer import MAX_INPUT_TOKENS
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _STUDY_ID = "study_002"
-_DECISION_MAX_INPUT = 13107
-_DIAGNOSTIC_MAX_INPUT = 13107
-_REPAIR_MAX_TOKENS = 4096
-_REPAIR_MAX_INPUT = 13107
+# A004-7: single source of truth for the input budget (validated for the 32 GB GPU).
+_DECISION_MAX_INPUT = MAX_INPUT_TOKENS
+_DIAGNOSTIC_MAX_INPUT = MAX_INPUT_TOKENS
+_REPAIR_MAX_TOKENS = 2048  # A004-7: bounded to keep peak VRAM in range
+_REPAIR_MAX_INPUT = MAX_INPUT_TOKENS
 _FIELD_MAX_TOKENS = 512
-_EDITS_MAX_TOKENS = 4096
+_EDITS_MAX_TOKENS = 2048  # A004-7: an edit array rarely exceeds this; caps decode KV
 
 FEW_SHOT_EXAMPLES = """
 ROUTING SIGNAL INTERPRETATION EXAMPLES:
@@ -121,8 +124,12 @@ async def _invoke_field(
     max_tokens: int = _FIELD_MAX_TOKENS,
     max_input: int = _DIAGNOSTIC_MAX_INPUT,
     default_value: str = "[not available — call failed]",
+    do_sample: bool = True,
 ) -> tuple[str, int]:
-    full_user = context + "\n\n" + user_instruction + "\n/no_think"
+    # A004-1: no /no_think appendage — thinking is suppressed at the template level.
+    # A004-2: the instruction is the tail of the user message and is preserved under
+    # budgeting; the context (head) is trimmed first if needed.
+    full_user = context + "\n\n" + user_instruction
     try:
         raw, token_usage = await asyncio.to_thread(
             _get_provider().complete_with_usage,
@@ -130,6 +137,7 @@ async def _invoke_field(
             full_user,
             max_tokens,
             max_input,
+            do_sample,
         )
         tokens = token_usage.total_tokens if token_usage else 0
         return raw.strip(), tokens
@@ -157,7 +165,7 @@ async def invoke_diagnostic_routing_trend(context: str) -> tuple[str, int]:
     )
     return await _invoke_field(
         "routing_trend", system, instruction, context,
-        default_value="flat",
+        default_value="flat", do_sample=False,  # A004-3: deterministic single word
     )
 
 
@@ -395,7 +403,8 @@ async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit],
         "- create_file: file_path, new_content\n"
         "- delete_file: file_path only"
     )
-    full_user = context + "\n\n" + instruction + "\n/no_think"
+    # A004-1: no /no_think appendage. A004-3: edits decode greedily (default).
+    full_user = context + "\n\n" + instruction
 
     for attempt in range(3):
         try:

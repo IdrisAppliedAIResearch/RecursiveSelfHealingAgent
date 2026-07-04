@@ -71,7 +71,11 @@ def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:
         f"iteration's corpus run. See experiments/{study_id}/pre-registration.md."
     )
 
-    _run_git(["add", "."])
+    # A004-15: stage only the study's artifacts and the mutable surface, not `.`,
+    # so iteration commits never capture incidental untracked files. `-A` with a
+    # pathspec includes deletions (e.g. an agent-removed playground module).
+    _run_git(["add", "-A", "--",
+              f"experiments/{study_id}", "playground", "prompts"])
     diff_check = _run_git(["diff", "--cached", "--quiet"], check=False)
     if diff_check.returncode == 0:
         return ""

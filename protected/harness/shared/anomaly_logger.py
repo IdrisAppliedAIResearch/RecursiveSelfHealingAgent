@@ -14,6 +14,11 @@ from pathlib import Path
 # - interface_validation_failed: Interface validation failed (triggers repair)
 # - repair_agent_failure: Repair call returned AgentFailure
 # - no_prior_output: No prior iteration output found
+# --- Amendment 004 (A004) additions ---
+# - context_truncated: Variable context was truncated to fit the input budget (A004-2)
+# - zero_extraction_output: Every abstract in an iteration returned zero claims (A004-4)
+# - abstract_offset_unresolved: Abstract could not be located in the templated prompt (A004-8)
+# - attention_abstract_failed: A single abstract's attention analysis raised; skipped (A004-10)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

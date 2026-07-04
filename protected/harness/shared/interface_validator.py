@@ -26,6 +26,23 @@ def reload_playground() -> None:
         del sys.modules[key]
 
 
+class _BoundedProvider:
+    """A004-14: wraps the shared provider to force a small generation budget for the
+    smoke test, which only verifies the pipeline runs — not extraction quality —
+    and must not risk the 60 s timeout on a full-length generation."""
+
+    def __init__(self, inner, cap: int = 64):
+        self._inner = inner
+        self._cap = cap
+
+    def complete_with_usage(self, system_prompt, user_message, max_tokens=None, *args, **kwargs):
+        capped = min(max_tokens or self._cap, self._cap)
+        return self._inner.complete_with_usage(system_prompt, user_message, capped, *args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
 def _validate_extract_fn(fn) -> ValidationResult:
     if fn is None or not callable(fn):
         return ValidationResult(
@@ -98,11 +115,20 @@ async def run_smoke_test() -> ValidationResult:
             smoke_test_passed=False,
         )
 
+    # A004-9: inject the shared provider so the extractor has a live provider even
+    # though reload_playground() reset it. A004-14: bound the generation budget.
+    from protected.harness.shared.corpus_runner import provider_injected
+    from protected.harness.shared.analyzer_registry import get_analyzer
+
+    provider = get_analyzer()
+    bounded = _BoundedProvider(provider) if provider is not None else None
+
     try:
-        result = await asyncio.wait_for(
-            extract_fn("smoke_test_001", _SMOKE_TEST_ABSTRACT),
-            timeout=60,
-        )
+        with provider_injected(bounded):
+            result = await asyncio.wait_for(
+                extract_fn("smoke_test_001", _SMOKE_TEST_ABSTRACT),
+                timeout=60,
+            )
         claim_count = len(result.claims) if hasattr(result, 'claims') else 0
         return ValidationResult(
             valid=True,

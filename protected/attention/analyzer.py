@@ -6,6 +6,23 @@ import torch
 from protected.attention.scorer import RoutingScore, compute_routing_score
 from protected.attention.segmenter import map_sentences_to_tokens
 
+# A004-7: input token budget validated to fit the RTX 5090 (32 GB) with headroom.
+# Calibrated by scratchpad/probe_context_budget.py (2026-07-04): input alone stays in
+# VRAM and fast up to ~6000 tokens (27.2 GB peak, 17.7 s); at 8000+ generation spills
+# to WDDM shared memory (31-94 s) and hard-OOMs by 14000. The prior ad-hoc 13107 sat
+# deep in the spill/OOM zone. Set to 5120 to leave headroom for decode-time KV growth
+# (edits/repair generate up to 2048 tokens) plus fragmentation and the registered hooks.
+MAX_INPUT_TOKENS = 5120
+# A004-11: the attention pass generates on the same budget as extraction so that
+# score_end is measured at the true end of extraction (EOS-terminated). Under greedy
+# decoding (A004-3) and aligned inputs (A004-6) the two passes produce the same tokens.
+EXTRACTION_MAX_NEW_TOKENS = 1024
+
+
+class AbstractOffsetUnresolved(RuntimeError):
+    """A004-8: raised when the abstract cannot be located within the templated
+    prompt, so a routing score would otherwise be computed over the whole sequence."""
+
 
 def _resolve_hf_cache_path(path: str) -> str:
     """Resolve HuggingFace cache refs to the actual snapshot directory."""
@@ -85,16 +102,28 @@ def build_input(
         return_tensors="pt",
         return_offsets_mapping=True,
         truncation=True,
-        max_length=4096,
+        max_length=MAX_INPUT_TOKENS,  # A004-6: align with the extraction input budget
     )
 
+    # A004-8: fail loudly rather than silently attributing whole-sequence attention
+    # to the abstract when the abstract cannot be located in the templated prompt.
     abstract_char_start = prompt.find(abstract_text)
+    if abstract_char_start == -1:
+        raise AbstractOffsetUnresolved(
+            "Abstract text not found in templated prompt; cannot locate token offset."
+        )
     offsets = inputs["offset_mapping"][0]
-    system_len = 0
+    system_len = None
     for i, (s, e) in enumerate(offsets):
         if s >= abstract_char_start:
             system_len = i
             break
+    if system_len is None:
+        # The abstract's char offset fell beyond the (truncated) token range.
+        raise AbstractOffsetUnresolved(
+            "Abstract offset beyond tokenized range (likely truncated out by a "
+            "large system prompt)."
+        )
 
     return {
         "input_ids": inputs["input_ids"].to(device),
@@ -152,11 +181,12 @@ def run_generation_attention(
     model,
     tokenizer,
     input_dict: dict,
-    max_new_tokens: int = 20,
+    max_new_tokens: int = EXTRACTION_MAX_NEW_TOKENS,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Runs minimal generation and captures attention at first and last
-    generated tokens.
+    Runs generation and captures attention at the first and last generated
+    tokens. A004-11: the budget matches extraction and generation stops at EOS,
+    so score_end is the grounding at the true final token of the extraction.
 
     Returns:
         start_attn: [seq_len] tensor — last-6-layer averaged attention
@@ -255,7 +285,7 @@ def analyze_abstract(
         input_dict = build_input(tokenizer, system_prompt, abstract_text, device)
 
         start_attn, end_attn = run_generation_attention(
-            model, tokenizer, input_dict, max_new_tokens=20
+            model, tokenizer, input_dict, max_new_tokens=EXTRACTION_MAX_NEW_TOKENS
         )
 
         sentence_map = map_sentences_to_tokens(
@@ -576,16 +606,51 @@ class AttentionAnalyzer:
             attention_weights=captured,
         )
 
-    def complete_with_usage(self, system_prompt, user_message, max_tokens=None, max_input_length=6656):
+    def _budget_user_message(self, system_prompt, user_message, max_input_length, reserve=384):
+        """A004-2: trim the variable user message so it fits the input budget while
+        the instruction at its tail is preserved. The system prompt is a separate
+        message and is left intact; only the user message's head (oldest context)
+        is dropped. Logs a context_truncated anomaly when trimming occurs."""
+        sys_ids = self.tokenizer(system_prompt)["input_ids"]
+        user_ids = self.tokenizer(user_message)["input_ids"]
+        user_cap = max_input_length - len(sys_ids) - reserve
+        if user_cap < 256:
+            user_cap = 256
+        if len(user_ids) <= user_cap:
+            return user_message
+        kept = user_ids[-user_cap:]  # keep the tail (instruction), drop the head
+        trimmed = self.tokenizer.decode(kept, skip_special_tokens=True)
+        try:
+            from protected.harness.shared.anomaly_logger import log_anomaly
+            log_anomaly("study_002", -1, "context_truncated", {
+                "original_user_tokens": len(user_ids),
+                "kept_user_tokens": len(kept),
+                "max_input_length": max_input_length,
+            })
+        except Exception:
+            pass
+        return trimmed
+
+    def complete_with_usage(self, system_prompt, user_message, max_tokens=None,
+                            max_input_length=None, do_sample=False):
         import gc
         from extractor.provider import TokenUsage
+
+        if max_input_length is None:
+            max_input_length = MAX_INPUT_TOKENS
+
+        # A004-2: preserve the instruction; trim only the variable context.
+        user_message = self._budget_user_message(
+            system_prompt, user_message, max_input_length
+        )
 
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
         ]
+        # A004-1: suppress thinking mode at the template level.
         chat_text = self.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True, tokenize=False
+            messages, add_generation_prompt=True, tokenize=False, enable_thinking=False
         )
         enc = self.tokenizer(
             chat_text, return_tensors="pt", truncation=True, max_length=max_input_length
@@ -613,16 +678,21 @@ class AttentionAnalyzer:
         gc.collect()
         torch.cuda.empty_cache()
 
+        # A004-3: greedy by default for structured output (extraction, edits);
+        # prose field calls opt into sampling via do_sample=True.
+        gen_kwargs = dict(
+            input_ids=input_ids,
+            max_new_tokens=max_tokens or EXTRACTION_MAX_NEW_TOKENS,
+            use_cache=True,
+            do_sample=do_sample,
+        )
+        if do_sample:
+            gen_kwargs["temperature"] = 0.7
+            gen_kwargs["top_p"] = 0.9
+
         try:
             with torch.no_grad():
-                output_sequences = self.model.generate(
-                    input_ids=input_ids,
-                    max_new_tokens=max_tokens or 1024,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    use_cache=True,
-                )
+                output_sequences = self.model.generate(**gen_kwargs)
 
             output_ids = output_sequences[0][prompt_len:].clone()
             del output_sequences

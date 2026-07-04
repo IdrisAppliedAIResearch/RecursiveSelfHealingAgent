@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,37 +33,29 @@ class CorpusRunResult:
     duration_seconds: float
     corpus_token_usage: CorpusTokenUsage
     abstract_texts: dict[str, str] | None = None
+    zero_claim_count: int = 0
+    n_extracted: int = 0
 
 
-class _CountingProviderProxy:
-    def __init__(self, wrapped):
-        self._wrapped = wrapped
-        self.total_prompt_tokens = 0
-        self.total_completion_tokens = 0
-        self.total_tokens_per_second_sum = 0.0
-        self.call_count = 0
+@contextmanager
+def provider_injected(provider):
+    """A004-9: set the extractor's module-global provider for the duration of a
+    block and restore the prior value afterward. Shared by the corpus run and the
+    interface smoke test so that any path invoking extract() has a live provider,
+    even immediately after reload_playground() reset the module to _provider=None.
 
-    def complete(self, system_prompt: str, user_message: str) -> str:
-        content, usage = self._wrapped.complete_with_usage(
-            system_prompt, user_message
-        )
-        self.total_prompt_tokens += usage.prompt_tokens
-        self.total_completion_tokens += usage.completion_tokens
-        self.total_tokens_per_second_sum += usage.tokens_per_second
-        self.call_count += 1
-        return content
-
-    def get_usage(self) -> CorpusTokenUsage:
-        attempted = self.call_count if self.call_count > 0 else 1
-        total = self.total_prompt_tokens + self.total_completion_tokens
-        return CorpusTokenUsage(
-            total_prompt_tokens=self.total_prompt_tokens,
-            total_completion_tokens=self.total_completion_tokens,
-            avg_tokens_per_abstract=total / attempted,
-            avg_tokens_per_second=(
-                self.total_tokens_per_second_sum / attempted
-            ),
-        )
+    If provider is None, the existing module provider is left untouched (used by
+    backends that establish the provider through another mechanism)."""
+    import playground.extractor as pg
+    if provider is None:
+        yield
+        return
+    old = getattr(pg, "_provider", None)
+    pg._provider = provider
+    try:
+        yield
+    finally:
+        pg._provider = old
 
 
 async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> CorpusRunResult:
@@ -74,63 +67,49 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
         abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
         abstract_files = sorted(abstracts_dir.glob("*.json"))
 
-    import playground.extractor as pg_extractor_mod
-
-    # Inject shared analyzer if available, so corpus runs use the same model
+    # Use the shared model instance so the corpus run uses the same weights as the
+    # attention pass and the agent calls.
     from protected.harness.shared.analyzer_registry import get_analyzer
-    _analyzer_instance = get_analyzer()
-
-    if _analyzer_instance is not None:
-        old_provider = pg_extractor_mod._provider
-        pg_extractor_mod._provider = _analyzer_instance
-        proxy = None
-    else:
-        old_provider = getattr(pg_extractor_mod, "_provider", None)
-        proxy = None
-        if old_provider is not None:
-            proxy = _CountingProviderProxy(old_provider)
-            pg_extractor_mod._provider = proxy
+    provider = get_analyzer()
 
     results: list[ExtractionResult] = []
     failures: list[CorpusAbstractFailure] = []
     abstract_texts: dict[str, str] = {}
 
-    print(f"  Corpus: running {len(abstract_files)} abstracts, provider={_analyzer_instance is not None}...", flush=True)
+    print(f"  Corpus: running {len(abstract_files)} abstracts, provider={provider is not None}...", flush=True)
     start = time.monotonic()
 
-    for idx, af in enumerate(abstract_files, 1):
-        abstract_id = af.stem
-        abstract_data = json.loads(af.read_text(encoding="utf-8", errors="replace"))
-        abstract_text = abstract_data.get("abstract", abstract_data.get("text", ""))
-        abstract_texts[abstract_id] = abstract_text
-        try:
-            result = await extract_fn(abstract_id, abstract_text)
-            results.append(result)
-            elapsed = time.monotonic() - start
-            print(f"  Corpus: {idx}/{len(abstract_files)} done ({abstract_id}) ({elapsed:.0f}s)", flush=True)
-        except Exception as e:
-            log_anomaly(
-                study_id, -1,
-                "corpus_abstract_failure",
-                {"abstract_id": abstract_id, "error": str(e)},
-            )
-            failures.append(CorpusAbstractFailure(abstract_id=abstract_id, error=str(e)))
+    with provider_injected(provider):
+        for idx, af in enumerate(abstract_files, 1):
+            abstract_id = af.stem
+            abstract_data = json.loads(af.read_text(encoding="utf-8", errors="replace"))
+            abstract_text = abstract_data.get("abstract", abstract_data.get("text", ""))
+            abstract_texts[abstract_id] = abstract_text
+            try:
+                result = await extract_fn(abstract_id, abstract_text)
+                results.append(result)
+                elapsed = time.monotonic() - start
+                print(f"  Corpus: {idx}/{len(abstract_files)} done ({abstract_id}) "
+                      f"[{len(result.claims)} claims] ({elapsed:.0f}s)", flush=True)
+            except Exception as e:
+                log_anomaly(
+                    study_id, -1,
+                    "corpus_abstract_failure",
+                    {"abstract_id": abstract_id, "error": str(e)},
+                )
+                failures.append(CorpusAbstractFailure(abstract_id=abstract_id, error=str(e)))
 
     duration = time.monotonic() - start
 
-    if _analyzer_instance is not None:
-        pg_extractor_mod._provider = old_provider
-        token_usage = CorpusTokenUsage(0, 0, 0.0, 0.0)
-    elif proxy:
-        token_usage = proxy.get_usage()
-        pg_extractor_mod._provider = old_provider
-    else:
-        token_usage = CorpusTokenUsage(0, 0, 0.0, 0.0)
+    # A004-4: extraction observability — count abstracts that produced zero claims.
+    zero_claim_count = sum(1 for r in results if len(r.claims) == 0)
 
     return CorpusRunResult(
         results=results,
         failures=failures,
         duration_seconds=duration,
-        corpus_token_usage=token_usage,
+        corpus_token_usage=CorpusTokenUsage(0, 0, 0.0, 0.0),
         abstract_texts=abstract_texts,
+        zero_claim_count=zero_claim_count,
+        n_extracted=len(results),
     )

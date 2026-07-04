@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 from protected.attention.scorer import RoutingScore
@@ -10,38 +11,62 @@ def _routing_history_path(study_id: str) -> Path:
     return _PROJECT_ROOT / "experiments" / study_id / "routing_history.jsonl"
 
 
+def _entry_scores(entry: dict) -> list[dict]:
+    """A004-12: read the single `scores` field, falling back to the legacy
+    `post_scores` for any records written before the schema change."""
+    return entry.get("scores", entry.get("post_scores", []))
+
+
+def _serialize(scores: list[RoutingScore]) -> list[dict]:
+    result = []
+    for s in scores:
+        result.append({
+            "abstract_id": s.abstract_id,
+            "score": s.score,
+            "score_start": s.score_start,
+            "score_end": s.score_end,
+            "intra_generation_delta": s.intra_generation_delta,
+            "results_attention_fraction": s.results_attention_fraction,
+            "methods_attention_fraction": s.methods_attention_fraction,
+            "background_attention_fraction": s.background_attention_fraction,
+            "n_results_tokens": s.n_results_tokens,
+            "n_methods_tokens": s.n_methods_tokens,
+            "n_background_tokens": s.n_background_tokens,
+            "n_layers_used": s.n_layers_used,
+        })
+    return result
+
+
 def append(
     study_id: str,
     iteration_n: int,
-    pre_scores: list[RoutingScore],
-    post_scores: list[RoutingScore],
+    scores: list[RoutingScore],
 ) -> None:
+    # A004-12: a single end-of-generation `scores` list per iteration. The prior
+    # pre_scores/post_scores pair was always identical and is removed; the
+    # consequence signal is the inter-iteration delta computed against the previous
+    # entry's aggregate.
     path = _routing_history_path(study_id)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _serialize(scores: list[RoutingScore]) -> list[dict]:
-        result = []
-        for s in scores:
-            result.append({
-                "abstract_id": s.abstract_id,
-                "score": s.score,
-                "score_start": s.score_start,
-                "score_end": s.score_end,
-                "intra_generation_delta": s.intra_generation_delta,
-                "results_attention_fraction": s.results_attention_fraction,
-                "methods_attention_fraction": s.methods_attention_fraction,
-                "background_attention_fraction": s.background_attention_fraction,
-                "n_results_tokens": s.n_results_tokens,
-                "n_methods_tokens": s.n_methods_tokens,
-                "n_background_tokens": s.n_background_tokens,
-                "n_layers_used": s.n_layers_used,
-            })
-        return result
+    serialized = _serialize(scores)
+    valid = [s["score"] for s in serialized if s["score"] is not None]
+    aggregate = sum(valid) / len(valid) if valid else None
+
+    prior = load_all(study_id)
+    prev_agg = prior[-1].get("aggregate_score") if prior else None
+    inter_delta = (
+        aggregate - prev_agg
+        if (aggregate is not None and prev_agg is not None)
+        else None
+    )
 
     record = {
         "iteration_n": iteration_n,
-        "pre_scores": _serialize(pre_scores),
-        "post_scores": _serialize(post_scores),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "scores": serialized,
+        "aggregate_score": aggregate,
+        "inter_iteration_delta": inter_delta,
     }
 
     with open(path, "a", encoding="utf-8") as f:
@@ -72,7 +97,7 @@ def format_for_agent(
 
     abstract_ids = set()
     for entry in history:
-        for s in entry.get("post_scores", []):
+        for s in _entry_scores(entry):
             abstract_ids.add(s["abstract_id"])
     abstract_ids = sorted(abstract_ids)
 
@@ -88,7 +113,7 @@ def format_for_agent(
 
     for entry in history:
         it = entry.get("iteration_n", 0)
-        for s in entry.get("post_scores", []):
+        for s in _entry_scores(entry):
             aid = s["abstract_id"]
             if aid in iter_scores:
                 iter_scores[aid][it] = s.get("score")
@@ -282,8 +307,8 @@ def format_routing_delta(study_id: str, iteration_n: int) -> str:
 
     prev = history[-2]
     curr = history[-1]
-    prev_post = prev.get("post_scores", [])
-    curr_post = curr.get("post_scores", [])
+    prev_post = _entry_scores(prev)
+    curr_post = _entry_scores(curr)
 
     prev_map = {s["abstract_id"]: s for s in prev_post}
     curr_map = {s["abstract_id"]: s for s in curr_post}

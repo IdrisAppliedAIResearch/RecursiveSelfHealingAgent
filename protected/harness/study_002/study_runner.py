@@ -213,6 +213,10 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "field_failure_count": 0,
         "smoke_test_passed": None,
         "smoke_test_claim_count": None,
+        "extraction_zero_claim_abstracts": None,
+        "context_truncated_calls": 0,
+        "abstract_offset_unresolved_count": 0,
+        "attention_abstract_failed_count": 0,
     }
 
 
@@ -433,6 +437,18 @@ async def _run_baseline(study_id: str) -> None:
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}", flush=True)
 
+    # A004-4: a broken baseline (every abstract returns zero claims) invalidates the
+    # entire run — hard stop rather than proceeding as A003 silently did.
+    if corpus_result.n_extracted > 0 and corpus_result.zero_claim_count >= corpus_result.n_extracted:
+        log_anomaly(study_id, 0, "zero_extraction_output", {
+            "n_extracted": corpus_result.n_extracted,
+            "zero_claim_count": corpus_result.zero_claim_count,
+        })
+        raise RuntimeError(
+            "Baseline produced zero claims across ALL abstracts (A004-4 hard stop). "
+            "The extractor pipeline is broken; fix it before running the study."
+        )
+
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
     pre_agg = None
@@ -440,15 +456,22 @@ async def _run_baseline(study_id: str) -> None:
 
     print("  Running attention analysis on control abstracts (subprocess)...", flush=True)
     analyzer = get_analyzer()
-    score_dicts = _run_attention_subprocess(study_id, 0, analyzer)
+    score_dicts = []
+    try:  # A004-10: an attention-pass failure must not terminate the run
+        score_dicts = _run_attention_subprocess(study_id, 0, analyzer)
+    except Exception as e:
+        print(f"  Attention pass FAILED: {e}", flush=True)
+        log_anomaly(study_id, 0, "attention_pass_failed", {"error": str(e)})
     post_scores = _dicts_to_routing_scores(score_dicts)
-    post_agg = (
-        sum(s.score for s in post_scores if s.score is not None)
-        / max(1, len(post_scores))
-    )
+    _valid_post = [s.score for s in post_scores if s.score is not None]
+    post_agg = (sum(_valid_post) / len(_valid_post)) if _valid_post else None
 
     metrics = _make_metrics_base(0)
     metrics["scanned"] = True
+    metrics["extraction_zero_claim_abstracts"] = corpus_result.zero_claim_count
+    metrics["attention_abstract_failed_count"] = sum(
+        1 for s in post_scores if s.score is None
+    )
     metrics["macro_precision"] = score_result["macro_precision"]
     metrics["macro_recall"] = score_result["macro_recall"]
     metrics["macro_f1"] = score_result["macro_f1"]
@@ -472,7 +495,7 @@ async def _run_baseline(study_id: str) -> None:
     metrics["pre_routing_score"] = pre_agg
     metrics["post_routing_score"] = post_agg
 
-    append_routing(study_id, 0, pre_scores, post_scores)
+    append_routing(study_id, 0, post_scores)  # A004-12: single scores list
     write_iteration_artifacts(0, study_id, corpus_result)
     snapshot_playground(0, study_id)
     append_metrics(0, study_id, metrics)
@@ -698,14 +721,22 @@ async def _run_iteration(
 
     print(f"  Running POST-MODIFICATION attention pass (subprocess)...")
     analyzer = get_analyzer()
-    score_dicts = _run_attention_subprocess(study_id, iteration_n, analyzer)
+    score_dicts = []
+    try:  # A004-10: an attention-pass failure must not terminate the run
+        score_dicts = _run_attention_subprocess(study_id, iteration_n, analyzer)
+    except Exception as e:
+        print(f"  Attention pass FAILED: {e}", flush=True)
+        log_anomaly(study_id, iteration_n, "attention_pass_failed", {"error": str(e)})
     post_scores = _dicts_to_routing_scores(score_dicts)
+    metrics["attention_abstract_failed_count"] = sum(
+        1 for s in post_scores if s.score is None
+    )
 
     routing_history = load_routing(study_id)
     if routing_history:
         last_entry = routing_history[-1]
-        last_post = last_entry.get("post_scores", [])
-        pre_scores = post_scores
+        # A004-12: read the single `scores` field (legacy post_scores fallback).
+        last_post = last_entry.get("scores", last_entry.get("post_scores", []))
         prev_scores_map = {s["abstract_id"]: s for s in last_post}
         pre_agg_list = []
         post_agg_list = []
@@ -827,6 +858,15 @@ async def _run_iteration(
     metrics["micro_fn"] = score_result["micro_fn"]
     metrics["avg_claims_per_abstract"] = score_result["avg_claims_per_abstract"]
     metrics["scan_duration_seconds"] = corpus_result.duration_seconds
+    metrics["extraction_zero_claim_abstracts"] = corpus_result.zero_claim_count
+
+    # A004-4: post-baseline, a wholly-empty extraction is a real (degenerate) agent
+    # state — log it as a non-blocking anomaly rather than aborting.
+    if corpus_result.n_extracted > 0 and corpus_result.zero_claim_count >= corpus_result.n_extracted:
+        log_anomaly(study_id, iteration_n, "zero_extraction_output", {
+            "n_extracted": corpus_result.n_extracted,
+            "zero_claim_count": corpus_result.zero_claim_count,
+        })
     metrics["corpus_total_prompt_tokens"] = (
         corpus_result.corpus_token_usage.total_prompt_tokens
     )
@@ -852,7 +892,7 @@ async def _run_iteration(
     else:
         metrics["routing_direction"] = "neutral"
 
-    append_routing(study_id, iteration_n, pre_scores, post_scores)
+    append_routing(study_id, iteration_n, post_scores)  # A004-12: single scores list
     write_iteration_artifacts(iteration_n, study_id, corpus_result)
     append_metrics(iteration_n, study_id, metrics)
     append_rationale(iteration_n, study_id, agent_result.rationale)
@@ -890,6 +930,12 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id)
+        # A004-13: single authoritative rollback point. An anomalous iteration
+        # (rationale is None) must leave a clean playground before the commit, so no
+        # broken edits can leak in and become the next iteration's baseline. A
+        # successful iteration returns its rationale and keeps its applied edits.
+        if rationale is None:
+            rollback_playground()
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 

@@ -62,7 +62,10 @@ def main():
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
 
-    from protected.attention.analyzer import load_attention_model, analyze_abstract
+    from protected.attention.analyzer import (
+        load_attention_model, analyze_abstract, AbstractOffsetUnresolved,
+    )
+    from protected.harness.shared.anomaly_logger import log_anomaly
 
     print(f"  [FP] Loading model...", flush=True)
     t0 = time.time()
@@ -73,32 +76,57 @@ def main():
         flush=True,
     )
 
+    def _null_score(abstract_id: str) -> dict:
+        return {
+            "abstract_id": abstract_id,
+            "score": None, "score_start": None, "score_end": None,
+            "intra_generation_delta": None,
+            "results_attention_fraction": None,
+            "methods_attention_fraction": None,
+            "background_attention_fraction": None,
+            "n_results_tokens": 0, "n_methods_tokens": 0, "n_background_tokens": 0,
+            "n_layers_used": 0,
+        }
+
     scores = []
     for idx, aid in enumerate(probe_ids, 1):
         abstract_text = _load_abstract_text(aid)
         print(f"  [FP] Analyzing [{idx}/{len(probe_ids)}] {aid}...", flush=True)
 
-        score = analyze_abstract(
-            model, tokenizer,
-            system_prompt=system_prompt,
-            abstract_id=aid,
-            abstract_text=abstract_text,
-        )
-
-        scores.append({
-            "abstract_id": score.abstract_id,
-            "score": score.score,
-            "score_start": score.score_start,
-            "score_end": score.score_end,
-            "intra_generation_delta": score.intra_generation_delta,
-            "results_attention_fraction": score.results_attention_fraction,
-            "methods_attention_fraction": score.methods_attention_fraction,
-            "background_attention_fraction": score.background_attention_fraction,
-            "n_results_tokens": score.n_results_tokens,
-            "n_methods_tokens": score.n_methods_tokens,
-            "n_background_tokens": score.n_background_tokens,
-            "n_layers_used": score.n_layers_used,
-        })
+        # A004-10: one abstract's failure (OOM re-raised as RuntimeError, offset
+        # resolution, etc.) must not terminate the pass. Log, record a null score,
+        # and continue.
+        try:
+            score = analyze_abstract(
+                model, tokenizer,
+                system_prompt=system_prompt,
+                abstract_id=aid,
+                abstract_text=abstract_text,
+            )
+            scores.append({
+                "abstract_id": score.abstract_id,
+                "score": score.score,
+                "score_start": score.score_start,
+                "score_end": score.score_end,
+                "intra_generation_delta": score.intra_generation_delta,
+                "results_attention_fraction": score.results_attention_fraction,
+                "methods_attention_fraction": score.methods_attention_fraction,
+                "background_attention_fraction": score.background_attention_fraction,
+                "n_results_tokens": score.n_results_tokens,
+                "n_methods_tokens": score.n_methods_tokens,
+                "n_background_tokens": score.n_background_tokens,
+                "n_layers_used": score.n_layers_used,
+            })
+        except AbstractOffsetUnresolved as e:  # A004-8
+            print(f"  [FP] offset unresolved for {aid}: {e}", flush=True)
+            log_anomaly(args.study, args.iteration, "abstract_offset_unresolved",
+                        {"abstract_id": aid, "error": str(e)})
+            scores.append(_null_score(aid))
+        except Exception as e:  # includes OOM re-raised as RuntimeError
+            print(f"  [FP] analysis failed for {aid}: {type(e).__name__}: {e}", flush=True)
+            log_anomaly(args.study, args.iteration, "attention_abstract_failed",
+                        {"abstract_id": aid, "error": f"{type(e).__name__}: {e}"})
+            scores.append(_null_score(aid))
 
         gc.collect()
         torch.cuda.empty_cache()
