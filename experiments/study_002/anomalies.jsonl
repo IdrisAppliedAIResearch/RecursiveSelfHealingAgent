@@ -93,3 +93,13 @@
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7681, "kept_user_tokens": 4720, "max_input_length": 5120}}
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7775, "kept_user_tokens": 4715, "max_input_length": 5120}}
 {"iteration_n": 13, "anomaly_type": "no_match", "details": {"offending_path": "playground/extractor.py"}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8797, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8793, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8788, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8790, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7573, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7570, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7567, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7576, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7670, "kept_user_tokens": 4715, "max_input_length": 5120}}
+{"iteration_n": 14, "anomaly_type": "no_match", "details": {"offending_path": "playground/extractor.py"}}
