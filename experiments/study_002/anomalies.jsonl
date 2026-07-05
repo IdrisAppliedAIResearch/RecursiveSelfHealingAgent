@@ -58,3 +58,12 @@
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8892, "kept_user_tokens": 4720, "max_input_length": 5120}}
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8901, "kept_user_tokens": 4720, "max_input_length": 5120}}
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8995, "kept_user_tokens": 4715, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7640, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7636, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7631, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7633, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8893, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8890, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8887, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8896, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8990, "kept_user_tokens": 4715, "max_input_length": 5120}}
