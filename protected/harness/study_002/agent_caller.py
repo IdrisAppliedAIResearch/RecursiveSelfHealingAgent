@@ -576,6 +576,8 @@ async def invoke_repair(
             user,
             _REPAIR_MAX_TOKENS,
             _REPAIR_MAX_INPUT,
+            True,  # A005-5: sample on repair turns so successive attempts cannot
+                   # re-emit an identical broken edit and lock into a fixed point.
         )
     except Exception as e:
         return AgentFailure(reason=f"Provider call failed: {e}")

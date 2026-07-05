@@ -52,6 +52,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
 N_ITERATIONS = 25
 
+# A005-1: debugging turns granted to the agent when its edits fail to *apply*
+# (before the iteration is abandoned). We study whether the agent can improve
+# extraction, not whether it writes a correct search-and-replace one-shot.
+_APPLY_REPAIR_ATTEMPTS = 3
+# A005-2: stop the study after this many consecutive non-scanned iterations —
+# once scans stop repeatedly nothing productive can happen.
+_MAX_CONSECUTIVE_ANOMALIES = 4
+
 
 def _load_probe_set() -> list[str]:
     probe_path = PROJECT_ROOT / "experiments" / STUDY_ID / "probe_set.json"
@@ -217,7 +225,71 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "context_truncated_calls": 0,
         "abstract_offset_unresolved_count": 0,
         "attention_abstract_failed_count": 0,
+        "apply_repair_attempts": 0,
     }
+
+
+# A005-3: turn an ApplyResult failure into an actionable instruction for the
+# agent's repair turn. The repair prompt already includes the full current file,
+# so the agent has everything it needs to correct itself.
+def _describe_apply_failure(apply_result) -> str:
+    reason = apply_result.reason or "edit_apply_failed"
+    path = apply_result.offending_path or "the target file"
+    hints = {
+        "no_match": (
+            f"Your edit to {path} could not be applied: the `old_string` was not "
+            "found in the file. Copy the exact text to replace verbatim — including "
+            "all whitespace and indentation — from the CURRENT FILE CONTENTS below."
+        ),
+        "ambiguous_match": (
+            f"Your edit to {path} could not be applied: the `old_string` appears "
+            "more than once. Include enough surrounding lines to make it unique."
+        ),
+        "file_not_found": (
+            f"Your edit references {path}, which does not exist. Use an existing "
+            "file path shown in CURRENT FILE CONTENTS."
+        ),
+        "allowlist_violation": (
+            f"Editing {path} is not permitted. You may only modify "
+            "playground/extractor.py and prompts/system_prompt.md."
+        ),
+        "missing_old_string": (
+            f"Your replace_string edit to {path} is missing the required "
+            "`old_string` field."
+        ),
+        "missing_new_string": (
+            f"Your replace_string edit to {path} is missing the required "
+            "`new_string` field."
+        ),
+        "unexpected_new_content": (
+            f"Your replace_string edit to {path} must not include `new_content`; "
+            "use `old_string` and `new_string` only."
+        ),
+        "empty_file_replacement": (
+            f"Your replace_file edit to {path} had empty `new_content`. Provide the "
+            "full replacement file body."
+        ),
+        "unexpected_old_or_new_string": (
+            f"Your replace_file edit to {path} must not include `old_string` or "
+            "`new_string`; provide `new_content` only."
+        ),
+        "missing_new_content": (
+            f"Your create_file edit to {path} is missing the required "
+            "`new_content` field."
+        ),
+        "create_file_exists": (
+            f"Your create_file edit targets {path}, which already exists. Use "
+            "replace_string or replace_file to modify it."
+        ),
+        "delete_file_missing": (
+            f"Your delete_file edit targets {path}, which does not exist."
+        ),
+    }
+    return hints.get(
+        reason,
+        f"Your edit to {path} could not be applied ({reason}). Correct the edit "
+        "against the CURRENT FILE CONTENTS below.",
+    )
 
 
 def _read_system_prompt() -> str:
@@ -608,18 +680,55 @@ async def _run_iteration(
     append_episode(study_id, iteration_n, agent_result.episode)
     metrics["episode_persisted"] = True
 
+    # A005-1: an edit that fails to *apply* earns the agent debugging turns
+    # rather than immediately ending the iteration. On the first successful
+    # apply we fall through to the smoke/interface repair loop below, which
+    # still catches edits that apply but are runtime-broken.
     apply_result = apply_edits(agent_result.edits)
-    if not apply_result.applied:
+    apply_repair_attempts = 0
+    while not apply_result.applied:
         print(f"  Edits REJECTED: {apply_result.reason} ({apply_result.offending_path})")
         log_anomaly(
             study_id, iteration_n,
             apply_result.reason or "edit_apply_failed",
-            {"offending_path": apply_result.offending_path},
+            {
+                "offending_path": apply_result.offending_path,
+                "apply_repair_attempt": apply_repair_attempts,
+            },
         )
-        metrics["anomaly"] = True
-        append_metrics(iteration_n, study_id, metrics)
-        return None
+        if apply_repair_attempts >= _APPLY_REPAIR_ATTEMPTS:
+            log_anomaly(
+                study_id, iteration_n, "apply_repair_exhausted",
+                {"reason": apply_result.reason,
+                 "offending_path": apply_result.offending_path},
+            )
+            rollback_playground()  # defensive; nothing should have applied
+            metrics["apply_repair_attempts"] = apply_repair_attempts
+            metrics["anomaly"] = True
+            append_metrics(iteration_n, study_id, metrics)
+            return None
 
+        apply_repair_attempts += 1
+        error_message = _describe_apply_failure(apply_result)
+        print(f"  Apply-repair attempt {apply_repair_attempts}: calling agent...")
+        repair_result = await invoke_repair(
+            error_message=error_message,
+            current_files=_current_files(),
+            attempt_number=apply_repair_attempts,
+        )
+        if isinstance(repair_result, AgentFailure):
+            log_anomaly(
+                study_id, iteration_n, "apply_repair_agent_failure",
+                {"reason": repair_result.reason},
+            )
+            rollback_playground()
+            metrics["apply_repair_attempts"] = apply_repair_attempts
+            metrics["anomaly"] = True
+            append_metrics(iteration_n, study_id, metrics)
+            return None
+        apply_result = apply_edits(repair_result.edits)
+
+    metrics["apply_repair_attempts"] = apply_repair_attempts
     metrics["agent_edits_applied"] = len(apply_result.files_changed or [])
     metrics["playground_files_changed"] = apply_result.files_changed or []
     print(f"  Edits applied: {apply_result.files_changed}")
@@ -927,6 +1036,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         commit_iteration(0, study_id, "Baseline run")
         start_iter = 1
 
+    consecutive_anomalies = 0
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id)
@@ -936,8 +1046,25 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         # successful iteration returns its rationale and keeps its applied edits.
         if rationale is None:
             rollback_playground()
+            consecutive_anomalies += 1
+        else:
+            consecutive_anomalies = 0
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
+
+        # A005-2: circuit breaker. Once scans stop repeatedly, nothing productive
+        # can happen — halt rather than burn the remaining iteration budget.
+        if consecutive_anomalies >= _MAX_CONSECUTIVE_ANOMALIES:
+            log_anomaly(
+                study_id, i, "study_halted_consecutive_anomalies",
+                {"consecutive": consecutive_anomalies},
+            )
+            print(
+                f"[{study_id}] HALTED: {consecutive_anomalies} consecutive "
+                f"non-scanned iterations. Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
 
     analyzer.close()
     set_analyzer(None)

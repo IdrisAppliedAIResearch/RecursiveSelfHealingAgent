@@ -19,6 +19,10 @@ from pathlib import Path
 # - zero_extraction_output: Every abstract in an iteration returned zero claims (A004-4)
 # - abstract_offset_unresolved: Abstract could not be located in the templated prompt (A004-8)
 # - attention_abstract_failed: A single abstract's attention analysis raised; skipped (A004-10)
+# --- Amendment 005 (A005) additions ---
+# - apply_repair_exhausted: Agent could not produce an appliable edit within the debug budget (A005-1)
+# - apply_repair_agent_failure: An apply-repair turn returned AgentFailure (A005-1)
+# - study_halted_consecutive_anomalies: Study stopped early by the circuit breaker (A005-2)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
