@@ -1,1 +1,6 @@
 {"iteration_n": -1, "anomaly_type": "field_call_failed", "details": {"field": "edits", "error": "Could not parse edits array: line 1 column 1 (char 0)", "attempt": 1}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5896, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5893, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5890, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5899, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5993, "kept_user_tokens": 4715, "max_input_length": 5120}}
