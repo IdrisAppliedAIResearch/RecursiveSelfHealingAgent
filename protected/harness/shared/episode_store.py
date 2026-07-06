@@ -21,6 +21,7 @@ def append(study_id: str, iteration_n: int, episode: Episode) -> None:
         "expectation": episode.expectation,
         "edits_applied": getattr(episode, "edits_applied", False),
         "field_failures": getattr(episode, "field_failures", []),
+        "failure_note": getattr(episode, "failure_note", None),  # A007-2
     }
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")

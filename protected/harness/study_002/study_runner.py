@@ -786,6 +786,16 @@ async def _run_iteration(
             log_anomaly(study_id, iteration_n, "repair_exhausted", {})
             metrics["repair_attempts"] = 3
             metrics["anomaly"] = True
+            # A007-2: feed the unrecovered contract/runtime error forward.
+            exhausted_error = smoke_result.error or (val_result.error or "Validation failed")
+            agent_result.episode.edits_applied = False
+            agent_result.episode.failure_note = (
+                f"YOUR EDIT WAS ROLLED BACK — it failed the interface/smoke check across "
+                f"3 repair attempts: {exhausted_error}. extract() must stay async, take "
+                f"(abstract_id, abstract_text), and return an ExtractionResult with a list "
+                f"of Claim. Try a different approach next iteration."
+            )
+            append_episode(study_id, iteration_n, agent_result.episode)
             append_metrics(iteration_n, study_id, metrics)
             return None
 
@@ -947,6 +957,12 @@ async def _run_iteration(
         rollback_playground()
         log_anomaly(study_id, iteration_n, "iteration_timeout", {})
         agent_result.episode.edits_applied = False
+        # A007-2: feed the timeout forward so the next iteration's diagnostic sees it.
+        agent_result.episode.failure_note = (
+            f"SCAN TIMED OUT after your edits applied and was rolled back "
+            f"(exceeded {ITERATION_TIMEOUT_S}s). Your change likely made extraction far "
+            f"slower per abstract. Keep extract() lightweight; do not repeat this change."
+        )
         append_episode(study_id, iteration_n, agent_result.episode)
         metrics["episode_persisted"] = True
         metrics["anomaly"] = True
@@ -961,6 +977,12 @@ async def _run_iteration(
             {"error": str(e)},
         )
         agent_result.episode.edits_applied = False
+        # A007-2: feed the crash forward so the next iteration's diagnostic sees it.
+        agent_result.episode.failure_note = (
+            f"SCAN CRASHED after your edits applied and was rolled back: {e}. "
+            f"extract() must return an ExtractionResult whose .claims is a list of "
+            f"Claim for every abstract in the corpus. Do not repeat this change."
+        )
         append_episode(study_id, iteration_n, agent_result.episode)
         metrics["episode_persisted"] = True
         metrics["anomaly"] = True

@@ -26,6 +26,13 @@ from pathlib import Path
 # --- Amendment 006 (A006) additions ---
 # - no_edits_proposed: The decision returned an empty edit array — a silent no-op (A006-3)
 # - study_halted_no_progress: Study stopped early after N unchanged iterations (A006-3)
+# --- Amendment 007 (A007) additions ---
+# No new anomaly types. A007-1 strengthens run_smoke_test to enforce the
+# ExtractionResult/.claims return contract, so a type/shape-breaking edit now trips the
+# existing `interface_smoke_test_failed` (routed into the smoke-repair loop) instead of
+# reaching the scan as `scan_failure`. A007-2 attaches a `failure_note` to the rolled-back
+# episode (persisted by episode_store) on the `scan_failure` / `iteration_timeout` /
+# `repair_exhausted` paths, feeding the failure into the next diagnostic context.
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

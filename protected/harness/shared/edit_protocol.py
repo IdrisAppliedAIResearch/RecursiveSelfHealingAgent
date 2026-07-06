@@ -31,6 +31,11 @@ class Episode:
     expectation: str
     edits_applied: bool = False
     field_failures: list = field(default_factory=list)
+    # A007-2: a concrete note about a runtime failure whose edit was rolled back
+    # (scan crash, timeout, repair exhausted). Persisted and surfaced in the next
+    # iteration's diagnostic context so a rolled-back crash informs the agent instead
+    # of being repeated blindly.
+    failure_note: str | None = None
 
 
 @dataclass
