@@ -59,6 +59,12 @@ _APPLY_REPAIR_ATTEMPTS = 3
 # A005-2: stop the study after this many consecutive non-scanned iterations —
 # once scans stop repeatedly nothing productive can happen.
 _MAX_CONSECUTIVE_ANOMALIES = 4
+# A006-3: stop the study after this many consecutive iterations that change nothing in
+# the playground (empty-edit no-ops or rolled-back anomalies). A frozen extractor cannot
+# move the signal; this caps a static stall (or a converged run) rather than burning the
+# full budget on byte-identical iterations. Set above _MAX_CONSECUTIVE_ANOMALIES so a
+# genuine early build-up phase is not cut short.
+_MAX_CONSECUTIVE_NO_CHANGE = 5
 
 
 def _load_probe_set() -> list[str]:
@@ -670,6 +676,16 @@ async def _run_iteration(
     metrics["agent_edits_proposed"] = len(agent_result.edits)
     metrics["code_changes_attempted"] = _check_code_changes(agent_result.edits)
 
+    # A006-3: a 0-edit decision applies cleanly as a no-op (apply_edits([]) => applied),
+    # so surface it explicitly — otherwise a stalled agent is indistinguishable from a
+    # productive one. Record the stated action so analysis can tell "declined" from
+    # "intended to edit but produced []".
+    if len(agent_result.edits) == 0:
+        action_text = getattr(agent_result.episode, "action", "") or ""
+        log_anomaly(study_id, iteration_n, "no_edits_proposed", {
+            "action_excerpt": action_text[:200],
+        })
+
     print(f"  Agent: hypothesis={agent_result.episode.hypothesis[:100]}...")
     print(f"  Agent: expectation={agent_result.episode.expectation[:100]}...")
     print(f"  Agent proposed {len(agent_result.edits)} edits")
@@ -1010,6 +1026,25 @@ async def _run_iteration(
     return agent_result.rationale
 
 
+def _last_applied_edit_count(study_id: str) -> int:
+    """A006-3: applied-edit count from the most recent metrics record (0 if absent).
+    Used by the no-progress breaker to detect empty-edit no-ops and rollbacks alike."""
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if not metrics_path.exists():
+        return 0
+    last_line = ""
+    for line in metrics_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            last_line = line
+    if not last_line:
+        return 0
+    try:
+        rec = json.loads(last_line)
+    except json.JSONDecodeError:
+        return 0
+    return int(rec.get("agent_edits_applied") or 0)
+
+
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
     _pre_run_checks(study_id)
 
@@ -1037,6 +1072,7 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         start_iter = 1
 
     consecutive_anomalies = 0
+    consecutive_no_change = 0
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id)
@@ -1049,6 +1085,13 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             consecutive_anomalies += 1
         else:
             consecutive_anomalies = 0
+        # A006-3: track iterations that leave the playground unchanged (empty-edit
+        # no-ops as well as rolled-back anomalies). Read the applied-edit count from the
+        # metrics record the iteration just wrote; any real change resets the counter.
+        if _last_applied_edit_count(study_id) > 0:
+            consecutive_no_change = 0
+        else:
+            consecutive_no_change += 1
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
@@ -1062,6 +1105,20 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             print(
                 f"[{study_id}] HALTED: {consecutive_anomalies} consecutive "
                 f"non-scanned iterations. Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
+
+        # A006-3: no-progress breaker. Scans succeed but the extractor is frozen —
+        # a stalled (or converged) run. Halt and surface it rather than spin.
+        if consecutive_no_change >= _MAX_CONSECUTIVE_NO_CHANGE:
+            log_anomaly(
+                study_id, i, "study_halted_no_progress",
+                {"consecutive": consecutive_no_change},
+            )
+            print(
+                f"[{study_id}] HALTED: {consecutive_no_change} consecutive "
+                f"iterations with no playground change. Stopping early at iteration {i}.",
                 flush=True,
             )
             break

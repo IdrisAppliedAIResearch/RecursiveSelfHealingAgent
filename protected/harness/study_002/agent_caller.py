@@ -203,9 +203,14 @@ async def invoke_diagnostic(
     routing_delta_text: str,
     prior_episodes: list[dict],
 ) -> AssessmentResult | AgentFailure:
+    # A006-4: window the episodic dump. Passing all prior episodes pushed the Call-1
+    # context to ~9k tokens and got it cut nearly in half by head-first budgeting, so the
+    # assessment was computed over a truncated fragment. Keep the last 8 (the decision
+    # call already windows to 5) so the context fits the budget intact.
+    windowed_episodes = prior_episodes[-8:] if len(prior_episodes) > 8 else prior_episodes
     context = _build_diagnostic_context(
         prior_output, prior_output_iteration,
-        routing_history_text, routing_delta_text, prior_episodes,
+        routing_history_text, routing_delta_text, windowed_episodes,
     )
 
     field_failures = []
@@ -387,7 +392,11 @@ def _parse_edits_array(raw: str) -> list[dict]:
     raise json.JSONDecodeError("Could not parse edits array", raw[:200], 0)
 
 
-async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit], list[dict] | None]:
+async def invoke_edits(
+    context: str,
+    plan: str | None = None,
+    iteration_n: int = -1,
+) -> tuple[list[Edit], list[dict] | None]:
     system = (
         "You are an autonomous extractor proposing file edits. "
         "You must output ONLY a valid JSON array of edit objects."
@@ -403,8 +412,23 @@ async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit],
         "- create_file: file_path, new_content\n"
         "- delete_file: file_path only"
     )
-    # A004-1: no /no_think appendage. A004-3: edits decode greedily (default).
-    full_user = context + "\n\n" + instruction
+    # A006-1: the agent's own stated plan (hypothesis + action) is placed at the TAIL
+    # of the user message, immediately before the instruction. It is preserved under
+    # head-first budgeting AND varies every iteration, so the edits prompt is no longer
+    # near-constant — this breaks the greedy fixed point that pinned the output to `[]`
+    # (or, in the prior run, to a stale non-matching edit). It also conditions the
+    # structured edit on the plan the narrator already committed to, closing the
+    # narrator/generator split.
+    plan_block = ""
+    if plan:
+        plan_block = (
+            "YOUR STATED PLAN FOR THIS ITERATION (implement exactly this as concrete "
+            "edits; if it truly requires no code change, return []):\n"
+            f"{plan}\n\n"
+        )
+    # A004-1: no /no_think appendage. A006-2: edits decode sampled (see below), narrowing
+    # A004-3 for this call only — a near-constant prompt must not pin to one output.
+    full_user = context + "\n\n" + plan_block + instruction
 
     for attempt in range(3):
         try:
@@ -414,6 +438,7 @@ async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit],
                 full_user,
                 _EDITS_MAX_TOKENS,
                 _DECISION_MAX_INPUT,
+                True,  # A006-2: sample the edits call
             )
 
             print(f"\n{'='*80}", flush=True)
@@ -450,7 +475,8 @@ async def invoke_edits(context: str, iteration_n: int = -1) -> tuple[list[Edit],
             if attempt < 2:
                 full_user = (
                     context + "\n\n"
-                    f"Previous edit output was malformed: {e}\n\n"
+                    + plan_block
+                    + f"Previous edit output was malformed: {e}\n\n"
                     "Respond with ONLY a valid JSON array of edit objects. "
                     "No other text. No markdown. Raw JSON array only.\n"
                     "Schema: [{\"file_path\": \"...\", \"operation\": \"...\", ...}]\n/no_think"
@@ -490,8 +516,10 @@ async def invoke_decision(
     if expectation == "[not available — call failed]":
         field_failures.append("expectation")
 
+    # A006-1: condition the edits generation on the plan the agent just stated.
+    plan = f"Hypothesis: {hypothesis}\nAction: {action}"
     try:
-        edits, edits_token_usage = await invoke_edits(context)
+        edits, edits_token_usage = await invoke_edits(context, plan=plan)
         if edits_token_usage:
             total_tokens += edits_token_usage.total_tokens
     except Exception as e:

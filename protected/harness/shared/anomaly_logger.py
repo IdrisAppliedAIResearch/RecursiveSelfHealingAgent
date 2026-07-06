@@ -23,6 +23,9 @@ from pathlib import Path
 # - apply_repair_exhausted: Agent could not produce an appliable edit within the debug budget (A005-1)
 # - apply_repair_agent_failure: An apply-repair turn returned AgentFailure (A005-1)
 # - study_halted_consecutive_anomalies: Study stopped early by the circuit breaker (A005-2)
+# --- Amendment 006 (A006) additions ---
+# - no_edits_proposed: The decision returned an empty edit array — a silent no-op (A006-3)
+# - study_halted_no_progress: Study stopped early after N unchanged iterations (A006-3)
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
