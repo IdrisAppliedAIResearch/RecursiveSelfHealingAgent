@@ -44,3 +44,38 @@
 {"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14673803", "error": "'tuple' object has no attribute 'claims'"}}
 {"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12842716", "error": "'tuple' object has no attribute 'claims'"}}
 {"iteration_n": 4, "anomaly_type": "scan_failure", "details": {"error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5764, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5760, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5755, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5757, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7771, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7768, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7765, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7774, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8125, "kept_user_tokens": 4715, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "10355678", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11590114", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12727182", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12873805", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12948717", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12967919", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14527570", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14642483", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14980552", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "15019708", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14742598", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11287664", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "10545400", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "9491989", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12427682", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12135971", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11960021", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11532891", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "9412517", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11248106", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "15006681", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14568477", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "11230093", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "14673803", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": -1, "anomaly_type": "corpus_abstract_failure", "details": {"abstract_id": "12842716", "error": "'tuple' object has no attribute 'claims'"}}
+{"iteration_n": 5, "anomaly_type": "scan_failure", "details": {"error": "'tuple' object has no attribute 'claims'"}}
