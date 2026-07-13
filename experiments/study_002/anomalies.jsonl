@@ -37,3 +37,14 @@
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8686, "kept_user_tokens": 4715, "max_input_length": 5120}}
 {"iteration_n": 7, "anomaly_type": "no_edits_proposed", "details": {"action_excerpt": "I will modify `playground/extractor.py` to implement the two-stage extraction logic described in the planning phase. Specifically, I will split the single LLM call into two distinct calls: Stage 1 wil"}}
 {"iteration_n": 7, "anomaly_type": "zero_extraction_output", "details": {"n_extracted": 25, "zero_claim_count": 25}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5864, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5860, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5855, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 5857, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8265, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8262, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8259, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8268, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8616, "kept_user_tokens": 4715, "max_input_length": 5120}}
+{"iteration_n": 8, "anomaly_type": "no_edits_proposed", "details": {"action_excerpt": "I will modify `playground/extractor.py` to implement the two-stage extraction logic described in the planning phase. Specifically, I will split the single LLM call into two distinct calls: Stage 1 wil"}}
+{"iteration_n": 8, "anomaly_type": "zero_extraction_output", "details": {"n_extracted": 25, "zero_claim_count": 25}}
