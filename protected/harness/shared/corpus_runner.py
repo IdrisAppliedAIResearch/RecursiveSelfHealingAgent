@@ -11,6 +11,11 @@ from protected.schema import ExtractionResult
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
+# A009-10: log a `slow_abstract` anomaly when a single extract() exceeds this wall-clock
+# budget (a runaway multi-call extractor). Observability only — the hard bound is the
+# per-iteration timeout (ITERATION_TIMEOUT_S).
+_SLOW_ABSTRACT_WARN_S = 90.0
+
 
 @dataclass
 class CorpusAbstractFailure:
@@ -86,11 +91,20 @@ async def run_corpus(study_id: str, abstract_files: list[Path] = None) -> Corpus
             abstract_text = abstract_data.get("abstract", abstract_data.get("text", ""))
             abstract_texts[abstract_id] = abstract_text
             try:
+                # A009-10 (audit #7): per-abstract wall clock. Generation is already bounded
+                # per call by EXTRACTION_MAX_NEW_TOKENS, so the residual slow path is a
+                # multi-call extractor; surface it (the hard bound is the iteration timeout).
+                ab_start = time.monotonic()
                 result = await extract_fn(abstract_id, abstract_text)
+                ab_elapsed = time.monotonic() - ab_start
                 results.append(result)
                 elapsed = time.monotonic() - start
+                if ab_elapsed > _SLOW_ABSTRACT_WARN_S:
+                    log_anomaly(study_id, -1, "slow_abstract",
+                                {"abstract_id": abstract_id, "seconds": round(ab_elapsed, 1)})
+                    print(f"  Corpus: SLOW abstract {abstract_id} took {ab_elapsed:.0f}s", flush=True)
                 print(f"  Corpus: {idx}/{len(abstract_files)} done ({abstract_id}) "
-                      f"[{len(result.claims)} claims] ({elapsed:.0f}s)", flush=True)
+                      f"[{len(result.claims)} claims] ({ab_elapsed:.0f}s / {elapsed:.0f}s total)", flush=True)
             except Exception as e:
                 log_anomaly(
                     study_id, -1,

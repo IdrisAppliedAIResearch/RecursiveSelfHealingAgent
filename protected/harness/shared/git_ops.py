@@ -50,7 +50,13 @@ def reset_partial_iteration() -> None:
 
 
 def rollback_playground() -> None:
+    # Restore tracked files to HEAD...
     _run_git(["checkout", "--", "playground/", "prompts/"], check=False)
+    # A009-6 (audit #3): ...and drop any UNTRACKED files the rolled-back iteration created
+    # (e.g. a new `playground/preprocessor.py`). `git checkout` leaves those in place, and
+    # the next `commit_iteration`'s `git add -A` would otherwise commit the orphan and
+    # contaminate the baseline + the agent's view of the current files.
+    _run_git(["clean", "-fd", "--", "playground/", "prompts/"], check=False)
 
 
 def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:

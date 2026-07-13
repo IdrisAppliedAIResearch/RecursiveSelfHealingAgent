@@ -34,6 +34,17 @@ from pathlib import Path
 # reaching the scan as `scan_failure`. A007-2 attaches a `failure_note` to the rolled-back
 # episode (persisted by episode_store) on the `scan_failure` / `iteration_timeout` /
 # `repair_exhausted` paths, feeding the failure into the next diagnostic context.
+# --- Amendment 009 (A009) additions ---
+# - routing_unmeasurable: The committed extractor's captured model input had no locatable
+#   RESULTS sentences (or it made no model call / empty input); routing is null for that
+#   abstract rather than a misleading 0 (A009-1)
+# - routing_history_skipped_empty: The whole attention pass produced no valid scores, so the
+#   routing-history append was skipped to avoid poisoning the next delta (A009-12)
+# - slow_abstract: A single extract() exceeded the wall-clock warning budget (A009-10)
+# - study_halted_output_stall: (re-scoped by A009-4) now fires on a routing fixed point —
+#   "frozen" (identical) or "oscillation" (2-cycle) — over scanned+applied iterations
+# Note: an apply exception surfaces as an `apply_exception: <Error>: <msg>` anomaly type via
+# the existing apply-failure path (A009-7 returns it as ApplyResult.reason).
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 

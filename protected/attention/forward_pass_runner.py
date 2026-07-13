@@ -44,6 +44,52 @@ def _read_system_prompt() -> str:
     return prompt
 
 
+class _ZeroUsage:
+    """Minimal token-usage stand-in so an extractor that unpacks (text, usage) and reads
+    usage.* attributes does not crash under the capture shim."""
+    prompt_tokens = 0
+    completion_tokens = 0
+    total_tokens = 0
+
+
+class _CaptureProvider:
+    """A009-1: a no-op provider that records the exact (system_prompt, text) the committed
+    extractor passes to the model, and returns a minimal valid response so extract()
+    completes without a real generation. Swapped in for the real provider during the routing
+    capture only."""
+
+    def __init__(self):
+        self.calls = []
+
+    def complete_with_usage(self, system_prompt=None, user_message=None, *args, **kwargs):
+        self.calls.append((system_prompt, user_message))
+        return ('{"claims": []}', _ZeroUsage())
+
+
+def _capture_extractor_input(abstract_id: str, raw_text: str):
+    """A009-1: run the committed extract() on this abstract with the capture shim and return
+    the (system_prompt, text) of its FIRST model call — i.e. the actual input the extractor
+    feeds the model, preprocessing included. Returns None if the extractor never called the
+    model (nothing to measure). Records the first call even if extract() later raises."""
+    import asyncio
+    import playground.extractor as pg
+
+    shim = _CaptureProvider()
+    old = getattr(pg, "_provider", None)
+    pg._provider = shim
+    try:
+        asyncio.run(pg.extract(abstract_id, raw_text))
+    except Exception as e:  # a broken extractor still yields its first captured call
+        print(f"  [FP] extractor raised during capture for {abstract_id}: "
+              f"{type(e).__name__}: {e}", flush=True)
+    finally:
+        pg._provider = old
+
+    if not shim.calls:
+        return None
+    return shim.calls[0]
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--study", required=True)
@@ -90,8 +136,31 @@ def main():
 
     scores = []
     for idx, aid in enumerate(probe_ids, 1):
-        abstract_text = _load_abstract_text(aid)
+        raw_text = _load_abstract_text(aid)
         print(f"  [FP] Analyzing [{idx}/{len(probe_ids)}] {aid}...", flush=True)
+
+        # A009-1: measure routing over the input the COMMITTED extractor actually feeds the
+        # model (preprocessing included), not the raw abstract. Capture it via the shim; if
+        # the extractor never called the model there is nothing to measure.
+        captured = _capture_extractor_input(aid, raw_text)
+        if captured is None:
+            print(f"  [FP] {aid}: extractor made no model call — routing unmeasurable", flush=True)
+            log_anomaly(args.study, args.iteration, "routing_unmeasurable",
+                        {"abstract_id": aid, "reason": "no_model_call"})
+            scores.append(_null_score(aid))
+            gc.collect()
+            torch.cuda.empty_cache()
+            continue
+        cap_system_prompt, cap_text = captured
+        cap_system_prompt = cap_system_prompt if isinstance(cap_system_prompt, str) else system_prompt
+        if not isinstance(cap_text, str) or not cap_text.strip():
+            print(f"  [FP] {aid}: captured empty model input — routing unmeasurable", flush=True)
+            log_anomaly(args.study, args.iteration, "routing_unmeasurable",
+                        {"abstract_id": aid, "reason": "empty_input"})
+            scores.append(_null_score(aid))
+            gc.collect()
+            torch.cuda.empty_cache()
+            continue
 
         # A004-10: one abstract's failure (OOM re-raised as RuntimeError, offset
         # resolution, etc.) must not terminate the pass. Log, record a null score,
@@ -99,10 +168,22 @@ def main():
         try:
             score = analyze_abstract(
                 model, tokenizer,
-                system_prompt=system_prompt,
+                system_prompt=cap_system_prompt,
                 abstract_id=aid,
-                abstract_text=abstract_text,
+                abstract_text=cap_text,
             )
+            # A009-1: if the (possibly transformed) input contains no locatable RESULTS
+            # sentences, results-attention fidelity is undefined here — record a null rather
+            # than a misleading 0 so the aggregate averages only over measurable abstracts.
+            if score.n_results_tokens == 0:
+                print(f"  [FP] {aid}: no RESULTS tokens located in extractor input — "
+                      f"routing unmeasurable", flush=True)
+                log_anomaly(args.study, args.iteration, "routing_unmeasurable",
+                            {"abstract_id": aid, "reason": "no_results_tokens"})
+                scores.append(_null_score(aid))
+                gc.collect()
+                torch.cuda.empty_cache()
+                continue
             scores.append({
                 "abstract_id": score.abstract_id,
                 "score": score.score,

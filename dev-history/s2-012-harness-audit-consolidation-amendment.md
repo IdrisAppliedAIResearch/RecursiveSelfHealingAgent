@@ -1,6 +1,6 @@
 # Amendment 009 (spec s2-012) — Harness Audit Consolidation & Pre-Registration Reconciliation
 
-**Status:** proposed (design registered; implementation pending)
+**Status:** implemented (design approved by operator; code landed & unit-tested 2026-07-13)
 **Date:** 2026-07-13
 **Branch:** `experiment/study_002`
 **Supersedes/extends:** builds on A004–A008. No prior *breaker* is reverted; A009 fixes
@@ -129,6 +129,24 @@ path reachable with `start_iter > 0` (A009-8); rollback zeroes `agent_edits_appl
 (A009-9); edited files are LF (A009-11). The A009-1 routing change additionally needs an
 end-to-end smoke on the real model before a full run. Then reset to a fresh pre-run baseline
 and hand to the operator.
+
+## Implementation notes (refinements found during coding)
+- **A009-10 scoped to observability.** The provider already caps every generation at
+  `EXTRACTION_MAX_NEW_TOKENS` (`analyzer.py:685`), so a single call cannot run unbounded; the
+  only residual slow path is a *multi-call* extractor, which cannot be hard-preempted
+  in-process (the model call is synchronous). A009-10 therefore logs a `slow_abstract`
+  anomaly + per-abstract wall clock; the hard bound is the now-30-min iteration timeout
+  (A009-3). True preemption would require a subprocess-per-abstract — out of scope.
+- **A009-1 fallback simplified.** The "label alignment" fallback is implemented as: if the
+  captured input yields `n_results_tokens == 0`, record a null routing score +
+  `routing_unmeasurable` for that abstract (rather than re-labelling the raw abstract). For
+  the control set — real abstracts selected to contain results — a 0 means a transformation
+  dropped them, which is exactly the unmeasurable case. Baseline (naive extractor) captures
+  the raw abstract verbatim, so its routing is unchanged from the pre-A009 pipeline.
+- **A008 test retired.** The old `(tp,fp,fn,routing)` signature (`_last_scan_signature`) is
+  replaced by `_routing_window` + `_detect_routing_stall`; A009 unit tests cover frozen,
+  oscillation, transition-not-firing, window filtering, per-iteration impact draw, and the
+  transactional apply (overlap rejection, LF write, create-then-edit buffer visibility).
 
 ## Open implementation risks (resolve during coding, not design)
 1. **A009-1 label alignment** on transformed extractor input (fallback: null +

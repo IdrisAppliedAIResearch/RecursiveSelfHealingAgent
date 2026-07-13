@@ -50,7 +50,9 @@ from protected.scorer import score_corpus
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
-N_ITERATIONS = 25
+# A009-3: 20 per the pre-registration (line 193) — aligns with the `count >= 21`
+# completion guard (baseline + 20). (Was 25, an undocumented deviation.)
+N_ITERATIONS = 20
 
 # A005-1: debugging turns granted to the agent when its edits fail to *apply*
 # (before the iteration is abandoned). We study whether the agent can improve
@@ -65,13 +67,13 @@ _MAX_CONSECUTIVE_ANOMALIES = 4
 # full budget on byte-identical iterations. Set above _MAX_CONSECUTIVE_ANOMALIES so a
 # genuine early build-up phase is not cut short.
 _MAX_CONSECUTIVE_NO_CHANGE = 5
-# A008-1: stop the study after this many consecutive SCANNED iterations that applied a
-# non-empty edit yet produced byte-identical scan output — extraction (micro tp/fp/fn) AND
-# routing score both unchanged. This is the strict complement of A006-3: that breaker keys
-# on applied-edit count and so resets every time the agent applies *something*, even when
-# the edit is semantically inert and the extractor's behaviour never moves. Kept below
-# _MAX_CONSECUTIVE_NO_CHANGE because an inert-edit stall (agent actively trying and failing
-# to move the signal) is a stronger halt signal than a frozen playground.
+# A008-1 / A009-4: stop the study on a routing fixed point the applied-edit-count breakers
+# miss. Over the routing values of scanned iterations that applied a non-empty edit, halt
+# when the last _MAX_CONSECUTIVE_NO_OP values are identical ("frozen") or the last 4 form an
+# exact 2-cycle ("oscillation"). Complement of A006-3, which keys on applied-edit count and
+# resets whenever the agent applies *something*, even when the edit is semantically inert.
+# A009-4 re-keyed this from the (tp,fp,fn,routing) signature to routing-only because A009-2
+# redraws the impact corpus each iteration (tp/fp/fn no longer stable for a frozen extractor).
 _MAX_CONSECUTIVE_NO_OP = 3
 
 
@@ -83,14 +85,18 @@ def _load_probe_set() -> list[str]:
     return data["abstract_ids"]
 
 
-def _load_impact_abstracts(probe_ids: list[str], n: int = 15) -> list[str]:
+def _load_impact_abstracts(probe_ids: list[str], iteration_n: int, n: int = 15) -> list[str]:
+    # A009-2: draw the 15 impact abstracts fresh each iteration (pre-reg line 104:
+    # "drawn randomly … each iteration"). Previously seed(42) fixed the same 15 every
+    # iteration. Seed on iteration_n so the draw is deterministic/reproducible per
+    # iteration but varies across the study, measuring generalization beyond the control set.
     abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
     all_ids = [f.stem for f in sorted(abstracts_dir.glob("*.json"))]
     impact_ids = [aid for aid in all_ids if aid not in probe_ids]
     import random
 
-    random.seed(42)
-    return random.sample(impact_ids, min(n, len(impact_ids)))
+    rng = random.Random(42 + iteration_n)
+    return rng.sample(impact_ids, min(n, len(impact_ids)))
 
 
 def _load_abstract_text(abstract_id: str) -> str:
@@ -99,9 +105,9 @@ def _load_abstract_text(abstract_id: str) -> str:
     return data.get("abstract", data.get("text", ""))
 
 
-def _get_mini_corpus_files() -> list[Path]:
+def _get_mini_corpus_files(iteration_n: int) -> list[Path]:
     probe_ids = _load_probe_set()
-    impact_ids = _load_impact_abstracts(probe_ids)
+    impact_ids = _load_impact_abstracts(probe_ids, iteration_n)  # A009-2: per-iteration draw
     all_ids = probe_ids + impact_ids
     abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
     files = []
@@ -432,7 +438,7 @@ def _verify_baseline_state(study_id: str) -> None:
             )
 
 
-def _pre_run_checks(study_id: str) -> None:
+def _pre_run_checks(study_id: str, verify_baseline: bool = True) -> None:
     pre_reg = PROJECT_ROOT / "experiments" / study_id / "pre-registration.md"
     if not pre_reg.exists():
         raise RuntimeError(f"Pre-registration not found: {pre_reg}")
@@ -454,7 +460,9 @@ def _pre_run_checks(study_id: str) -> None:
         if not full.exists():
             raise RuntimeError(f"Required file missing: {fp}")
 
-    _verify_baseline_state(study_id)
+    # A009-8: the baseline-state assertions are fresh-run only; a resume skips them.
+    if verify_baseline:
+        _verify_baseline_state(study_id)
 
     branch_name = f"experiment/{study_id}"
     ensure_branch(branch_name)
@@ -495,7 +503,7 @@ async def _run_baseline(study_id: str) -> None:
     ground_truth = _load_ground_truth()
     probe_ids = _load_probe_set()
 
-    mini_files = _get_mini_corpus_files()
+    mini_files = _get_mini_corpus_files(0)
     print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...", flush=True)
     t0 = time.time()
     try:
@@ -794,6 +802,7 @@ async def _run_iteration(
             log_anomaly(study_id, iteration_n, "repair_exhausted", {})
             metrics["repair_attempts"] = 3
             metrics["anomaly"] = True
+            metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
             # A007-2: feed the unrecovered contract/runtime error forward.
             exhausted_error = smoke_result.error or (val_result.error or "Validation failed")
             agent_result.episode.edits_applied = False
@@ -954,7 +963,7 @@ async def _run_iteration(
 
     print(f"  Mini-corpus run starting...")
     t0 = time.time()
-    mini_files = _get_mini_corpus_files()
+    mini_files = _get_mini_corpus_files(iteration_n)
     try:
         corpus_result = await asyncio.wait_for(
             run_corpus(study_id, mini_files),
@@ -965,6 +974,7 @@ async def _run_iteration(
         rollback_playground()
         log_anomaly(study_id, iteration_n, "iteration_timeout", {})
         agent_result.episode.edits_applied = False
+        metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
         # A007-2: feed the timeout forward so the next iteration's diagnostic sees it.
         agent_result.episode.failure_note = (
             f"SCAN TIMED OUT after your edits applied and was rolled back "
@@ -985,6 +995,7 @@ async def _run_iteration(
             {"error": str(e)},
         )
         agent_result.episode.edits_applied = False
+        metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
         # A007-2: feed the crash forward so the next iteration's diagnostic sees it.
         agent_result.episode.failure_note = (
             f"SCAN CRASHED after your edits applied and was rolled back: {e}. "
@@ -1047,7 +1058,13 @@ async def _run_iteration(
     else:
         metrics["routing_direction"] = "neutral"
 
-    append_routing(study_id, iteration_n, post_scores)  # A004-12: single scores list
+    # A009-12 (audit #10): only record routing history when the pass produced at least one
+    # valid score. An all-null pass (attention subprocess failure / all-unmeasurable) would
+    # otherwise poison the NEXT iteration's delta with an empty prev-scores map.
+    if any(s.score is not None for s in post_scores):
+        append_routing(study_id, iteration_n, post_scores)  # A004-12: single scores list
+    else:
+        log_anomaly(study_id, iteration_n, "routing_history_skipped_empty", {})
     write_iteration_artifacts(iteration_n, study_id, corpus_result)
     append_metrics(iteration_n, study_id, metrics)
     append_rationale(iteration_n, study_id, agent_result.rationale)
@@ -1075,44 +1092,72 @@ def _last_applied_edit_count(study_id: str) -> int:
     return int(rec.get("agent_edits_applied") or 0)
 
 
-def _last_scan_signature(study_id: str):
-    """A008-2: extraction+routing output signature from the most recent metrics record, or
-    None if that iteration did not scan. Two consecutive scanned iterations with an
-    *identical* signature produced byte-identical output — a semantically inert change that
-    the A006-3 applied-edit-count breaker cannot see. Uses the hidden micro tp/fp/fn (never
-    surfaced to the agent, so no F1 contamination) plus the agent-visible routing score."""
+def _routing_window(study_id: str) -> list:
+    """A009-4: the ordered routing values of every scanned iteration that applied a non-empty
+    edit and produced a numeric routing score. Non-scanned / zero-applied / unmeasurable
+    iterations are omitted (they neither advance nor reset stall detection). Rebuilt from
+    metrics each call, so it is inherently resume-safe. This replaces A008's per-record
+    (tp,fp,fn,routing) signature: A009-2 redraws the impact corpus each iteration, so tp/fp/fn
+    is no longer stable for a frozen extractor; the routing score is computed on the FIXED 10
+    control abstracts (corpus-independent) and — with A009-1 making routing reflect the
+    committed extractor — a frozen/oscillating routing value despite applied edits is a true
+    inert-edit signal."""
     metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
     if not metrics_path.exists():
-        return None
-    last_line = ""
+        return []
+    window = []
     for line in metrics_path.read_text(encoding="utf-8").splitlines():
-        if line.strip():
-            last_line = line
-    if not last_line:
-        return None
-    try:
-        rec = json.loads(last_line)
-    except json.JSONDecodeError:
-        return None
-    if not rec.get("scanned"):
-        return None
-    return (
-        rec.get("micro_tp"),
-        rec.get("micro_fp"),
-        rec.get("micro_fn"),
-        rec.get("post_routing_score"),
-    )
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not rec.get("scanned"):
+            continue
+        if int(rec.get("agent_edits_applied") or 0) <= 0:
+            continue
+        score = rec.get("post_routing_score")
+        if isinstance(score, (int, float)):
+            window.append(score)
+    return window
+
+
+def _detect_routing_stall(window: list) -> str | None:
+    """A009-4: given the routing values of recent scanned+applied iterations (most recent
+    last), detect a degenerate fixed point the applied-edit-count breakers miss:
+      - "frozen":      the last _MAX_CONSECUTIVE_NO_OP values are all identical; or
+      - "oscillation": the last 4 values form an exact 2-cycle (A,B,A,B, A!=B).
+    Both mean applied edits are producing no net routing movement. Exact equality is used so
+    any genuine change avoids the halt. The oscillation check requires v[-4]==v[-2] and
+    v[-3]==v[-1] with the two states distinct, so a one-off transition (…A,A,B) does NOT
+    trip it — only a sustained alternation does (folds in audit finding #4)."""
+    k = _MAX_CONSECUTIVE_NO_OP
+    if len(window) >= k and len(set(window[-k:])) == 1:
+        return "frozen"
+    if len(window) >= 4:
+        a, b, c, d = window[-4], window[-3], window[-2], window[-1]
+        if a == c and b == d and a != b:
+            return "oscillation"
+    return None
 
 
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
-    _pre_run_checks(study_id)
+    last = last_committed_iteration(study_id)
+    start_iter = last + 1
+
+    # A009-8 (audit #2): make resume reachable. On a genuine resume, first discard any
+    # uncommitted edits a crashed iteration left behind (per spec 003:830), then run the
+    # pre-run checks but SKIP the fresh-run baseline assertions (empty metrics + locked
+    # prompt hash + playground inventory) — those only make sense at iteration 0 and would
+    # otherwise force deleting all data to restart.
+    if start_iter > 0:
+        reset_partial_iteration()
+    _pre_run_checks(study_id, verify_baseline=(start_iter == 0))
 
     import torch
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-
-    last = last_committed_iteration(study_id)
-    start_iter = last + 1
 
     # Load model for agent completions only — forward pass runs in subprocess
     print("  Loading AttentionAnalyzer model for agent calls...")
@@ -1132,10 +1177,6 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
 
     consecutive_anomalies = 0
     consecutive_no_change = 0
-    # A008-2: seed from the last committed scanned iteration so a resumed run compares
-    # against real history instead of spuriously resetting the no-op counter.
-    consecutive_no_op = 0
-    prev_scan_sig = _last_scan_signature(study_id)
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id)
@@ -1156,18 +1197,9 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             consecutive_no_change = 0
         else:
             consecutive_no_change += 1
-        # A008-1: output-stall detection. Only scanned iterations carry a signature; a
-        # non-scanned (anomalous) iteration returns None and is skipped — it neither
-        # advances nor resets the no-op counter (pure non-scanned stalls are A005-2's job).
-        # An applied but byte-identical scan (exact signature match) is a semantically inert
-        # edit; any differing field is real movement and resets the counter.
-        cur_scan_sig = _last_scan_signature(study_id)
-        if cur_scan_sig is not None:
-            if applied_this_iter > 0 and prev_scan_sig is not None and cur_scan_sig == prev_scan_sig:
-                consecutive_no_op += 1
-            else:
-                consecutive_no_op = 0
-            prev_scan_sig = cur_scan_sig
+        # A009-4: routing-stall detection over the history of scanned+applied iterations
+        # (rebuilt from metrics each pass — resume-safe). Evaluated in the breaker block below.
+        routing_stall = _detect_routing_stall(_routing_window(study_id))
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
@@ -1199,17 +1231,17 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             )
             break
 
-        # A008-1: output-stall breaker. Scans succeed and the agent keeps applying edits,
-        # but the extractor's behaviour is frozen (extraction and routing byte-identical) —
-        # a semantically inert fixed point the A006-3 applied-edit-count breaker never sees.
-        if consecutive_no_op >= _MAX_CONSECUTIVE_NO_OP:
+        # A008-1 / A009-4: routing-stall breaker. Scans succeed and the agent keeps applying
+        # edits, but the routing DV is a fixed point — frozen (identical) or a 2-state
+        # oscillation — which the A006-3 applied-edit-count breaker never sees.
+        if routing_stall is not None:
             log_anomaly(
                 study_id, i, "study_halted_output_stall",
-                {"consecutive": consecutive_no_op},
+                {"pattern": routing_stall, "window": _routing_window(study_id)[-4:]},
             )
             print(
-                f"[{study_id}] HALTED: {consecutive_no_op} consecutive iterations applied "
-                f"edits but produced byte-identical output. Stopping early at iteration {i}.",
+                f"[{study_id}] HALTED: routing {routing_stall} across applied iterations "
+                f"(no net movement). Stopping early at iteration {i}.",
                 flush=True,
             )
             break

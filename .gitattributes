@@ -1,0 +1,9 @@
+# A009-11 (audit #8): pin text files to LF in the working tree so agent edits and baseline
+# restores never pick up CRLF under core.autocrlf=true. The study's baseline gate hashes
+# prompts/system_prompt.md as raw LF bytes; without this, `git checkout` smudged it to CRLF
+# and broke the locked-hash check. Combined with edit_applier writing newline="".
+*.py   text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.txt  text eol=lf
