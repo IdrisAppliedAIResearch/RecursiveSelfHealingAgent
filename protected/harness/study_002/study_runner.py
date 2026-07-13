@@ -65,6 +65,14 @@ _MAX_CONSECUTIVE_ANOMALIES = 4
 # full budget on byte-identical iterations. Set above _MAX_CONSECUTIVE_ANOMALIES so a
 # genuine early build-up phase is not cut short.
 _MAX_CONSECUTIVE_NO_CHANGE = 5
+# A008-1: stop the study after this many consecutive SCANNED iterations that applied a
+# non-empty edit yet produced byte-identical scan output — extraction (micro tp/fp/fn) AND
+# routing score both unchanged. This is the strict complement of A006-3: that breaker keys
+# on applied-edit count and so resets every time the agent applies *something*, even when
+# the edit is semantically inert and the extractor's behaviour never moves. Kept below
+# _MAX_CONSECUTIVE_NO_CHANGE because an inert-edit stall (agent actively trying and failing
+# to move the signal) is a stronger halt signal than a frozen playground.
+_MAX_CONSECUTIVE_NO_OP = 3
 
 
 def _load_probe_set() -> list[str]:
@@ -1067,6 +1075,35 @@ def _last_applied_edit_count(study_id: str) -> int:
     return int(rec.get("agent_edits_applied") or 0)
 
 
+def _last_scan_signature(study_id: str):
+    """A008-2: extraction+routing output signature from the most recent metrics record, or
+    None if that iteration did not scan. Two consecutive scanned iterations with an
+    *identical* signature produced byte-identical output — a semantically inert change that
+    the A006-3 applied-edit-count breaker cannot see. Uses the hidden micro tp/fp/fn (never
+    surfaced to the agent, so no F1 contamination) plus the agent-visible routing score."""
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if not metrics_path.exists():
+        return None
+    last_line = ""
+    for line in metrics_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            last_line = line
+    if not last_line:
+        return None
+    try:
+        rec = json.loads(last_line)
+    except json.JSONDecodeError:
+        return None
+    if not rec.get("scanned"):
+        return None
+    return (
+        rec.get("micro_tp"),
+        rec.get("micro_fp"),
+        rec.get("micro_fn"),
+        rec.get("post_routing_score"),
+    )
+
+
 async def _run_study_async(study_id: str, n_iterations: int) -> None:
     _pre_run_checks(study_id)
 
@@ -1095,6 +1132,10 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
 
     consecutive_anomalies = 0
     consecutive_no_change = 0
+    # A008-2: seed from the last committed scanned iteration so a resumed run compares
+    # against real history instead of spuriously resetting the no-op counter.
+    consecutive_no_op = 0
+    prev_scan_sig = _last_scan_signature(study_id)
     for i in range(start_iter, n_iterations + 1):
         print(f"[{study_id}] Running iteration {i}...", flush=True)
         rationale = await _run_iteration(i, study_id)
@@ -1110,10 +1151,23 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
         # A006-3: track iterations that leave the playground unchanged (empty-edit
         # no-ops as well as rolled-back anomalies). Read the applied-edit count from the
         # metrics record the iteration just wrote; any real change resets the counter.
-        if _last_applied_edit_count(study_id) > 0:
+        applied_this_iter = _last_applied_edit_count(study_id)
+        if applied_this_iter > 0:
             consecutive_no_change = 0
         else:
             consecutive_no_change += 1
+        # A008-1: output-stall detection. Only scanned iterations carry a signature; a
+        # non-scanned (anomalous) iteration returns None and is skipped — it neither
+        # advances nor resets the no-op counter (pure non-scanned stalls are A005-2's job).
+        # An applied but byte-identical scan (exact signature match) is a semantically inert
+        # edit; any differing field is real movement and resets the counter.
+        cur_scan_sig = _last_scan_signature(study_id)
+        if cur_scan_sig is not None:
+            if applied_this_iter > 0 and prev_scan_sig is not None and cur_scan_sig == prev_scan_sig:
+                consecutive_no_op += 1
+            else:
+                consecutive_no_op = 0
+            prev_scan_sig = cur_scan_sig
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
@@ -1141,6 +1195,21 @@ async def _run_study_async(study_id: str, n_iterations: int) -> None:
             print(
                 f"[{study_id}] HALTED: {consecutive_no_change} consecutive "
                 f"iterations with no playground change. Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
+
+        # A008-1: output-stall breaker. Scans succeed and the agent keeps applying edits,
+        # but the extractor's behaviour is frozen (extraction and routing byte-identical) —
+        # a semantically inert fixed point the A006-3 applied-edit-count breaker never sees.
+        if consecutive_no_op >= _MAX_CONSECUTIVE_NO_OP:
+            log_anomaly(
+                study_id, i, "study_halted_output_stall",
+                {"consecutive": consecutive_no_op},
+            )
+            print(
+                f"[{study_id}] HALTED: {consecutive_no_op} consecutive iterations applied "
+                f"edits but produced byte-identical output. Stopping early at iteration {i}.",
                 flush=True,
             )
             break

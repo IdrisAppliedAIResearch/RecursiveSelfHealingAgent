@@ -26,6 +26,7 @@ from pathlib import Path
 # --- Amendment 006 (A006) additions ---
 # - no_edits_proposed: The decision returned an empty edit array — a silent no-op (A006-3)
 # - study_halted_no_progress: Study stopped early after N unchanged iterations (A006-3)
+# - study_halted_output_stall: Study stopped early after N applied-but-inert iterations (A008-1)
 # --- Amendment 007 (A007) additions ---
 # No new anomaly types. A007-1 strengthens run_smoke_test to enforce the
 # ExtractionResult/.claims return contract, so a type/shape-breaking edit now trips the
