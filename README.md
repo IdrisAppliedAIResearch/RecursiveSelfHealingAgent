@@ -16,13 +16,16 @@ Study 001 established the failure baseline. Each subsequent study adds exactly o
 |-------|----------------------|--------|--------|
 | **001** | (baseline — no consequence signal) | Complete | **Negative** — F1 0.467 → 0.142; agent edited only prompts, never code |
 | **002** | Intrinsic cost signal (attention routing fidelity) + baseline correction | Complete | **Soft negative** — correction unlocked code edits; routing signal did not guide them |
-| 003–006 | (reserved: configurator, calibration, dual-agent, …) | Planned | — |
+| **003** | Feasibility probe: workspace grounding via the logit lens (candidate alternative signal) | Probe run | **Negative** — no result-concepts surface at the generation position; signal not viable as instantiated |
+| 004–006 | (reserved: configurator, calibration, dual-agent, …) | Planned | — |
 
 ## Key Findings So Far
 
 **Study 001 — No.** Across fourteen iterations (0–13), macro-F1 degraded from 0.467 to 0.142, a 69.6% decline. The agent exclusively modified prompts, never Python code, pursued progressively over-constraining extraction criteria, and became trapped in a local minimum without ever detecting its own decline. The hidden-score constraint, intended to prevent metric gaming, proved sufficient to prevent improvement.
 
 **Study 002 — A signal can unlock code self-modification without guiding it.** Adding an intrinsic cost signal (attention routing fidelity) plus a baseline capability correction, the agent modified `playground/extractor.py` at four iterations — clearing the behavioral-differentiation criterion Study 001 met at zero. But the code edits are most parsimoniously attributed to the baseline correction, not the routing signal, which was inert as a guide: it declined to a frozen 0.0058 and never once read as improving. At iteration 6 the agent refactored the extractor into a contradictory two-call pipeline that produced **zero claims on every abstract from iteration 6 through 12** — an extraction death the routing signal, which measures attention over the model's *input* rather than the health of the downstream pipeline, reported as flat and unremarkable. Reported as a **soft negative**: attention routing fidelity, as instantiated here, is structurally decoupled from the quantity the agent was trying to improve.
+
+**Study 003 (probe) — a second candidate signal, ruled out before it cost a study.** Before designing an alternative to attention routing, we ran a one-shot feasibility probe on *workspace grounding* — reading the model's verbalizable "workspace" with the logit lens (Anthropic, Transformer Circuits 2026). At the generation-start position, across 3 real and 2 synthetic abstracts, **no result-concept words surface at any middle-band layer**, and results-heavy vs methods-heavy inputs are indistinguishable. The readable band exists but holds the model's *task procedure* and *output JSON format*, not the abstract's domain concepts — the same decoupling failure as Study 002, reached by a different route. Ruled out as instantiated; see [`experiments/study_003/README.md`](experiments/study_003/README.md).
 
 ## Repository Structure
 
@@ -48,6 +51,11 @@ experiments/
     anomalies.jsonl        # Structured anomaly events
     assessments.jsonl      # Per-iteration assessments
     probe_set.json         # Fixed 10-abstract control set
+  study_003/          # Feasibility probe (negative)
+    README.md              # Probe findings + verdict
+    logit_lens_probe.py    # Runnable logit-lens workspace probe
+    probe_output.txt       # Human-readable layer sweep
+    probe_output.json      # Structured per-layer top-tokens and concept counts
 ```
 
 ## Study Design (shared across the program)
@@ -64,3 +72,4 @@ experiments/
 
 - **Study 001** — full analysis in [`experiments/study_001/paper.md`](experiments/study_001/paper.md).
 - **Study 002** — full findings paper in [`experiments/study_002/README.md`](experiments/study_002/README.md), with figures under `figures/` and an interactive brief in `brief.html`.
+- **Study 003** — logit-lens workspace probe: spec in [`dev-history/s3-001-logit-lens-workspace-probe.md`](dev-history/s3-001-logit-lens-workspace-probe.md), findings and verdict in [`experiments/study_003/README.md`](experiments/study_003/README.md).
