@@ -1,0 +1,423 @@
+<title>Study 002 — Intrinsic Cost Signal</title>
+<style>
+  :root {
+    --page:#f1f1ed; --surface:#fcfcfb; --surface-2:#f7f6f2;
+    --ink:#15150f; --secondary:#53524d; --muted:#8a887f;
+    --hair:#e4e3dc; --hair-strong:#d3d2c9;
+    --accent:#2a78d6; --routing:#e0642e;
+    --good:#0a8f0a; --critical:#cf3a3a; --collapse:#f7dede;
+    --shadow:0 1px 2px rgba(20,20,15,.05),0 8px 28px rgba(20,20,15,.06);
+    --mono:ui-monospace,"SFMono-Regular","Cascadia Code","Consolas",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --page:#0d0e0f; --surface:#17181a; --surface-2:#1d1e20;
+      --ink:#f3f3f0; --secondary:#b7b6ae; --muted:#87867f;
+      --hair:#292a2c; --hair-strong:#37383a;
+      --accent:#3f8ce8; --routing:#ee7847;
+      --good:#12a512; --critical:#e46464; --collapse:#3a2222;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --page:#f1f1ed; --surface:#fcfcfb; --surface-2:#f7f6f2;
+    --ink:#15150f; --secondary:#53524d; --muted:#8a887f;
+    --hair:#e4e3dc; --hair-strong:#d3d2c9;
+    --accent:#2a78d6; --routing:#e0642e;
+    --good:#0a8f0a; --critical:#cf3a3a; --collapse:#f7dede;
+    --shadow:0 1px 2px rgba(20,20,15,.05),0 8px 28px rgba(20,20,15,.06);
+  }
+  :root[data-theme="dark"]{
+    --page:#0d0e0f; --surface:#17181a; --surface-2:#1d1e20;
+    --ink:#f3f3f0; --secondary:#b7b6ae; --muted:#87867f;
+    --hair:#292a2c; --hair-strong:#37383a;
+    --accent:#3f8ce8; --routing:#ee7847;
+    --good:#12a512; --critical:#e46464; --collapse:#3a2222;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--ink);
+    font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;font-size:17px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  .col{max-width:720px;margin-left:auto;margin-right:auto}
+
+  /* ---- meta bar ---- */
+  .metabar{border-bottom:1px solid var(--hair);background:var(--surface)}
+  .metabar .wrap{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;
+    padding-top:13px;padding-bottom:13px;font-family:var(--mono);
+    font-size:12px;letter-spacing:.04em;color:var(--muted)}
+  .metabar b{color:var(--secondary);font-weight:600}
+  .verdict{margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+    color:var(--ink);font-weight:600}
+  .verdict .dot{width:8px;height:8px;border-radius:50%;background:var(--critical)}
+
+  /* ---- hero ---- */
+  header.hero{padding:64px 0 40px}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--routing);font-weight:600;margin:0 0 20px}
+  h1{font-size:clamp(30px,5vw,46px);line-height:1.08;letter-spacing:-.02em;
+    font-weight:760;margin:0 0 22px;text-wrap:balance}
+  h1 .cliff{color:var(--critical)}
+  h1 .flat{color:var(--routing)}
+  .dek{font-size:19px;color:var(--secondary);margin:0;text-wrap:pretty}
+
+  /* ---- kpi row ---- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:40px 0 8px}
+  .kpi{background:var(--surface);border:1px solid var(--hair);border-radius:12px;
+    padding:18px 18px 16px;box-shadow:var(--shadow)}
+  .kpi .v{font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:-.02em;
+    line-height:1;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.35}
+  .kpi.crit .v{color:var(--critical)}
+  .kpi.good .v{color:var(--good)}
+
+  /* ---- sections ---- */
+  section{padding:34px 0}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  h2{font-size:26px;line-height:1.2;letter-spacing:-.015em;font-weight:700;
+    margin:0 0 16px;text-wrap:balance}
+  h3{font-size:18px;font-weight:660;margin:26px 0 8px}
+  p{margin:0 0 16px}
+  p .term{font-family:var(--mono);font-size:.9em;background:var(--surface-2);
+    border:1px solid var(--hair);border-radius:4px;padding:1px 5px}
+  strong{font-weight:660}
+  .rule{height:1px;background:var(--hair);border:0;margin:0}
+
+  /* ---- scorecard ---- */
+  .cards{display:grid;gap:12px}
+  .crit-row{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;
+    background:var(--surface);border:1px solid var(--hair);border-radius:12px;
+    padding:16px 18px;box-shadow:var(--shadow)}
+  .crit-row .n{font-family:var(--mono);font-size:13px;color:var(--muted);
+    padding-top:2px;font-variant-numeric:tabular-nums}
+  .crit-row .body{font-size:15.5px}
+  .crit-row .body .t{font-weight:640;color:var(--ink)}
+  .crit-row .body .d{color:var(--secondary);font-size:14px;margin-top:3px}
+  .pill{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.03em;
+    text-transform:uppercase;padding:5px 11px;border-radius:999px;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:6px}
+  .pill.fail{background:color-mix(in srgb,var(--critical) 13%,transparent);color:var(--critical)}
+  .pill.pass{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+  .pill .g{width:7px;height:7px;border-radius:50%;background:currentColor}
+
+  /* ---- figure / chart ---- */
+  figure{margin:0}
+  .panel{background:var(--surface);border:1px solid var(--hair);border-radius:14px;
+    padding:20px 20px 8px;box-shadow:var(--shadow);position:relative}
+  .panel .head{display:flex;justify-content:space-between;align-items:baseline;
+    gap:12px;margin-bottom:6px;flex-wrap:wrap}
+  .panel .head .title{font-weight:650;font-size:15px}
+  .legend{display:flex;gap:16px;font-family:var(--mono);font-size:12px;color:var(--secondary)}
+  .legend i{display:inline-block;width:11px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+  figcaption{font-size:13.5px;color:var(--muted);margin-top:14px;line-height:1.5;max-width:760px}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .tick{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+  .axlab{font-family:var(--mono);font-size:11px;fill:var(--secondary)}
+
+  .tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .09s;
+    background:var(--ink);color:var(--page);font-family:var(--mono);font-size:12px;
+    line-height:1.5;padding:9px 11px;border-radius:8px;white-space:nowrap;z-index:5;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);transform:translate(-50%,-108%)}
+  .tip b{color:var(--page);font-weight:700}
+  .tip .kf{color:#8fc0f2}.tip .kr{color:#f0a074}
+
+  /* ---- callout ---- */
+  .callout{background:var(--surface-2);border:1px solid var(--hair-strong);
+    border-left:3px solid var(--routing);border-radius:10px;padding:16px 18px;
+    margin:22px 0;font-size:15px}
+  .callout .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--routing);font-weight:600;margin-bottom:7px}
+  .mono-fig{font-family:var(--mono);color:var(--ink);font-weight:600}
+
+  /* ---- instrumentation ---- */
+  .instr{display:grid;gap:12px}
+  .instr .item{background:var(--surface);border:1px solid var(--hair);border-radius:12px;
+    padding:15px 18px;box-shadow:var(--shadow)}
+  .instr .item .h{display:flex;gap:10px;align-items:center;font-weight:640;font-size:15px;margin-bottom:5px}
+  .instr .item .tag{font-family:var(--mono);font-size:11px;color:var(--muted);
+    border:1px solid var(--hair-strong);border-radius:5px;padding:2px 6px}
+  .instr .item p{margin:0;font-size:14.5px;color:var(--secondary)}
+
+  footer{border-top:1px solid var(--hair);margin-top:30px;padding:26px 0 60px;
+    font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  footer a{color:var(--secondary)}
+
+  @media (max-width:640px){
+    body{font-size:16px}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .crit-row{grid-template-columns:auto 1fr;grid-template-areas:"n body" "pill pill"}
+    .crit-row .pill{grid-area:pill;justify-self:start}
+  }
+</style>
+
+<div class="metabar"><div class="wrap">
+  <span><b>IDRIS APPLIED AI RESEARCH</b></span>
+  <span>STUDY 002 · INTRINSIC COST SIGNAL</span>
+  <span>QWEN 3.6 27B · N=13 SCANNED</span>
+  <span class="verdict"><span class="dot"></span>SOFT NEGATIVE</span>
+</div></div>
+
+<div class="wrap">
+<header class="hero">
+  <div class="col">
+    <p class="eyebrow">Attention-routing fidelity as a self-modification signal</p>
+    <h1>An intrinsic attention signal let the agent <span class="cliff">rewrite its own code</span> — but couldn't tell it the code had <span class="flat">gone dead</span>.</h1>
+    <p class="dek">Study 001's agent never touched Python and drifted downhill with no feedback. Study 002 gave it one internal signal — how much of the model's attention lands on results sentences — in place of any score. The signal unlocked code changes. It could not guide them.</p>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">0.603</div><div class="l">Baseline macro-F1 (iteration 0)</div></div>
+    <div class="kpi good"><div class="v">0.691</div><div class="l">Peak F1 — iteration 1, a prompt edit (the only real gain)</div></div>
+    <div class="kpi crit"><div class="v">0.000</div><div class="l">F1 from iteration 6 onward — extraction dead for 7 iterations</div></div>
+    <div class="kpi"><div class="v">1<span style="font-size:18px;color:var(--muted)"> / 5</span></div><div class="l">Pre-registered evidence criteria met (and it's the wrong one)</div></div>
+  </div>
+</header>
+</div>
+
+<hr class="rule">
+
+<div class="wrap"><section><div class="col">
+  <p class="kicker">The pre-registered scorecard</p>
+  <h2>Five criteria decided this study in advance. Four fail; the one that passes isn't the signal's to claim.</h2>
+  <p>The design locked five ways the study could show a positive signal before any code ran. Only behavioral differentiation — did the agent attempt a code change — came back positive, and the pre-registration itself concedes that criterion could be driven by the baseline correction rather than the routing signal under test.</p>
+</div>
+
+<div class="col cards" style="margin-top:24px">
+  <div class="crit-row"><div class="n">01</div>
+    <div class="body"><div class="t">Routing improvement</div><div class="d">Aggregate routing fell 0.023 → 0.0058 and never once read "improving."</div></div>
+    <span class="pill fail"><span class="g"></span>Not met</span></div>
+  <div class="crit-row"><div class="n">02</div>
+    <div class="body"><div class="t">Behavioral differentiation</div><div class="d">extractor.py edited at iterations 3, 4, 6, 9 — vs zero across all 14 of Study 001's iterations.</div></div>
+    <span class="pill pass"><span class="g"></span>Met</span></div>
+  <div class="crit-row"><div class="n">03</div>
+    <div class="body"><div class="t">Self-correction</div><div class="d">No rollback. The agent doubted the metric at the meta level twice but never reversed a code direction.</div></div>
+    <span class="pill fail"><span class="g"></span>Not met</span></div>
+  <div class="crit-row"><div class="n">04</div>
+    <div class="body"><div class="t">Calibration</div><div class="d">A near-verbatim wrong prediction ("routing will rise to &gt;0.30") repeated across iterations 2–13.</div></div>
+    <span class="pill fail"><span class="g"></span>Not met</span></div>
+  <div class="crit-row"><div class="n">05</div>
+    <div class="body"><div class="t">Validation F1 &gt; 0.142</div><div class="d">Run died before the 200-abstract validation; committed final-state F1 = 0.000.</div></div>
+    <span class="pill fail"><span class="g"></span>Moot</span></div>
+</div>
+</section></div>
+
+<hr class="rule">
+
+<div class="wrap"><section>
+  <div class="col">
+    <p class="kicker">The evidence, in one picture</p>
+    <h2>Extraction quality falls off a cliff while the signal the agent steered by barely moves.</h2>
+    <p>The two series are drawn on separate axes on purpose — their scales are 25× apart, and a shared dual axis would fake a relationship that isn't there. At iteration 6 the agent's two-call refactor produced zero claims on every abstract. The routing score registered the catastrophe as a shrug, then flatlined.</p>
+  </div>
+
+  <figure style="margin-top:24px">
+    <div class="panel">
+      <div class="head">
+        <span class="title">Macro-F1 and aggregate routing score · iterations 0–12</span>
+        <span class="legend">
+          <span><i style="background:var(--accent)"></i>Macro-F1</span>
+          <span><i style="background:var(--routing)"></i>Routing</span>
+        </span>
+      </div>
+      <svg id="traj" viewBox="0 0 720 400" role="img" aria-label="Macro-F1 collapses to zero at iteration 6 while the routing score declines gently and then freezes at 0.0058."></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <figcaption>Circled markers are iterations that edited <span style="font-family:var(--mono)">extractor.py</span>. The shaded band is the zero-claim collapse (iterations 6–12). Values are read directly from the committed <span style="font-family:var(--mono)">metrics.jsonl</span> / <span style="font-family:var(--mono)">routing_history.jsonl</span>. Hover for per-iteration detail.</figcaption>
+  </figure>
+</section></div>
+
+<hr class="rule">
+
+<div class="wrap"><section><div class="col">
+  <p class="kicker">Why the signal went blind</p>
+  <h2>Routing measures attention over the model's input — not the health of the pipeline that consumes it.</h2>
+  <p>This run used the corrected instrumentation (amendment A009-1), so attention was measured over the extractor's real first model call, exactly as pre-registered. It still didn't move when the agent edited code — because the edits changed downstream parsing and pipeline logic, not the text handed to that first call.</p>
+
+  <div class="callout">
+    <div class="lab">Direct evidence · routing_history.jsonl</div>
+    Iteration 4 was an <span class="mono-fig">extractor.py</span>-only edit. Its routing score is <span class="mono-fig">byte-identical</span> to iteration 3's — <span class="mono-fig">0.009366872215545337</span>, delta <span class="mono-fig">0.0</span>. Iteration 9's code edit: also delta <span class="mono-fig">0.0</span>. A signal watching input attention cannot see a pipeline change underneath it.
+  </div>
+
+  <p>The bug (measuring the wrong call) was real and is fixed. The residual decoupling — watching <em>input</em> attention rather than the pipeline's <em>behavior</em> — is a property of the signal's design, and it survives the fix. That is why a fully dead extractor read "flat" for seven straight iterations.</p>
+</div></section></div>
+
+<hr class="rule">
+
+<div class="wrap"><section>
+  <div class="col">
+    <p class="kicker">Bad execution, or bad strategy?</p>
+    <h2>Even implemented correctly, the agent's refactor loses to leaving the extractor alone.</h2>
+    <p>The iteration-6 pipeline failed because the agent's own prompt contradicted its own injection. But an offline replication that implemented the same two-stage decomposition <em>correctly</em> still scored far below the untouched baseline on iteration 6's exact draw — both precision and recall collapse. The harness bugs decided how <em>catastrophically</em> the run failed, not <em>whether</em> the direction could have won. It couldn't.</p>
+  </div>
+
+  <figure style="margin-top:22px">
+    <div class="panel">
+      <div class="head">
+        <span class="title">Corrected two-stage refactor vs naive baseline · iteration-6 draw</span>
+        <span class="legend">
+          <span><i style="background:var(--accent)"></i>Naive baseline</span>
+          <span><i style="background:var(--routing)"></i>Two-stage</span>
+        </span>
+      </div>
+      <svg id="repl" viewBox="0 0 720 300" role="img" aria-label="Naive baseline beats the corrected two-stage refactor on all three metrics: precision 0.548 vs 0.308, recall 0.559 vs 0.219, F1 0.554 vs 0.256."></svg>
+      <div class="tip" id="tip2"></div>
+    </div>
+    <figcaption><strong>Operator-reported and not reproducible from the committed run files</strong> — this experiment ran outside the harness and its corrected implementation is not in the study's git history. Included because it separates "bad execution" from "bad strategy," which is central to the interpretation.</figcaption>
+  </figure>
+</section></div>
+
+<hr class="rule">
+
+<div class="wrap"><section><div class="col">
+  <p class="kicker">Threats to validity</p>
+  <h2>What the study establishes, and what the instrumentation confounds.</h2>
+  <p>The negative result is partly entangled with harness defects found and amended across implementation (series A004–A009). The core finding — an input-attention signal is decoupled from extraction quality — is a design property, not a bug. But three instrumentation gaps shaped how the run failed.</p>
+</div>
+
+<div class="col instr" style="margin-top:22px">
+  <div class="item"><div class="h"><span class="tag">§5.2</span>Context truncation suppressed the fixes</div>
+    <p>Prompts grew to 7–8.7k tokens against a 5,120-token budget; truncation kept the file tail and discarded the agent's edit blocks. It repeatedly diagnosed its own bug, then had the fix cut off (no_edits_proposed at iterations 7, 8, 10, 11, 12).</p></div>
+  <div class="item"><div class="h"><span class="tag">§5.3</span>No dead-extractor guard</div>
+    <p>The smoke test passed at iteration 6 with a claim count of zero. No breaker halts ~100% zero-claim output, so a dead extractor ran for seven iterations without stopping itself.</p></div>
+  <div class="item"><div class="h"><span class="tag">§5.4</span>Signal near its own floor</div>
+    <p>Routing values stay under ~2.5% and fall to ~0.6% in the dead tail — plausibly dominated by noise. The study cannot fully separate "the agent failed to use a real signal" from "there was no real signal to use."</p></div>
+</div>
+</section></div>
+
+<hr class="rule">
+
+<div class="wrap"><section><div class="col">
+  <p class="kicker">What it means for the program</p>
+  <h2>A constraint on intrinsic signals, not a dead end.</h2>
+  <p>Study 002 delivers two usable results. The behavioral one — plain capability framing produces code changes — is a clean positive that will be held constant, so later studies inherit an agent that actually uses its full modification surface. The signal one is a bounded negative: attention-<em>over-input</em> routing fidelity is not a sufficient intrinsic cost signal. A useful intrinsic signal likely has to be computed over the model's output-generating pass or the pipeline's behavior — not its input attention. Study 003 proceeds with the baseline correction retained and the intrinsic-signal question sharpened by what routing fidelity could not do.</p>
+</div></section></div>
+
+<div class="wrap"><footer><div class="col">
+  Idris Applied AI Research · Study 002 — Intrinsic Cost Signal Isolation · Qwen 3.6 27B · single run (n=1).<br>
+  Companion to <a href="#">experiments/study_002/paper.md</a>. Charts generated from committed <span style="color:var(--muted)">metrics.jsonl</span> and <span style="color:var(--muted)">routing_history.jsonl</span>. Figures reproducible via <span style="color:var(--muted)">make_figures.py</span>.
+</div></footer></div>
+
+<script>
+(function(){
+  // ---- data (read directly from metrics.jsonl / routing_history.jsonl) ----
+  const D = [
+    {it:0, f1:0.603, r:0.0230, p:0.615, rec:0.590, code:false, surf:"baseline"},
+    {it:1, f1:0.691, r:0.0188, p:0.758, rec:0.635, code:false, surf:"system_prompt.md"},
+    {it:2, f1:0.560, r:0.0101, p:0.649, rec:0.492, code:false, surf:"system_prompt.md"},
+    {it:3, f1:0.399, r:0.00937,p:0.443, rec:0.363, code:true,  surf:"system_prompt.md + extractor.py"},
+    {it:4, f1:0.513, r:0.00937,p:0.575, rec:0.463, code:true,  surf:"extractor.py"},
+    {it:5, f1:0.385, r:0.00674,p:0.433, rec:0.346, code:false, surf:"system_prompt.md"},
+    {it:6, f1:0.000, r:0.00584,p:0.000, rec:0.000, code:true,  surf:"extractor.py — 0 claims"},
+    {it:7, f1:0.000, r:0.00584,p:0.000, rec:0.000, code:false, surf:"none"},
+    {it:8, f1:0.000, r:0.00584,p:0.000, rec:0.000, code:false, surf:"none"},
+    {it:9, f1:0.000, r:0.00584,p:0.000, rec:0.000, code:true,  surf:"extractor.py — 0 claims"},
+    {it:10,f1:0.000, r:0.00584,p:0.000, rec:0.000, code:false, surf:"none"},
+    {it:11,f1:0.000, r:0.00584,p:0.000, rec:0.000, code:false, surf:"none"},
+    {it:12,f1:0.000, r:0.00584,p:0.000, rec:0.000, code:false, surf:"none"},
+  ];
+  const css = k => getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  const SVGNS="http://www.w3.org/2000/svg";
+  function el(n,a){const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+  // ---- trajectory dual-panel chart ----
+  function drawTraj(){
+    const svg=document.getElementById("traj"); svg.innerHTML="";
+    const W=720, L=54, R=18, xw=W-L-R;
+    const x = i => L + (i/12)*xw;
+    // panels
+    const pA={y:16,h:186, max:0.75}, pB={y:238,h:126, max:0.026};
+    const yA=v=>pA.y+pA.h-(v/pA.max)*pA.h;
+    const yB=v=>pB.y+pB.h-(v/pB.max)*pB.h;
+    // collapse band
+    const bx=x(5.5);
+    [[pA.y,pA.h],[pB.y,pB.h]].forEach(([yy,hh])=>{
+      svg.appendChild(el("rect",{x:bx,y:yy,width:x(12)+8-bx,height:hh,fill:css("--collapse"),opacity:.85}));
+    });
+    // gridlines + y ticks (F1)
+    [0,0.2,0.4,0.6].forEach(v=>{
+      svg.appendChild(el("line",{x1:L,y1:yA(v),x2:W-R,y2:yA(v),stroke:css("--hair"),"stroke-width":1}));
+      const t=el("text",{x:L-8,y:yA(v)+3,"text-anchor":"end",class:"tick"});t.textContent=v.toFixed(1);svg.appendChild(t);
+    });
+    [0,0.01,0.02].forEach(v=>{
+      svg.appendChild(el("line",{x1:L,y1:yB(v),x2:W-R,y2:yB(v),stroke:css("--hair"),"stroke-width":1}));
+      const t=el("text",{x:L-8,y:yB(v)+3,"text-anchor":"end",class:"tick"});t.textContent=v.toFixed(2);svg.appendChild(t);
+    });
+    // study001 reference line
+    svg.appendChild(el("line",{x1:L,y1:yA(0.142),x2:W-R,y2:yA(0.142),stroke:css("--muted"),"stroke-width":1.2,"stroke-dasharray":"5 4"}));
+    const rl=el("text",{x:W-R,y:yA(0.142)-5,"text-anchor":"end",class:"axlab"});rl.textContent="Study 001 final 0.142";svg.appendChild(rl);
+    // x ticks
+    D.forEach(d=>{const t=el("text",{x:x(d.it),y:pB.y+pB.h+20,"text-anchor":"middle",class:"tick"});t.textContent=d.it;svg.appendChild(t);});
+    const xl=el("text",{x:L+xw/2,y:pB.y+pB.h+38,"text-anchor":"middle",class:"axlab"});xl.textContent="ITERATION";svg.appendChild(xl);
+    // axis labels
+    const a1=el("text",{x:L-40,y:pA.y+pA.h/2,"text-anchor":"middle",class:"axlab",transform:`rotate(-90 ${L-40} ${pA.y+pA.h/2})`});a1.textContent="MACRO-F1";svg.appendChild(a1);
+    const a2=el("text",{x:L-40,y:pB.y+pB.h/2,"text-anchor":"middle",class:"axlab",transform:`rotate(-90 ${L-40} ${pB.y+pB.h/2})`});a2.textContent="ROUTING";svg.appendChild(a2);
+    // lines
+    const pathF=D.map((d,i)=>(i?"L":"M")+x(d.it)+" "+yA(d.f1)).join(" ");
+    const pathR=D.map((d,i)=>(i?"L":"M")+x(d.it)+" "+yB(d.r)).join(" ");
+    svg.appendChild(el("path",{d:pathF,fill:"none",stroke:css("--accent"),"stroke-width":2.4,"stroke-linejoin":"round"}));
+    svg.appendChild(el("path",{d:pathR,fill:"none",stroke:css("--routing"),"stroke-width":2.4,"stroke-linejoin":"round"}));
+    // markers
+    D.forEach(d=>{
+      svg.appendChild(el("circle",{cx:x(d.it),cy:yA(d.f1),r:3.6,fill:css("--accent"),stroke:css("--surface"),"stroke-width":1.4}));
+      svg.appendChild(el("circle",{cx:x(d.it),cy:yB(d.r),r:3.6,fill:css("--routing"),stroke:css("--surface"),"stroke-width":1.4}));
+      if(d.code) svg.appendChild(el("circle",{cx:x(d.it),cy:yA(d.f1),r:8,fill:"none",stroke:css("--critical"),"stroke-width":1.8}));
+    });
+    // annotations
+    const an=(tx,ty,txt,col,anchor)=>{const t=el("text",{x:tx,y:ty,"text-anchor":anchor||"start",fill:col,"font-family":"var(--mono)","font-size":"11.5"});t.textContent=txt;svg.appendChild(t);};
+    an(x(1)+8, yA(0.691)-6, "iter 1 · 0.691 peak", css("--good"));
+    an(x(6)+11, yA(0.16), "iter 6 → 0 claims", css("--critical"));
+    an(x(9), yB(0.00584)-9, "frozen 0.0058", css("--secondary"),"middle");
+
+    // hover
+    const tip=document.getElementById("tip"); const box=svg.getBoundingClientRect();
+    const guide=el("line",{x1:0,y1:pA.y,x2:0,y2:pB.y+pB.h,stroke:css("--hair-strong"),"stroke-width":1,opacity:0});svg.appendChild(guide);
+    svg.addEventListener("pointermove",ev=>{
+      const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)/r.width*W;
+      let d=D[0],best=1e9; D.forEach(o=>{const dd=Math.abs(x(o.it)-px);if(dd<best){best=dd;d=o;}});
+      guide.setAttribute("x1",x(d.it));guide.setAttribute("x2",x(d.it));guide.setAttribute("opacity",1);
+      tip.style.opacity=1;
+      tip.style.left=(x(d.it)/W*r.width)+"px";
+      tip.style.top=((yA(Math.max(d.f1,0.05)))/400*r.height)+"px";
+      tip.innerHTML=`<b>iteration ${d.it}</b><br><span class="kf">F1 ${d.f1.toFixed(3)}</span> · <span class="kr">routing ${d.r.toFixed(4)}</span><br>${d.surf}`;
+    });
+    svg.addEventListener("pointerleave",()=>{tip.style.opacity=0;guide.setAttribute("opacity",0);});
+  }
+
+  // ---- replication grouped bars ----
+  function drawRepl(){
+    const svg=document.getElementById("repl"); svg.innerHTML="";
+    const W=720,H=300,L=48,R=18,T=18,B=52; const iw=W-L-R,ih=H-T-B;
+    const groups=[{k:"Precision",a:0.548,b:0.308},{k:"Recall",a:0.559,b:0.219},{k:"Macro-F1",a:0.554,b:0.256}];
+    const max=0.62, y=v=>T+ih-(v/max)*ih;
+    [0,0.2,0.4,0.6].forEach(v=>{
+      svg.appendChild(el("line",{x1:L,y1:y(v),x2:W-R,y2:y(v),stroke:css("--hair"),"stroke-width":1}));
+      const t=el("text",{x:L-8,y:y(v)+3,"text-anchor":"end",class:"tick"});t.textContent=v.toFixed(1);svg.appendChild(t);
+    });
+    const gw=iw/groups.length, bw=46, gap=10;
+    groups.forEach((g,i)=>{
+      const cx=L+gw*i+gw/2;
+      const xa=cx-bw-gap/2, xb=cx+gap/2;
+      const bars=[[xa,g.a,css("--accent"),"naive"],[xb,g.b,css("--routing"),"two-stage"]];
+      bars.forEach(([bx,v,c,lbl])=>{
+        svg.appendChild(el("rect",{x:bx,y:y(v),width:bw,height:T+ih-y(v),rx:4,fill:c}));
+        const t=el("text",{x:bx+bw/2,y:y(v)-7,"text-anchor":"middle",fill:css("--secondary"),"font-family":"var(--mono)","font-size":"12","font-weight":"600"});t.textContent=v.toFixed(3);svg.appendChild(t);
+      });
+      const gl=el("text",{x:cx,y:H-30,"text-anchor":"middle",fill:css("--ink"),"font-size":"13"});gl.textContent=g.k;svg.appendChild(gl);
+    });
+    const yl=el("text",{x:L-36,y:T+ih/2,"text-anchor":"middle",class:"axlab",transform:`rotate(-90 ${L-36} ${T+ih/2})`});yl.textContent="SCORE · ITER-6 DRAW";svg.appendChild(yl);
+    // delta note
+    const dn=el("text",{x:W-R,y:T+8,"text-anchor":"end",fill:css("--critical"),"font-family":"var(--mono)","font-size":"12","font-weight":"600"});dn.textContent="Δ F1 = −0.298";svg.appendChild(dn);
+  }
+
+  function redraw(){drawTraj();drawRepl();}
+  redraw();
+  // redraw on theme toggle / scheme change (colors are read live)
+  matchMedia("(prefers-color-scheme:dark)").addEventListener("change",redraw);
+  new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  addEventListener("resize",()=>{clearTimeout(window._rt);window._rt=setTimeout(redraw,120);});
+})();
+</script>

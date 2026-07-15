@@ -91,3 +91,13 @@
 {"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8695, "kept_user_tokens": 4715, "max_input_length": 5120}}
 {"iteration_n": 12, "anomaly_type": "no_edits_proposed", "details": {"action_excerpt": "The current implementation in `playground/extractor.py` is fundamentally flawed because it attempts to perform two distinct logical stages (sentence classification and claim extraction) within a singl"}}
 {"iteration_n": 12, "anomaly_type": "zero_extraction_output", "details": {"n_extracted": 25, "zero_claim_count": 25}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7053, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7049, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7044, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 7046, "kept_user_tokens": 4289, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8275, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8272, "kept_user_tokens": 4716, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8269, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8278, "kept_user_tokens": 4720, "max_input_length": 5120}}
+{"iteration_n": -1, "anomaly_type": "context_truncated", "details": {"original_user_tokens": 8641, "kept_user_tokens": 4715, "max_input_length": 5120}}
+{"iteration_n": 13, "anomaly_type": "no_edits_proposed", "details": {"action_excerpt": "I will refactor the `extract` function to implement a strict two-stage pipeline that decouples sentence classification from claim generation. First, I will modify the Stage 1 prompt to suppress JSON o"}}
