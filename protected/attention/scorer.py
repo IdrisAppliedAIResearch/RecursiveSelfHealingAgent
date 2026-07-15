@@ -1,13 +1,16 @@
 from dataclasses import dataclass
+from typing import Any
 
-from protected.attention.analyzer import AttentionResult
-from protected.attention.segmenter import Sentence
+import torch
 
 
 @dataclass
 class RoutingScore:
     abstract_id: str
     score: float
+    score_start: float
+    score_end: float
+    intra_generation_delta: float
     results_attention_fraction: float
     methods_attention_fraction: float
     background_attention_fraction: float
@@ -17,102 +20,89 @@ class RoutingScore:
     n_layers_used: int
 
 
-def compute_routing_score(
-    attention_result: AttentionResult,
-    segments: list[Sentence],
-    tokenizer,
-) -> RoutingScore:
-    abstract_text = attention_result.abstract_text
-    encoding = tokenizer(abstract_text, return_offsets_mapping=True)
-    offsets = encoding["offset_mapping"]
+def _compute_attention_fractions(
+    abstract_attn: torch.Tensor,
+    sentence_map: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Compute attention fractions from a single attention tensor.
+    Returns dict with routing_score, fractions, and token counts.
+    """
+    total_attn = abstract_attn.sum().item()
 
-    abstract_tokens = set()
-    for idx, (t_start, t_end) in enumerate(offsets):
-        if t_start >= 0 and t_start < len(abstract_text):
-            abstract_tokens.add(idx)
+    if total_attn == 0:
+        return {
+            "routing_score": 0.0,
+            "results_fraction": 0.0,
+            "methods_fraction": 0.0,
+            "background_fraction": 0.0,
+            "n_results_tokens": 0,
+            "n_methods_tokens": 0,
+            "n_background_tokens": 0,
+            "total_abstract_tokens": len(abstract_attn),
+        }
 
-    if not abstract_tokens:
-        return RoutingScore(
-            abstract_id=attention_result.abstract_id,
-            score=None,  # type: ignore
-            results_attention_fraction=0.0,
-            methods_attention_fraction=0.0,
-            background_attention_fraction=0.0,
-            n_results_tokens=0,
-            n_methods_tokens=0,
-            n_background_tokens=0,
-            n_layers_used=0,
-        )
+    results_attn = 0.0
+    methods_attn = 0.0
+    background_attn = 0.0
+    n_results = n_methods = n_background = 0
 
-    results_tokens = set()
-    methods_tokens = set()
-    background_tokens = set()
-
-    for sent in segments:
-        for idx in range(sent.token_start, sent.token_end):
-            if idx in abstract_tokens:
-                if sent.label == "RESULTS":
-                    results_tokens.add(idx)
-                elif sent.label == "METHODS":
-                    methods_tokens.add(idx)
-                else:
-                    background_tokens.add(idx)
-
-    layers_used = 0
-    results_fractions = []
-    methods_fractions = []
-    background_fractions = []
-
-    for layer_idx, weights in attention_result.attention_weights.items():
-        if weights is None:
+    for sent in sentence_map:
+        label = sent["label"]
+        positions = [p for p in sent["token_positions"] if p < len(abstract_attn)]
+        if not positions:
             continue
-        layers_used += 1
 
-        attn_avg = weights.mean(dim=0)
-        total_attn = 0.0
-        results_attn = 0.0
-        methods_attn = 0.0
-        background_attn = 0.0
+        sent_attn = abstract_attn[positions].sum().item()
 
-        for tok_idx in abstract_tokens:
-            if tok_idx < attn_avg.shape[0]:
-                w = attn_avg[tok_idx].item()
-                total_attn += w
-                if tok_idx in results_tokens:
-                    results_attn += w
-                elif tok_idx in methods_tokens:
-                    methods_attn += w
-                elif tok_idx in background_tokens:
-                    background_attn += w
-
-        if total_attn > 0:
-            results_fractions.append(results_attn / total_attn)
-            methods_fractions.append(methods_attn / total_attn)
-            background_fractions.append(background_attn / total_attn)
+        if label == "RESULTS":
+            results_attn += sent_attn
+            n_results += len(positions)
+        elif label == "METHODS":
+            methods_attn += sent_attn
+            n_methods += len(positions)
         else:
-            results_fractions.append(0.0)
-            methods_fractions.append(0.0)
-            background_fractions.append(0.0)
+            background_attn += sent_attn
+            n_background += len(positions)
 
-    if not results_fractions:
-        results_frac = 0.0
-        methods_frac = 0.0
-        background_frac = 0.0
-    else:
-        results_frac = sum(results_fractions) / len(results_fractions)
-        methods_frac = sum(methods_fractions) / len(methods_fractions)
-        background_frac = sum(background_fractions) / len(background_fractions)
+    return {
+        "routing_score": results_attn / total_attn,
+        "results_fraction": results_attn / total_attn,
+        "methods_fraction": methods_attn / total_attn,
+        "background_fraction": background_attn / total_attn,
+        "n_results_tokens": n_results,
+        "n_methods_tokens": n_methods,
+        "n_background_tokens": n_background,
+        "total_abstract_tokens": len(abstract_attn),
+    }
 
-    score = results_frac
 
-    return RoutingScore(
-        abstract_id=attention_result.abstract_id,
-        score=score,
-        results_attention_fraction=results_frac,
-        methods_attention_fraction=methods_frac,
-        background_attention_fraction=background_frac,
-        n_results_tokens=len(results_tokens),
-        n_methods_tokens=len(methods_tokens),
-        n_background_tokens=len(background_tokens),
-        n_layers_used=layers_used,
-    )
+def compute_routing_score(
+    start_attn: torch.Tensor,
+    end_attn: torch.Tensor,
+    sentence_map: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    Compute routing scores from start and end attention tensors.
+    Returns dict with all three scores plus fractions from end attention.
+    """
+    start_dict = _compute_attention_fractions(start_attn, sentence_map)
+    end_dict = _compute_attention_fractions(end_attn, sentence_map)
+
+    score_start = start_dict["routing_score"]
+    score_end = end_dict["routing_score"]
+    intra_delta = score_end - score_start
+
+    return {
+        "routing_score": score_end,
+        "score_start": score_start,
+        "score_end": score_end,
+        "intra_generation_delta": intra_delta,
+        "results_fraction": end_dict["results_fraction"],
+        "methods_fraction": end_dict["methods_fraction"],
+        "background_fraction": end_dict["background_fraction"],
+        "n_results_tokens": end_dict["n_results_tokens"],
+        "n_methods_tokens": end_dict["n_methods_tokens"],
+        "n_background_tokens": end_dict["n_background_tokens"],
+        "total_abstract_tokens": end_dict["total_abstract_tokens"],
+    }

@@ -3,7 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 def _run_git(args: list[str], check: bool = True) -> subprocess.CompletedProcess:
@@ -50,7 +50,13 @@ def reset_partial_iteration() -> None:
 
 
 def rollback_playground() -> None:
+    # Restore tracked files to HEAD...
     _run_git(["checkout", "--", "playground/", "prompts/"], check=False)
+    # A009-6 (audit #3): ...and drop any UNTRACKED files the rolled-back iteration created
+    # (e.g. a new `playground/preprocessor.py`). `git checkout` leaves those in place, and
+    # the next `commit_iteration`'s `git add -A` would otherwise commit the orphan and
+    # contaminate the baseline + the agent's view of the current files.
+    _run_git(["clean", "-fd", "--", "playground/", "prompts/"], check=False)
 
 
 def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:
@@ -71,7 +77,11 @@ def commit_iteration(iteration_n: int, study_id: str, rationale: str) -> str:
         f"iteration's corpus run. See experiments/{study_id}/pre-registration.md."
     )
 
-    _run_git(["add", "."])
+    # A004-15: stage only the study's artifacts and the mutable surface, not `.`,
+    # so iteration commits never capture incidental untracked files. `-A` with a
+    # pathspec includes deletions (e.g. an agent-removed playground module).
+    _run_git(["add", "-A", "--",
+              f"experiments/{study_id}", "playground", "prompts"])
     diff_check = _run_git(["diff", "--cached", "--quiet"], check=False)
     if diff_check.returncode == 0:
         return ""

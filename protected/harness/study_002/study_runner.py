@@ -7,11 +7,16 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from protected.attention.analyzer import AttentionAnalyzer, AttentionResult
-from protected.attention.segmenter import segment_abstract, align_tokens
-from protected.attention.scorer import RoutingScore, compute_routing_score
+import torch
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
+
+from protected.attention.analyzer import AttentionAnalyzer
+from protected.attention.scorer import RoutingScore
+from protected.harness.shared.analyzer_registry import set_analyzer, get_analyzer
 from protected.harness.shared.anomaly_logger import log_anomaly
 from protected.harness.shared.artifact_writer import (
+    append_assessment,
     append_metrics,
     append_rationale,
     snapshot_playground,
@@ -19,7 +24,7 @@ from protected.harness.shared.artifact_writer import (
 )
 from protected.harness.shared.corpus_runner import run_corpus
 from protected.harness.shared.edit_applier import apply_edits
-from protected.harness.shared.edit_protocol import AgentFailure
+from protected.harness.shared.edit_protocol import AgentFailure, AssessmentResult
 from protected.harness.shared.episode_store import append as append_episode
 from protected.harness.shared.episode_store import load_all as load_episodes
 from protected.harness.shared.git_ops import (
@@ -30,12 +35,13 @@ from protected.harness.shared.git_ops import (
     rollback_playground,
     verify_no_remote_push,
 )
-from protected.harness.shared.interface_validator import validate_interface
+from protected.harness.shared.interface_validator import validate_interface, run_smoke_test
 from protected.harness.shared.model_performance import append_after_iteration, summarize
-from protected.harness.study_002.agent_caller import invoke, invoke_repair
+from protected.harness.study_002.agent_caller import invoke_diagnostic, invoke_decision, invoke_repair
 from protected.harness.study_002.routing_history import (
     append as append_routing,
     format_for_agent,
+    format_routing_delta,
     load_all as load_routing,
 )
 from protected.harness.shared.allowlist import ALLOWED_FILE_EXACT
@@ -44,11 +50,31 @@ from protected.scorer import score_corpus
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 STUDY_ID = "study_002"
+# A009-3: 20 per the pre-registration (line 193) — aligns with the `count >= 21`
+# completion guard (baseline + 20). (Was 25, an undocumented deviation.)
 N_ITERATIONS = 20
 
-
-class StudyAlreadyComplete(Exception):
-    pass
+# A005-1: debugging turns granted to the agent when its edits fail to *apply*
+# (before the iteration is abandoned). We study whether the agent can improve
+# extraction, not whether it writes a correct search-and-replace one-shot.
+_APPLY_REPAIR_ATTEMPTS = 3
+# A005-2: stop the study after this many consecutive non-scanned iterations —
+# once scans stop repeatedly nothing productive can happen.
+_MAX_CONSECUTIVE_ANOMALIES = 4
+# A006-3: stop the study after this many consecutive iterations that change nothing in
+# the playground (empty-edit no-ops or rolled-back anomalies). A frozen extractor cannot
+# move the signal; this caps a static stall (or a converged run) rather than burning the
+# full budget on byte-identical iterations. Set above _MAX_CONSECUTIVE_ANOMALIES so a
+# genuine early build-up phase is not cut short.
+_MAX_CONSECUTIVE_NO_CHANGE = 5
+# A008-1 / A009-4: stop the study on a routing fixed point the applied-edit-count breakers
+# miss. Over the routing values of scanned iterations that applied a non-empty edit, halt
+# when the last _MAX_CONSECUTIVE_NO_OP values are identical ("frozen") or the last 4 form an
+# exact 2-cycle ("oscillation"). Complement of A006-3, which keys on applied-edit count and
+# resets whenever the agent applies *something*, even when the edit is semantically inert.
+# A009-4 re-keyed this from the (tp,fp,fn,routing) signature to routing-only because A009-2
+# redraws the impact corpus each iteration (tp/fp/fn no longer stable for a frozen extractor).
+_MAX_CONSECUTIVE_NO_OP = 3
 
 
 def _load_probe_set() -> list[str]:
@@ -59,14 +85,18 @@ def _load_probe_set() -> list[str]:
     return data["abstract_ids"]
 
 
-def _load_impact_abstracts(probe_ids: list[str], n: int = 15) -> list[str]:
+def _load_impact_abstracts(probe_ids: list[str], iteration_n: int, n: int = 15) -> list[str]:
+    # A009-2: draw the 15 impact abstracts fresh each iteration (pre-reg line 104:
+    # "drawn randomly … each iteration"). Previously seed(42) fixed the same 15 every
+    # iteration. Seed on iteration_n so the draw is deterministic/reproducible per
+    # iteration but varies across the study, measuring generalization beyond the control set.
     abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
     all_ids = [f.stem for f in sorted(abstracts_dir.glob("*.json"))]
     impact_ids = [aid for aid in all_ids if aid not in probe_ids]
     import random
 
-    random.seed(42)
-    return random.sample(impact_ids, min(n, len(impact_ids)))
+    rng = random.Random(42 + iteration_n)
+    return rng.sample(impact_ids, min(n, len(impact_ids)))
 
 
 def _load_abstract_text(abstract_id: str) -> str:
@@ -75,9 +105,9 @@ def _load_abstract_text(abstract_id: str) -> str:
     return data.get("abstract", data.get("text", ""))
 
 
-def _get_mini_corpus_files() -> list[Path]:
+def _get_mini_corpus_files(iteration_n: int) -> list[Path]:
     probe_ids = _load_probe_set()
-    impact_ids = _load_impact_abstracts(probe_ids)
+    impact_ids = _load_impact_abstracts(probe_ids, iteration_n)  # A009-2: per-iteration draw
     all_ids = probe_ids + impact_ids
     abstracts_dir = PROJECT_ROOT / "corpus" / "abstracts"
     files = []
@@ -102,7 +132,7 @@ def _get_control_corpus_files() -> list[Path]:
 def _load_ground_truth() -> dict[str, list[str]]:
     gt_path = PROJECT_ROOT / "corpus" / "ground_truth.jsonl"
     gt = {}
-    for line in gt_path.read_text(encoding="utf-8").strip().splitlines():
+    for line in gt_path.read_text(encoding="utf-8-sig").strip().splitlines():
         if line.strip():
             try:
                 entry = json.loads(line)
@@ -184,6 +214,14 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "agent_total_tokens": None,
         "agent_tokens_per_second": None,
         "agent_context_window": None,
+        "assessment_available": None,
+        "assessment_routing_trend": None,
+        "call_1_prompt_tokens": None,
+        "call_1_completion_tokens": None,
+        "call_1_tokens_per_second": None,
+        "call_2_prompt_tokens": None,
+        "call_2_completion_tokens": None,
+        "call_2_tokens_per_second": None,
         "corpus_total_prompt_tokens": None,
         "corpus_total_completion_tokens": None,
         "corpus_avg_tokens_per_abstract": None,
@@ -197,7 +235,81 @@ def _make_metrics_base(iteration_n: int) -> dict:
         "control_abstracts_improved": 0,
         "control_abstracts_declined": 0,
         "code_changes_attempted": False,
+        "avg_routing_score_start": None,
+        "avg_routing_score_end": None,
+        "avg_intra_generation_delta": None,
+        "field_failure_count": 0,
+        "smoke_test_passed": None,
+        "smoke_test_claim_count": None,
+        "extraction_zero_claim_abstracts": None,
+        "context_truncated_calls": 0,
+        "abstract_offset_unresolved_count": 0,
+        "attention_abstract_failed_count": 0,
+        "apply_repair_attempts": 0,
     }
+
+
+# A005-3: turn an ApplyResult failure into an actionable instruction for the
+# agent's repair turn. The repair prompt already includes the full current file,
+# so the agent has everything it needs to correct itself.
+def _describe_apply_failure(apply_result) -> str:
+    reason = apply_result.reason or "edit_apply_failed"
+    path = apply_result.offending_path or "the target file"
+    hints = {
+        "no_match": (
+            f"Your edit to {path} could not be applied: the `old_string` was not "
+            "found in the file. Copy the exact text to replace verbatim — including "
+            "all whitespace and indentation — from the CURRENT FILE CONTENTS below."
+        ),
+        "ambiguous_match": (
+            f"Your edit to {path} could not be applied: the `old_string` appears "
+            "more than once. Include enough surrounding lines to make it unique."
+        ),
+        "file_not_found": (
+            f"Your edit references {path}, which does not exist. Use an existing "
+            "file path shown in CURRENT FILE CONTENTS."
+        ),
+        "allowlist_violation": (
+            f"Editing {path} is not permitted. You may only modify "
+            "playground/extractor.py and prompts/system_prompt.md."
+        ),
+        "missing_old_string": (
+            f"Your replace_string edit to {path} is missing the required "
+            "`old_string` field."
+        ),
+        "missing_new_string": (
+            f"Your replace_string edit to {path} is missing the required "
+            "`new_string` field."
+        ),
+        "unexpected_new_content": (
+            f"Your replace_string edit to {path} must not include `new_content`; "
+            "use `old_string` and `new_string` only."
+        ),
+        "empty_file_replacement": (
+            f"Your replace_file edit to {path} had empty `new_content`. Provide the "
+            "full replacement file body."
+        ),
+        "unexpected_old_or_new_string": (
+            f"Your replace_file edit to {path} must not include `old_string` or "
+            "`new_string`; provide `new_content` only."
+        ),
+        "missing_new_content": (
+            f"Your create_file edit to {path} is missing the required "
+            "`new_content` field."
+        ),
+        "create_file_exists": (
+            f"Your create_file edit targets {path}, which already exists. Use "
+            "replace_string or replace_file to modify it."
+        ),
+        "delete_file_missing": (
+            f"Your delete_file edit targets {path}, which does not exist."
+        ),
+    }
+    return hints.get(
+        reason,
+        f"Your edit to {path} could not be applied ({reason}). Correct the edit "
+        "against the CURRENT FILE CONTENTS below.",
+    )
 
 
 def _read_system_prompt() -> str:
@@ -211,39 +323,51 @@ def _read_system_prompt() -> str:
     return prompt
 
 
-async def _run_attention_pass(
-    analyzer: AttentionAnalyzer,
-    abstract_ids: list[str],
-    system_prompt: str,
-) -> list[RoutingScore]:
-    scores = []
-    for aid in abstract_ids:
-        abstract_text = _load_abstract_text(aid)
-        result = analyzer.forward_pass(
-            abstract_text=abstract_text,
-            system_prompt=system_prompt,
-            abstract_id=aid,
+def _run_attention_subprocess(study_id: str, iteration_n: int, analyzer: AttentionAnalyzer) -> list[dict]:
+    output_path = PROJECT_ROOT / "experiments" / study_id / f"attention_scores_{iteration_n}.json"
+    cmd = [
+        sys.executable, "-m", "protected.attention.forward_pass_runner",
+        "--study", study_id,
+        "--iteration", str(iteration_n),
+        "--output", str(output_path),
+    ]
+
+    print(f"  [attention] Releasing main-process VRAM before subprocess...", flush=True)
+    analyzer.close()
+    torch.cuda.empty_cache()
+
+    try:
+        print(f"  [attention] Running subprocess: {' '.join(cmd)}", flush=True)
+        result = subprocess.run(cmd, cwd=str(PROJECT_ROOT), capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"Attention subprocess exited with code {result.returncode}")
+    finally:
+        print(f"  [attention] Reloading model after subprocess...", flush=True)
+        analyzer.load()
+        set_analyzer(analyzer)
+
+    data = json.loads(output_path.read_text(encoding="utf-8"))
+    return data["scores"]
+
+
+def _dicts_to_routing_scores(score_dicts: list[dict]) -> list[RoutingScore]:
+    return [
+        RoutingScore(
+            abstract_id=s["abstract_id"],
+            score=s.get("score", 0.0),
+            score_start=s.get("score_start", 0.0),
+            score_end=s.get("score_end", 0.0),
+            intra_generation_delta=s.get("intra_generation_delta", 0.0),
+            results_attention_fraction=s.get("results_attention_fraction", 0.0),
+            methods_attention_fraction=s.get("methods_attention_fraction", 0.0),
+            background_attention_fraction=s.get("background_attention_fraction", 0.0),
+            n_results_tokens=s.get("n_results_tokens", 0),
+            n_methods_tokens=s.get("n_methods_tokens", 0),
+            n_background_tokens=s.get("n_background_tokens", 0),
+            n_layers_used=s.get("n_layers_used", 0),
         )
-
-        segments = segment_abstract(abstract_text)
-        align_tokens(segments, analyzer.tokenizer, abstract_text)
-
-        score = compute_routing_score(result, segments, analyzer.tokenizer)
-        if score.score is None:
-            log_anomaly(
-                STUDY_ID, -1,
-                "routing_score_null",
-                {"abstract_id": aid},
-            )
-        elif score.n_results_tokens == 0 and score.n_methods_tokens == 0:
-            log_anomaly(
-                STUDY_ID, -1,
-                "no_results_sentences",
-                {"abstract_id": aid},
-            )
-        scores.append(score)
-
-    return scores
+        for s in score_dicts
+    ]
 
 
 def _check_code_changes(edits) -> bool:
@@ -259,7 +383,62 @@ def _check_code_changes(edits) -> bool:
     return False
 
 
-def _pre_run_checks(study_id: str) -> None:
+def _verify_baseline_state(study_id: str) -> None:
+    import hashlib
+    locked_hash = "c6c43f5f32bf647fd563711ad3407eb6ee3d5097fc3105dd4f8e402392f6fef7"
+
+    prompt_path = PROJECT_ROOT / "prompts" / "system_prompt.md"
+    actual_hash = hashlib.sha256(prompt_path.read_bytes()).hexdigest()
+    if actual_hash != locked_hash:
+        log_anomaly(study_id, -1, "baseline_state_invalid", {
+            "check": "prompt_hash",
+            "expected": locked_hash,
+            "actual": actual_hash,
+        })
+        raise RuntimeError(
+            f"Baseline prompt hash mismatch. Expected {locked_hash}, got {actual_hash}. "
+            f"Restore prompts/system_prompt.md to the original naive prompt."
+        )
+
+    examples_path = PROJECT_ROOT / "prompts" / "examples.md"
+    if examples_path.exists():
+        content = examples_path.read_text(encoding="utf-8").strip()
+        if content:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "examples_empty",
+                "actual_size": len(content),
+            })
+            raise RuntimeError(
+                "prompts/examples.md is not empty. Restore to zero-byte file."
+            )
+
+    playground_dir = PROJECT_ROOT / "playground"
+    if playground_dir.exists():
+        pg_files = {f.name for f in playground_dir.iterdir() if f.is_file()}
+        expected = {"__init__.py", "extractor.py"}
+        extra = pg_files - expected
+        if extra:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "playground_inventory",
+                "extra_files": list(extra),
+            })
+            raise RuntimeError(
+                f"Extra files in playground/: {extra}. Only __init__.py and extractor.py allowed."
+            )
+
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if metrics_path.exists():
+        content = metrics_path.read_text(encoding="utf-8").strip()
+        if content:
+            log_anomaly(study_id, -1, "baseline_state_invalid", {
+                "check": "metrics_empty",
+            })
+            raise RuntimeError(
+                "experiments/study_002/metrics.jsonl is not empty. Clear prior run data."
+            )
+
+
+def _pre_run_checks(study_id: str, verify_baseline: bool = True) -> None:
     pre_reg = PROJECT_ROOT / "experiments" / study_id / "pre-registration.md"
     if not pre_reg.exists():
         raise RuntimeError(f"Pre-registration not found: {pre_reg}")
@@ -281,6 +460,10 @@ def _pre_run_checks(study_id: str) -> None:
         if not full.exists():
             raise RuntimeError(f"Required file missing: {fp}")
 
+    # A009-8: the baseline-state assertions are fresh-run only; a resume skips them.
+    if verify_baseline:
+        _verify_baseline_state(study_id)
+
     branch_name = f"experiment/{study_id}"
     ensure_branch(branch_name)
     verify_no_remote_push(branch_name)
@@ -295,15 +478,15 @@ def _pre_run_checks(study_id: str) -> None:
                     count += 1
                 except json.JSONDecodeError:
                     pass
-        if count >= 22:
-            raise StudyAlreadyComplete(
-                f"Study {study_id} already complete ({count} metrics entries)"
+        if count >= 21:
+            raise RuntimeError(
+                f"Study {study_id} already complete ({count} metrics entries). "
+                f"Delete experiments/{study_id}/ to re-run."
             )
 
-    llm_provider = os.environ.get("LLM_PROVIDER")
-    llama_url = os.environ.get("LLAMA_CPP_BASE_URL")
-    if not llm_provider or not llama_url:
-        raise RuntimeError("LLM_PROVIDER and LLAMA_CPP_BASE_URL must be set")
+    transformers_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
+    if not transformers_path:
+        raise RuntimeError("TRANSFORMERS_MODEL_PATH must be set (e.g., C:\\Users\\muzaf\\.cache\\huggingface\\hub\\models--Qwen--Qwen3.6-27B)")
 
     harness_diff = subprocess.run(
         ["git", "diff", "--exit-code", "HEAD", "--", "protected/harness/", "protected/attention/"],
@@ -316,12 +499,12 @@ def _pre_run_checks(study_id: str) -> None:
         )
 
 
-async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> None:
+async def _run_baseline(study_id: str) -> None:
     ground_truth = _load_ground_truth()
     probe_ids = _load_probe_set()
 
-    mini_files = _get_mini_corpus_files()
-    print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...")
+    mini_files = _get_mini_corpus_files(0)
+    print(f"  Mini-corpus ({len(mini_files)} abstracts) run starting...", flush=True)
     t0 = time.time()
     try:
         corpus_result = await asyncio.wait_for(
@@ -343,29 +526,46 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
         append_metrics(0, study_id, metrics)
         return
     elapsed = time.time() - t0
-    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures")
+    print(f"  Mini-corpus done in {elapsed:.0f}s: {len(corpus_result.results)} abstracts, {len(corpus_result.failures)} failures", flush=True)
 
     score_result = score_corpus(corpus_result.results, ground_truth)
-    print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
+    print(f"  Baseline scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}", flush=True)
 
-    system_prompt = _read_system_prompt()
+    # A004-4: a broken baseline (every abstract returns zero claims) invalidates the
+    # entire run — hard stop rather than proceeding as A003 silently did.
+    if corpus_result.n_extracted > 0 and corpus_result.zero_claim_count >= corpus_result.n_extracted:
+        log_anomaly(study_id, 0, "zero_extraction_output", {
+            "n_extracted": corpus_result.n_extracted,
+            "zero_claim_count": corpus_result.zero_claim_count,
+        })
+        raise RuntimeError(
+            "Baseline produced zero claims across ALL abstracts (A004-4 hard stop). "
+            "The extractor pipeline is broken; fix it before running the study."
+        )
+
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
+    pre_agg = None
+    post_agg = None
 
-    if analyzer is not None:
-        print("  Running attention analysis on control abstracts...")
-        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
-        pre_agg = 0.0
-        post_agg = (
-            sum(s.score for s in post_scores if s.score is not None)
-            / max(1, len(post_scores))
-        )
-    else:
-        pre_agg = None
-        post_agg = None
+    print("  Running attention analysis on control abstracts (subprocess)...", flush=True)
+    analyzer = get_analyzer()
+    score_dicts = []
+    try:  # A004-10: an attention-pass failure must not terminate the run
+        score_dicts = _run_attention_subprocess(study_id, 0, analyzer)
+    except Exception as e:
+        print(f"  Attention pass FAILED: {e}", flush=True)
+        log_anomaly(study_id, 0, "attention_pass_failed", {"error": str(e)})
+    post_scores = _dicts_to_routing_scores(score_dicts)
+    _valid_post = [s.score for s in post_scores if s.score is not None]
+    post_agg = (sum(_valid_post) / len(_valid_post)) if _valid_post else None
 
     metrics = _make_metrics_base(0)
     metrics["scanned"] = True
+    metrics["extraction_zero_claim_abstracts"] = corpus_result.zero_claim_count
+    metrics["attention_abstract_failed_count"] = sum(
+        1 for s in post_scores if s.score is None
+    )
     metrics["macro_precision"] = score_result["macro_precision"]
     metrics["macro_recall"] = score_result["macro_recall"]
     metrics["macro_f1"] = score_result["macro_f1"]
@@ -389,7 +589,7 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
     metrics["pre_routing_score"] = pre_agg
     metrics["post_routing_score"] = post_agg
 
-    append_routing(study_id, 0, pre_scores, post_scores)
+    append_routing(study_id, 0, post_scores)  # A004-12: single scores list
     write_iteration_artifacts(0, study_id, corpus_result)
     snapshot_playground(0, study_id)
     append_metrics(0, study_id, metrics)
@@ -399,7 +599,6 @@ async def _run_baseline(study_id: str, analyzer: AttentionAnalyzer | None) -> No
 async def _run_iteration(
     iteration_n: int,
     study_id: str,
-    analyzer: AttentionAnalyzer | None,
 ) -> str | None:
     prior_output, prior_iter = _load_prior_output(study_id)
     if not prior_output:
@@ -414,56 +613,154 @@ async def _run_iteration(
 
     routing_history = load_routing(study_id)
     routing_history_text = format_for_agent(routing_history)
-
-    print(f"  Calling agent (output from iteration {prior_iter}, {len(prior_episodes)} prior episodes)...")
-    agent_result = await invoke(
-        prior_output=prior_output,
-        prior_output_iteration=prior_iter,
-        current_files=current_files,
-        prior_episodes=prior_episodes,
-        routing_history_text=routing_history_text,
-    )
+    routing_delta_text = format_routing_delta(study_id, iteration_n)
 
     metrics = _make_metrics_base(iteration_n)
 
+    # b1 — Diagnostic Assessment (Call 1)
+    print(f"  [Call 1] Diagnostic assessment (output from iteration {prior_iter}, {len(prior_episodes)} prior episodes)...")
+    assessment = await invoke_diagnostic(
+        prior_output=prior_output,
+        prior_output_iteration=prior_iter,
+        routing_history_text=routing_history_text,
+        routing_delta_text=routing_delta_text,
+        prior_episodes=prior_episodes,
+    )
+
+    if isinstance(assessment, AgentFailure):
+        print(f"  [Call 1] Assessment FAILED: {assessment.reason}")
+        log_anomaly(
+            study_id, iteration_n,
+            "assessment_malformed",
+            {"reason": assessment.reason},
+        )
+        metrics["assessment_available"] = False
+        assessment = None
+
+    if assessment is not None:
+        metrics["assessment_available"] = True
+        metrics["assessment_routing_trend"] = assessment.routing_trend
+        trend = assessment.routing_trend
+        if trend not in ("improving", "declining", "flat"):
+            log_anomaly(
+                study_id, iteration_n,
+                "assessment_field_invalid",
+                {"field": "routing_trend", "value": trend},
+            )
+        append_assessment(iteration_n, study_id, assessment)
+        field_tokens = getattr(assessment, "_field_call_total_tokens", 0)
+        metrics["call_1_field_total_tokens"] = field_tokens
+        if assessment.token_usage is not None:
+            tu1 = assessment.token_usage
+            metrics["call_1_prompt_tokens"] = tu1.prompt_tokens
+            metrics["call_1_completion_tokens"] = tu1.completion_tokens
+            metrics["call_1_tokens_per_second"] = tu1.tokens_per_second
+
+    # b2 — Modification Decision (Call 2, last 5 episodes only)
+    windowed_episodes = prior_episodes[-5:] if len(prior_episodes) > 5 else prior_episodes
+    print(f"  [Call 2] Modification decision (windowed to {len(windowed_episodes)} episodes)...")
+    agent_result = await invoke_decision(
+        assessment=assessment,
+        current_files=current_files,
+        prior_episodes=windowed_episodes,
+    )
+
     if isinstance(agent_result, AgentFailure):
-        print(f"  Agent FAILED: {agent_result.reason}")
+        print(f"  [Call 2] Agent FAILED: {agent_result.reason}")
         log_anomaly(
             study_id, iteration_n,
             "agent_response_malformed",
             {"reason": agent_result.reason},
         )
         metrics["anomaly"] = True
+        metrics["scanned"] = False
         append_metrics(iteration_n, study_id, metrics)
         return None
+
+    if agent_result.token_usage:
+        tu2 = agent_result.token_usage
+        metrics["call_2_prompt_tokens"] = tu2.prompt_tokens
+        metrics["call_2_completion_tokens"] = tu2.completion_tokens
+        metrics["call_2_tokens_per_second"] = tu2.tokens_per_second
+
+        metrics["agent_prompt_tokens"] = tu2.prompt_tokens
+        metrics["agent_completion_tokens"] = tu2.completion_tokens
+        metrics["agent_total_tokens"] = tu2.total_tokens
+        metrics["agent_tokens_per_second"] = tu2.tokens_per_second
+        metrics["agent_context_window"] = tu2.context_window
 
     metrics["agent_edits_proposed"] = len(agent_result.edits)
     metrics["code_changes_attempted"] = _check_code_changes(agent_result.edits)
 
-    if agent_result.token_usage:
-        tu = agent_result.token_usage
-        metrics["agent_prompt_tokens"] = tu.prompt_tokens
-        metrics["agent_completion_tokens"] = tu.completion_tokens
-        metrics["agent_total_tokens"] = tu.total_tokens
-        metrics["agent_tokens_per_second"] = tu.tokens_per_second
-        metrics["agent_context_window"] = tu.context_window
+    # A006-3: a 0-edit decision applies cleanly as a no-op (apply_edits([]) => applied),
+    # so surface it explicitly — otherwise a stalled agent is indistinguishable from a
+    # productive one. Record the stated action so analysis can tell "declined" from
+    # "intended to edit but produced []".
+    if len(agent_result.edits) == 0:
+        action_text = getattr(agent_result.episode, "action", "") or ""
+        log_anomaly(study_id, iteration_n, "no_edits_proposed", {
+            "action_excerpt": action_text[:200],
+        })
 
     print(f"  Agent: hypothesis={agent_result.episode.hypothesis[:100]}...")
     print(f"  Agent: expectation={agent_result.episode.expectation[:100]}...")
     print(f"  Agent proposed {len(agent_result.edits)} edits")
 
+    agent_result.episode.edits_applied = False
+    agent_result.episode.field_failures = getattr(agent_result.episode, "field_failures", [])
+    metrics["field_failure_count"] = len(agent_result.episode.field_failures)
+    append_episode(study_id, iteration_n, agent_result.episode)
+    metrics["episode_persisted"] = True
+
+    # A005-1: an edit that fails to *apply* earns the agent debugging turns
+    # rather than immediately ending the iteration. On the first successful
+    # apply we fall through to the smoke/interface repair loop below, which
+    # still catches edits that apply but are runtime-broken.
     apply_result = apply_edits(agent_result.edits)
-    if not apply_result.applied:
+    apply_repair_attempts = 0
+    while not apply_result.applied:
         print(f"  Edits REJECTED: {apply_result.reason} ({apply_result.offending_path})")
         log_anomaly(
             study_id, iteration_n,
             apply_result.reason or "edit_apply_failed",
-            {"offending_path": apply_result.offending_path},
+            {
+                "offending_path": apply_result.offending_path,
+                "apply_repair_attempt": apply_repair_attempts,
+            },
         )
-        metrics["anomaly"] = True
-        append_metrics(iteration_n, study_id, metrics)
-        return None
+        if apply_repair_attempts >= _APPLY_REPAIR_ATTEMPTS:
+            log_anomaly(
+                study_id, iteration_n, "apply_repair_exhausted",
+                {"reason": apply_result.reason,
+                 "offending_path": apply_result.offending_path},
+            )
+            rollback_playground()  # defensive; nothing should have applied
+            metrics["apply_repair_attempts"] = apply_repair_attempts
+            metrics["anomaly"] = True
+            append_metrics(iteration_n, study_id, metrics)
+            return None
 
+        apply_repair_attempts += 1
+        error_message = _describe_apply_failure(apply_result)
+        print(f"  Apply-repair attempt {apply_repair_attempts}: calling agent...")
+        repair_result = await invoke_repair(
+            error_message=error_message,
+            current_files=_current_files(),
+            attempt_number=apply_repair_attempts,
+        )
+        if isinstance(repair_result, AgentFailure):
+            log_anomaly(
+                study_id, iteration_n, "apply_repair_agent_failure",
+                {"reason": repair_result.reason},
+            )
+            rollback_playground()
+            metrics["apply_repair_attempts"] = apply_repair_attempts
+            metrics["anomaly"] = True
+            append_metrics(iteration_n, study_id, metrics)
+            return None
+        apply_result = apply_edits(repair_result.edits)
+
+    metrics["apply_repair_attempts"] = apply_repair_attempts
     metrics["agent_edits_applied"] = len(apply_result.files_changed or [])
     metrics["playground_files_changed"] = apply_result.files_changed or []
     print(f"  Edits applied: {apply_result.files_changed}")
@@ -471,35 +768,59 @@ async def _run_iteration(
     repair_attempts = 0
     repair_prompt_tokens = 0
     repair_completion_tokens = 0
-    validation_ok = False
+
     for attempt in range(1, 4):
+        smoke_result = await run_smoke_test()
+        metrics["smoke_test_passed"] = smoke_result.smoke_test_passed
+        metrics["smoke_test_claim_count"] = smoke_result.smoke_test_claim_count
+        if smoke_result.smoke_test_passed:
+            print(f"  [smoke] PASSED ({smoke_result.smoke_test_claim_count} claims)")
+        else:
+            print(f"  [smoke] FAILED: {smoke_result.error}")
+            log_anomaly(study_id, iteration_n, "interface_smoke_test_failed", {
+                "error": smoke_result.error,
+                "attempt": attempt,
+            })
+
         val_result = await validate_interface()
         if val_result.valid:
-            validation_ok = True
-            if attempt > 1:
-                print(f"  Interface valid after repair attempt {attempt}")
-            break
+            print(f"  Interface valid")
+        else:
+            print(f"  Interface INVALID (attempt {attempt}): {val_result.error}")
+            log_anomaly(
+                study_id, iteration_n,
+                "interface_validation_failed",
+                {"error": val_result.error, "attempt": attempt},
+            )
 
-        print(f"  Interface INVALID (attempt {attempt}): {val_result.error}")
-        log_anomaly(
-            study_id, iteration_n,
-            "interface_validation_failed",
-            {"error": val_result.error, "attempt": attempt},
-        )
+        if smoke_result.smoke_test_passed and val_result.valid:
+            agent_result.episode.edits_applied = True
+            break
 
         if attempt == 3:
             rollback_playground()
             log_anomaly(study_id, iteration_n, "repair_exhausted", {})
-            log_anomaly(study_id, iteration_n, "episode_discarded", {})
             metrics["repair_attempts"] = 3
             metrics["anomaly"] = True
+            metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
+            # A007-2: feed the unrecovered contract/runtime error forward.
+            exhausted_error = smoke_result.error or (val_result.error or "Validation failed")
+            agent_result.episode.edits_applied = False
+            agent_result.episode.failure_note = (
+                f"YOUR EDIT WAS ROLLED BACK — it failed the interface/smoke check across "
+                f"3 repair attempts: {exhausted_error}. extract() must stay async, take "
+                f"(abstract_id, abstract_text), and return an ExtractionResult with a list "
+                f"of Claim. Try a different approach next iteration."
+            )
+            append_episode(study_id, iteration_n, agent_result.episode)
             append_metrics(iteration_n, study_id, metrics)
             return None
 
+        error_msg = smoke_result.error or (val_result.error or "Validation failed")
         repair_files = _current_files()
         print(f"  Repair attempt {attempt}: calling agent...")
         repair_result = await invoke_repair(
-            error_message=val_result.error or "Validation failed",
+            error_message=error_msg,
             current_files=repair_files,
             attempt_number=attempt,
         )
@@ -533,7 +854,7 @@ async def _run_iteration(
             append_metrics(iteration_n, study_id, metrics)
             return None
 
-    if not validation_ok:
+    if not agent_result.episode.edits_applied:
         rollback_playground()
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
@@ -544,59 +865,105 @@ async def _run_iteration(
         metrics["repair_prompt_tokens"] = repair_prompt_tokens
         metrics["repair_completion_tokens"] = repair_completion_tokens
 
-    system_prompt = _read_system_prompt()
-    probe_ids = _load_probe_set()
-
     pre_scores: list[RoutingScore] = []
     post_scores: list[RoutingScore] = []
     pre_agg = None
     post_agg = None
     routing_delta = None
 
-    if analyzer is not None:
-        print("  Running POST-MODIFICATION attention pass on control abstracts...")
-        post_scores = await _run_attention_pass(analyzer, probe_ids, system_prompt)
+    print(f"  Running POST-MODIFICATION attention pass (subprocess)...")
+    analyzer = get_analyzer()
+    score_dicts = []
+    try:  # A004-10: an attention-pass failure must not terminate the run
+        score_dicts = _run_attention_subprocess(study_id, iteration_n, analyzer)
+    except Exception as e:
+        print(f"  Attention pass FAILED: {e}", flush=True)
+        log_anomaly(study_id, iteration_n, "attention_pass_failed", {"error": str(e)})
+    post_scores = _dicts_to_routing_scores(score_dicts)
+    metrics["attention_abstract_failed_count"] = sum(
+        1 for s in post_scores if s.score is None
+    )
 
-        routing_history = load_routing(study_id)
-        if routing_history:
-            last_entry = routing_history[-1]
-            last_post = last_entry.get("post_scores", [])
-            pre_scores = post_scores
-            prev_scores_map = {s["abstract_id"]: s for s in last_post}
-            pre_agg_list = []
-            post_agg_list = []
-            control_improved = 0
-            control_declined = 0
-            for s in post_scores:
-                prev = prev_scores_map.get(s.abstract_id, {})
-                prev_score = prev.get("score")
-                if prev_score is not None and s.score is not None:
-                    pre_agg_list.append(prev_score)
-                    post_agg_list.append(s.score)
-                    d = s.score - prev_score
-                    if d > 0.02:
-                        control_improved += 1
-                    elif d < -0.02:
-                        control_declined += 1
+    routing_history = load_routing(study_id)
+    if routing_history:
+        last_entry = routing_history[-1]
+        # A004-12: read the single `scores` field (legacy post_scores fallback).
+        last_post = last_entry.get("scores", last_entry.get("post_scores", []))
+        prev_scores_map = {s["abstract_id"]: s for s in last_post}
+        pre_agg_list = []
+        post_agg_list = []
+        control_improved = 0
+        control_declined = 0
+        for s in post_scores:
+            prev = prev_scores_map.get(s.abstract_id, {})
+            prev_score = prev.get("score")
+            if prev_score is not None and s.score is not None:
+                pre_agg_list.append(prev_score)
+                post_agg_list.append(s.score)
+                d = s.score - prev_score
+                if d > 0.02:
+                    control_improved += 1
+                elif d < -0.02:
+                    control_declined += 1
 
-            pre_agg = sum(pre_agg_list) / len(pre_agg_list) if pre_agg_list else None
-            post_agg = sum(post_agg_list) / len(post_agg_list) if post_agg_list else None
-            routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
-            metrics["control_abstracts_improved"] = control_improved
-            metrics["control_abstracts_declined"] = control_declined
-        else:
-            pre_agg = (
-                sum(s.score for s in post_scores if s.score is not None)
-                / max(1, len(post_scores))
-            )
-            post_agg = pre_agg
-            pre_scores = post_scores
+        pre_agg = sum(pre_agg_list) / len(pre_agg_list) if pre_agg_list else None
+        post_agg = sum(post_agg_list) / len(post_agg_list) if post_agg_list else None
+        routing_delta = post_agg - pre_agg if (pre_agg is not None and post_agg is not None) else None
+        metrics["control_abstracts_improved"] = control_improved
+        metrics["control_abstracts_declined"] = control_declined
+
+        pre_start_list = []
+        post_start_list = []
+        pre_end_list = []
+        post_end_list = []
+        pre_intra_list = []
+        post_intra_list = []
+        for s in post_scores:
+            prev = prev_scores_map.get(s.abstract_id, {})
+            if prev.get("score_start") is not None:
+                pre_start_list.append(prev.get("score_start", 0.0))
+                post_start_list.append(s.score_start)
+            if prev.get("score_end") is not None:
+                pre_end_list.append(prev.get("score_end", 0.0))
+                post_end_list.append(s.score_end)
+            if prev.get("intra_generation_delta") is not None:
+                pre_intra_list.append(prev.get("intra_generation_delta", 0.0))
+                post_intra_list.append(s.intra_generation_delta)
+
+        metrics["avg_routing_score_start"] = (
+            sum(post_start_list) / len(post_start_list) if post_start_list else None
+        )
+        metrics["avg_routing_score_end"] = (
+            sum(post_end_list) / len(post_end_list) if post_end_list else None
+        )
+        metrics["avg_intra_generation_delta"] = (
+            sum(post_intra_list) / len(post_intra_list) if post_intra_list else None
+        )
+    else:
+        pre_agg = (
+            sum(s.score for s in post_scores if s.score is not None)
+            / max(1, len(post_scores))
+        )
+        post_agg = pre_agg
+        pre_scores = post_scores
+        start_vals = [s.score_start for s in post_scores if s.score_start is not None]
+        end_vals = [s.score_end for s in post_scores if s.score_end is not None]
+        intra_vals = [s.intra_generation_delta for s in post_scores if s.intra_generation_delta is not None]
+        metrics["avg_routing_score_start"] = (
+            sum(start_vals) / len(start_vals) if start_vals else None
+        )
+        metrics["avg_routing_score_end"] = (
+            sum(end_vals) / len(end_vals) if end_vals else None
+        )
+        metrics["avg_intra_generation_delta"] = (
+            sum(intra_vals) / len(intra_vals) if intra_vals else None
+        )
 
     snapshot_playground(iteration_n, study_id)
 
     print(f"  Mini-corpus run starting...")
     t0 = time.time()
-    mini_files = _get_mini_corpus_files()
+    mini_files = _get_mini_corpus_files(iteration_n)
     try:
         corpus_result = await asyncio.wait_for(
             run_corpus(study_id, mini_files),
@@ -606,7 +973,16 @@ async def _run_iteration(
         print(f"  Corpus TIMEOUT after {time.time()-t0:.0f}s")
         rollback_playground()
         log_anomaly(study_id, iteration_n, "iteration_timeout", {})
-        log_anomaly(study_id, iteration_n, "episode_discarded", {})
+        agent_result.episode.edits_applied = False
+        metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
+        # A007-2: feed the timeout forward so the next iteration's diagnostic sees it.
+        agent_result.episode.failure_note = (
+            f"SCAN TIMED OUT after your edits applied and was rolled back "
+            f"(exceeded {ITERATION_TIMEOUT_S}s). Your change likely made extraction far "
+            f"slower per abstract. Keep extract() lightweight; do not repeat this change."
+        )
+        append_episode(study_id, iteration_n, agent_result.episode)
+        metrics["episode_persisted"] = True
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
         return None
@@ -618,7 +994,16 @@ async def _run_iteration(
             "scan_failure",
             {"error": str(e)},
         )
-        log_anomaly(study_id, iteration_n, "episode_discarded", {})
+        agent_result.episode.edits_applied = False
+        metrics["agent_edits_applied"] = 0  # A009-9: rolled back → playground unchanged
+        # A007-2: feed the crash forward so the next iteration's diagnostic sees it.
+        agent_result.episode.failure_note = (
+            f"SCAN CRASHED after your edits applied and was rolled back: {e}. "
+            f"extract() must return an ExtractionResult whose .claims is a list of "
+            f"Claim for every abstract in the corpus. Do not repeat this change."
+        )
+        append_episode(study_id, iteration_n, agent_result.episode)
+        metrics["episode_persisted"] = True
         metrics["anomaly"] = True
         append_metrics(iteration_n, study_id, metrics)
         return None
@@ -630,9 +1015,6 @@ async def _run_iteration(
     score_result = score_corpus(corpus_result.results, ground_truth)
     print(f"  Scores: P={score_result['macro_precision']:.3f} R={score_result['macro_recall']:.3f} F1={score_result['macro_f1']:.3f}")
 
-    append_episode(study_id, iteration_n, agent_result.episode)
-    metrics["episode_persisted"] = True
-
     metrics["scanned"] = True
     metrics["macro_precision"] = score_result["macro_precision"]
     metrics["macro_recall"] = score_result["macro_recall"]
@@ -642,6 +1024,15 @@ async def _run_iteration(
     metrics["micro_fn"] = score_result["micro_fn"]
     metrics["avg_claims_per_abstract"] = score_result["avg_claims_per_abstract"]
     metrics["scan_duration_seconds"] = corpus_result.duration_seconds
+    metrics["extraction_zero_claim_abstracts"] = corpus_result.zero_claim_count
+
+    # A004-4: post-baseline, a wholly-empty extraction is a real (degenerate) agent
+    # state — log it as a non-blocking anomaly rather than aborting.
+    if corpus_result.n_extracted > 0 and corpus_result.zero_claim_count >= corpus_result.n_extracted:
+        log_anomaly(study_id, iteration_n, "zero_extraction_output", {
+            "n_extracted": corpus_result.n_extracted,
+            "zero_claim_count": corpus_result.zero_claim_count,
+        })
     metrics["corpus_total_prompt_tokens"] = (
         corpus_result.corpus_token_usage.total_prompt_tokens
     )
@@ -667,7 +1058,13 @@ async def _run_iteration(
     else:
         metrics["routing_direction"] = "neutral"
 
-    append_routing(study_id, iteration_n, pre_scores, post_scores)
+    # A009-12 (audit #10): only record routing history when the pass produced at least one
+    # valid score. An all-null pass (attention subprocess failure / all-unmeasurable) would
+    # otherwise poison the NEXT iteration's delta with an empty prev-scores map.
+    if any(s.score is not None for s in post_scores):
+        append_routing(study_id, iteration_n, post_scores)  # A004-12: single scores list
+    else:
+        log_anomaly(study_id, iteration_n, "routing_history_skipped_empty", {})
     write_iteration_artifacts(iteration_n, study_id, corpus_result)
     append_metrics(iteration_n, study_id, metrics)
     append_rationale(iteration_n, study_id, agent_result.rationale)
@@ -676,45 +1073,188 @@ async def _run_iteration(
     return agent_result.rationale
 
 
-async def _run_study_async(study_id: str, n_iterations: int) -> None:
-    _pre_run_checks(study_id)
+def _last_applied_edit_count(study_id: str) -> int:
+    """A006-3: applied-edit count from the most recent metrics record (0 if absent).
+    Used by the no-progress breaker to detect empty-edit no-ops and rollbacks alike."""
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if not metrics_path.exists():
+        return 0
+    last_line = ""
+    for line in metrics_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            last_line = line
+    if not last_line:
+        return 0
+    try:
+        rec = json.loads(last_line)
+    except json.JSONDecodeError:
+        return 0
+    return int(rec.get("agent_edits_applied") or 0)
 
+
+def _routing_window(study_id: str) -> list:
+    """A009-4: the ordered routing values of every scanned iteration that applied a non-empty
+    edit and produced a numeric routing score. Non-scanned / zero-applied / unmeasurable
+    iterations are omitted (they neither advance nor reset stall detection). Rebuilt from
+    metrics each call, so it is inherently resume-safe. This replaces A008's per-record
+    (tp,fp,fn,routing) signature: A009-2 redraws the impact corpus each iteration, so tp/fp/fn
+    is no longer stable for a frozen extractor; the routing score is computed on the FIXED 10
+    control abstracts (corpus-independent) and — with A009-1 making routing reflect the
+    committed extractor — a frozen/oscillating routing value despite applied edits is a true
+    inert-edit signal."""
+    metrics_path = PROJECT_ROOT / "experiments" / study_id / "metrics.jsonl"
+    if not metrics_path.exists():
+        return []
+    window = []
+    for line in metrics_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not rec.get("scanned"):
+            continue
+        if int(rec.get("agent_edits_applied") or 0) <= 0:
+            continue
+        score = rec.get("post_routing_score")
+        if isinstance(score, (int, float)):
+            window.append(score)
+    return window
+
+
+def _detect_routing_stall(window: list) -> str | None:
+    """A009-4: given the routing values of recent scanned+applied iterations (most recent
+    last), detect a degenerate fixed point the applied-edit-count breakers miss:
+      - "frozen":      the last _MAX_CONSECUTIVE_NO_OP values are all identical; or
+      - "oscillation": the last 4 values form an exact 2-cycle (A,B,A,B, A!=B).
+    Both mean applied edits are producing no net routing movement. Exact equality is used so
+    any genuine change avoids the halt. The oscillation check requires v[-4]==v[-2] and
+    v[-3]==v[-1] with the two states distinct, so a one-off transition (…A,A,B) does NOT
+    trip it — only a sustained alternation does (folds in audit finding #4)."""
+    k = _MAX_CONSECUTIVE_NO_OP
+    if len(window) >= k and len(set(window[-k:])) == 1:
+        return "frozen"
+    if len(window) >= 4:
+        a, b, c, d = window[-4], window[-3], window[-2], window[-1]
+        if a == c and b == d and a != b:
+            return "oscillation"
+    return None
+
+
+async def _run_study_async(study_id: str, n_iterations: int) -> None:
     last = last_committed_iteration(study_id)
     start_iter = last + 1
 
-    analyzer = None
-    try:
-        model_path = os.environ.get("TRANSFORMERS_MODEL_PATH")
-        if model_path:
-            print("  Loading AttentionAnalyzer model...")
-            analyzer = AttentionAnalyzer(model_path)
-            analyzer.load()
-            print("  AttentionAnalyzer loaded successfully.")
-        else:
-            print("  TRANSFORMERS_MODEL_PATH not set — skipping attention analysis.")
-    except Exception as e:
-        print(f"  AttentionAnalyzer failed to load: {e}")
-        log_anomaly(study_id, -1, "transformers_load_failure", {"error": str(e)})
-        analyzer = None
+    # A009-8 (audit #2): make resume reachable. On a genuine resume, first discard any
+    # uncommitted edits a crashed iteration left behind (per spec 003:830), then run the
+    # pre-run checks but SKIP the fresh-run baseline assertions (empty metrics + locked
+    # prompt hash + playground inventory) — those only make sense at iteration 0 and would
+    # otherwise force deleting all data to restart.
+    if start_iter > 0:
+        reset_partial_iteration()
+    _pre_run_checks(study_id, verify_baseline=(start_iter == 0))
+
+    import torch
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+
+    # Load model for agent completions only — forward pass runs in subprocess
+    print("  Loading AttentionAnalyzer model for agent calls...")
+    model_path = os.environ.get("TRANSFORMERS_MODEL_PATH", "")
+    if not model_path:
+        raise RuntimeError("TRANSFORMERS_MODEL_PATH not set")
+    analyzer = AttentionAnalyzer(model_path)
+    analyzer.load()
+    set_analyzer(analyzer)
+    print("  AttentionAnalyzer loaded.")
 
     if start_iter == 0:
-        print(f"[{study_id}] Running baseline (iteration 0)...")
-        await _run_baseline(study_id, analyzer)
+        print(f"[{study_id}] Running baseline (iteration 0)...", flush=True)
+        await _run_baseline(study_id)
         commit_iteration(0, study_id, "Baseline run")
         start_iter = 1
 
+    consecutive_anomalies = 0
+    consecutive_no_change = 0
     for i in range(start_iter, n_iterations + 1):
-        print(f"[{study_id}] Running iteration {i}...")
-        rationale = await _run_iteration(i, study_id, analyzer)
+        print(f"[{study_id}] Running iteration {i}...", flush=True)
+        rationale = await _run_iteration(i, study_id)
+        # A004-13: single authoritative rollback point. An anomalous iteration
+        # (rationale is None) must leave a clean playground before the commit, so no
+        # broken edits can leak in and become the next iteration's baseline. A
+        # successful iteration returns its rationale and keeps its applied edits.
+        if rationale is None:
+            rollback_playground()
+            consecutive_anomalies += 1
+        else:
+            consecutive_anomalies = 0
+        # A006-3: track iterations that leave the playground unchanged (empty-edit
+        # no-ops as well as rolled-back anomalies). Read the applied-edit count from the
+        # metrics record the iteration just wrote; any real change resets the counter.
+        applied_this_iter = _last_applied_edit_count(study_id)
+        if applied_this_iter > 0:
+            consecutive_no_change = 0
+        else:
+            consecutive_no_change += 1
+        # A009-4: routing-stall detection over the history of scanned+applied iterations
+        # (rebuilt from metrics each pass — resume-safe). Evaluated in the breaker block below.
+        routing_stall = _detect_routing_stall(_routing_window(study_id))
         commit_iteration(i, study_id, rationale or f"Iteration {i}")
         print(f"[{study_id}] Iteration {i} committed.")
 
-    if analyzer is not None:
-        analyzer.close()
+        # A005-2: circuit breaker. Once scans stop repeatedly, nothing productive
+        # can happen — halt rather than burn the remaining iteration budget.
+        if consecutive_anomalies >= _MAX_CONSECUTIVE_ANOMALIES:
+            log_anomaly(
+                study_id, i, "study_halted_consecutive_anomalies",
+                {"consecutive": consecutive_anomalies},
+            )
+            print(
+                f"[{study_id}] HALTED: {consecutive_anomalies} consecutive "
+                f"non-scanned iterations. Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
 
+        # A006-3: no-progress breaker. Scans succeed but the extractor is frozen —
+        # a stalled (or converged) run. Halt and surface it rather than spin.
+        if consecutive_no_change >= _MAX_CONSECUTIVE_NO_CHANGE:
+            log_anomaly(
+                study_id, i, "study_halted_no_progress",
+                {"consecutive": consecutive_no_change},
+            )
+            print(
+                f"[{study_id}] HALTED: {consecutive_no_change} consecutive "
+                f"iterations with no playground change. Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
+
+        # A008-1 / A009-4: routing-stall breaker. Scans succeed and the agent keeps applying
+        # edits, but the routing DV is a fixed point — frozen (identical) or a 2-state
+        # oscillation — which the A006-3 applied-edit-count breaker never sees.
+        if routing_stall is not None:
+            log_anomaly(
+                study_id, i, "study_halted_output_stall",
+                {"pattern": routing_stall, "window": _routing_window(study_id)[-4:]},
+            )
+            print(
+                f"[{study_id}] HALTED: routing {routing_stall} across applied iterations "
+                f"(no net movement). Stopping early at iteration {i}.",
+                flush=True,
+            )
+            break
+
+    analyzer.close()
+    set_analyzer(None)
     print(f"[{study_id}] Study complete. {n_iterations + 1} iterations total.")
     summarize(study_id)
 
 
 def run_study(study_id: str = STUDY_ID, n_iterations: int = N_ITERATIONS) -> None:
     asyncio.run(_run_study_async(study_id, n_iterations))
+
+
+if __name__ == "__main__":
+    run_study()

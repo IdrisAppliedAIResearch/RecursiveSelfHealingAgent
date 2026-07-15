@@ -136,30 +136,66 @@ def segment_abstract(abstract_text: str) -> list[Sentence]:
 def align_tokens(sentences: list[Sentence], tokenizer, abstract_text: str) -> None:
     encoding = tokenizer(abstract_text, return_offsets_mapping=True)
     offsets = encoding["offset_mapping"]
-    token_to_char = []
-    for (start, end) in offsets:
-        token_to_char.append(start)
 
     for sent in sentences:
-        sent_char_start = sent.char_start
-        sent_char_end = sent.char_end
-        first_token = 0
+        first_token = None
         last_token = 0
+
         for idx, (t_start, t_end) in enumerate(offsets):
-            if t_start >= sent_char_end:
+            if t_start >= sent.char_end:
                 break
-            if t_end > sent_char_start:
-                if first_token == 0 and t_start >= sent_char_start:
+            if t_end > sent.char_start:
+                if first_token is None and t_start >= sent.char_start:
                     first_token = idx
                 last_token = idx + 1
 
-        if first_token == 0:
+        if first_token is None:
             for idx, (t_start, t_end) in enumerate(offsets):
-                if t_start >= sent_char_start:
+                if t_start >= sent.char_start:
                     first_token = idx
                     break
-            else:
-                first_token = 0
 
-        sent.token_start = first_token
+        sent.token_start = first_token if first_token is not None else 0
         sent.token_end = last_token
+
+
+def map_sentences_to_tokens(
+    abstract_text: str,
+    tokenizer,
+    abstract_start_token_idx: int,
+) -> list[dict]:
+    """
+    Returns list of dicts:
+    {
+        "text": sentence text,
+        "label": "RESULTS" | "METHODS" | "BACKGROUND",
+        "token_positions": list of int (positions within abstract token range)
+    }
+    """
+    sentences = _split_sentences(abstract_text)
+    result = []
+
+    for sent_text, char_start, char_end in sentences:
+        label = _classify_sentence(sent_text)
+
+        prefix_before = tokenizer(
+            abstract_text[:char_start],
+            add_special_tokens=False
+        )["input_ids"]
+        prefix_after = tokenizer(
+            abstract_text[:char_end],
+            add_special_tokens=False
+        )["input_ids"]
+
+        token_start = len(prefix_before)
+        token_end = len(prefix_after)
+        token_positions = list(range(token_start, token_end))
+
+        if token_positions:
+            result.append({
+                "text": sent_text,
+                "label": label,
+                "token_positions": token_positions,
+            })
+
+    return result

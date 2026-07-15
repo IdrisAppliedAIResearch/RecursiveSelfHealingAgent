@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from pathlib import Path
 
 import openai
@@ -56,11 +57,20 @@ def annotate_corpus(output_path: Path = None):
         abstract_data = json.loads(af.read_text())
         abstract_text = abstract_data.get("abstract", abstract_data.get("text", ""))
         print(f"Annotating {abstract_id} ...")
-        try:
-            claims = annotate_abstract(client, model, prompt, abstract_id, abstract_text)
-        except Exception as e:
-            print(f"  Error: {e}")
-            claims = []
+        claims = []
+        for attempt in range(3):
+            try:
+                claims = annotate_abstract(client, model, prompt, abstract_id, abstract_text)
+                break
+            except json.JSONDecodeError:
+                if attempt < 2:
+                    print(f"  Retry {attempt+1}/3...")
+                    time.sleep(2)
+                else:
+                    print(f"  Failed after 3 retries")
+            except Exception as e:
+                print(f"  Error: {e}")
+                break
         entry = {"abstract_id": abstract_id, "claims": claims}
         lines.append(json.dumps(entry))
 

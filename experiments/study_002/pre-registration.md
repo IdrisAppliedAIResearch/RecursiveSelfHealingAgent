@@ -349,3 +349,38 @@ The RDE Framework is referenced here as a published methodology artifact that St
 *Study 002 Pre-Registration — Idris Applied AI Research*  
 *Commit this document before any implementation begins.*  
 *The commit SHA of this document is the study's integrity anchor.*
+
+---
+
+# Amendment Addendum — Documented Deviations (A009-5, 2026-07-13)
+
+The original protocol above is unchanged. The following deviations were introduced by
+harness amendments during implementation and are logged here for transparency, per
+standard pre-registration practice. Each is a response to a degenerate condition the
+original protocol did not anticipate; none alters the research question, the corpus, the
+signals, or the evaluation criteria (002-D).
+
+**D1 — Early-halt circuit breakers (deviates from "Twenty iterations with no hard stops",
+line 193).** Runs may stop before 20 iterations when the loop enters a provably unproductive
+state, to avoid burning compute on a fixed point:
+- `study_halted_consecutive_anomalies` (A005-2): ≥4 consecutive non-scanned iterations.
+- `study_halted_no_progress` (A006-3): ≥5 consecutive iterations that leave the playground
+  unchanged (empty-edit no-ops / rollbacks).
+- `study_halted_output_stall` (A008 / re-scoped A009-4): the routing signal is a fixed point
+  (identical or a 2-cycle) across scanned iterations that nonetheless applied edits.
+An early halt is itself a recorded result; it does not fabricate or omit iteration data.
+
+**D2 — Diagnostic-context windowing (deviates from "All prior episodes… No windowing at
+N=20", line 201).** The agent's *diagnostic* call receives the last 8 episodes rather than
+all prior (A006-4), because the full history overflowed the model's input budget and was
+truncated arbitrarily. Episodic memory is still persisted in full; only the per-call context
+is windowed.
+
+**D3 — Routing measured on the committed extractor (implementation correction, A009-1).**
+The routing pass now measures attention over the input the committed `extractor.py` actually
+feeds the model (via a capture shim), as 002-E line 141 specifies ("the current extractor…
+runs"), rather than over the raw abstract. This *restores* fidelity to the pre-registration;
+it was an implementation bug that the routing pass ignored extractor code changes.
+
+**D4 — Config alignment (A009-3).** `N_ITERATIONS` and the iteration timeout are set to the
+pre-registered 20 iterations and 30 minutes; a prior build had drifted to 25 / 4 hours.

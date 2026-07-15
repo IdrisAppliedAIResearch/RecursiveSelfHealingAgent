@@ -1,1 +1,10 @@
 ﻿corpus/archive/
+**/__pycache__/
+*.pyc
+*.pyo
+protected/experiments/
+.plan-*.md
+# Study artifacts under experiments/ are tracked as the run record (A004). Ignore
+# only transient/regenerable outputs.
+experiments/**/attention_scores_*.json
+experiments/**/.perf_start_ts
