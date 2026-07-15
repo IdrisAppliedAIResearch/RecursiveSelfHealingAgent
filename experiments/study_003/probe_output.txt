@@ -1,0 +1,150 @@
+Loading model from: C:\Users\muzaf\.cache\huggingface\hub\models--Qwen--Qwen3.6-27B
+Loaded. dtype-check lm_head: torch.bfloat16
+
+======================================================================
+ABSTRACT 10355678
+======================================================================
+Model has 64 layers
+Abstract (first 200 chars): Brain damage can cause remarkably selective deficits in processing specific categories of objects, indicating the high degree of functional segregation within the brain. The neuroimaging study present...
+
+--- Layer 12 (20% depth) | result-concepts=0 method-concepts=0 ---
+, (, , ., ..., !, :, ,, …, A, , **, is, A, , I, ?, —, 。, <|endoftext|>, .., ', [, , a, “, <think>, ;, -, /
+
+--- Layer 25 (40% depth) | result-concepts=0 method-concepts=0 ---
+, is, a, ari, the, #, ati, to, |, A, $, S, ", for, ., |, [, ning, rp, this, <think>, fine, “, ?, true, `, from, ex, clear, isa
+
+--- Layer 32 (50% depth) | result-concepts=0 method-concepts=1 ---
+, *, the, analysis, #, -, **, one, 分析, None, a, B, (, 苟, Q, if, P, this, 恐, an, “, One, ##, :, these, 介, [, if, A, that
+    result: []  |  method: ['analysis']
+
+--- Layer 38 (60% depth) | result-concepts=0 method-concepts=1 ---
+о, aster, only, the, 前提, om, �, opic, :, aste, 抽, 抽取, highly, 款, 提取, ub, analysis, �, 正面, omics, 贯, 可以按照, tissue, list, �, iff, oned, one, one, if
+    result: []  |  method: ['analysis']
+
+--- Layer 44 (70% depth) | result-concepts=0 method-concepts=1 ---
+分析, analysis, 首先, 如下, isas, 分析与, 先, A, (, 先行, 按照, first, 法, 眷, 先将, the, :, erty, arget, aste, 第一步, following, �, [, 梳理, >, **, -, 您好, 
+    result: []  |  method: ['analysis']
+
+--- Layer 51 (80% depth) | result-concepts=0 method-concepts=0 ---
+首先, 먼, 以下是, 先在, 先把, 先将, 先, 먼저, 分析与, まず, 首先需要, first, сначала, {", arre, erty, 首先是, 先看, First, 首先在, Сначала, {\, 先用, 日电, olg, 第一步, 勘, uned, 下面是, First
+
+--- Layer 57 (90% depth) | result-concepts=0 method-concepts=0 ---
+```, {, {, {", ```, {", {\, {\, {', json, <th, ]{, thought, <?, {', json, `{, andum, "{, >{", (json, }{, ({, .json, JSON, JSON, ({", Stephan, _json, ={"
+
+======================================================================
+ABSTRACT 11590114
+======================================================================
+Model has 64 layers
+Abstract (first 200 chars): Previous neuroimaging studies have identified brain regions that underlie verbal working memory in humans. According to these studies a phonological store is located in the left inferior parietal cort...
+
+--- Layer 12 (20% depth) | result-concepts=0 method-concepts=0 ---
+, , (, ., ..., !, :, ,, , …, A, **, A, is, , ?, <|endoftext|>, , 。, .., —, I, “, ', [, <think>, -, /, ), [
+
+--- Layer 25 (40% depth) | result-concepts=0 method-concepts=0 ---
+, is, a, the, to, ari, |, <think>, ", $, #, A, for, ., S, from, not, [, |, ,, this, ?, or, ?, and, :, fine, ning, “, rp
+
+--- Layer 32 (50% depth) | result-concepts=0 method-concepts=1 ---
+, *, the, #, -, analysis, **, Q, if, one, (, a, B, 苟, this, P, None, “, 分析, an, if, [, l, these, One, rett, , A, 恐, :
+    result: []  |  method: ['analysis']
+
+--- Layer 38 (60% depth) | result-concepts=0 method-concepts=1 ---
+о, aster, only, 前提, the, 抽取, 贯, om, :, 抽, 提取, iff, aste, 以下是, 履, omics, ub, 款, highly, 可以按照, �, analysis, list, only, �, oned, 正面, if, 抽出, �
+    result: []  |  method: ['analysis']
+
+--- Layer 44 (70% depth) | result-concepts=0 method-concepts=1 ---
+首先, 分析, 如下, analysis, isas, 先, 分析与, 按照, A, :, 先行, 法, first, (, the, 先将, 第一步, following, [, >, erty, -, aste, 眷, �, {, , arget, H, 本题
+    result: []  |  method: ['analysis']
+
+--- Layer 51 (80% depth) | result-concepts=0 method-concepts=0 ---
+首先, 以下是, 먼, 先在, 先把, 先将, 先, 分析与, 먼저, arre, {", 首先需要, сначала, erty, まず, {\, first, ```, 首先在, Сначала, olg, 所提供的, [{', 下面是, uned, 勘, 年以下, uerdo, 先用, voici
+
+--- Layer 57 (90% depth) | result-concepts=0 method-concepts=0 ---
+```, {, {, ```, {", {", {\, {\, json, ]{, thought, <th, {', `{, <?, json, "{, }{, ({, .json, ::{, (json, >{", ){, Thought, _json, JSON, ={, JSON, <tool_call>
+
+======================================================================
+ABSTRACT 12727182
+======================================================================
+Model has 64 layers
+Abstract (first 200 chars): Subsystems of category learning have been identified on the basis of general domains of content (e.g., tools, faces). The present study examined categories from the standpoint of internal structure an...
+
+--- Layer 12 (20% depth) | result-concepts=0 method-concepts=0 ---
+, , (, ., ..., !, :, ,, , A, …, is, , **, ?, A, <|endoftext|>, —, [, a, ', , -, I, 。, .., [, ;, ), /
+
+--- Layer 25 (40% depth) | result-concepts=0 method-concepts=0 ---
+, is, a, ari, the, #, <think>, to, $, |, A, S, ", ?, [, for, from, rp, ., ati, |, ning, this, fine, 散, and, not, `, ?, ex
+
+--- Layer 32 (50% depth) | result-concepts=0 method-concepts=1 ---
+, the, *, #, analysis, 苟, a, **, (, None, one, 恐, 分析, if, “, this, -, Q, B, P, an, these, [, if, 介, that, \, !, One, list
+    result: []  |  method: ['analysis']
+
+--- Layer 38 (60% depth) | result-concepts=0 method-concepts=1 ---
+о, aster, 前提, only, the, om, :, aste, analysis, 贯, �, highly, 提取, oned, 抽取, ub, omics, elic, if, 正面, 截, one, 抽, �, opic, a, list, One, (, 
+    result: []  |  method: ['analysis']
+
+--- Layer 44 (70% depth) | result-concepts=0 method-concepts=1 ---
+分析, analysis, 首先, isas, 分析与, 如下, (, A, :, first, aste, , 法, 先, [, 眷, the, 先行, arget, 按照, **, 梳理, 先将, erty, {, �, following, arei, -, a
+    result: []  |  method: ['analysis']
+
+--- Layer 51 (80% depth) | result-concepts=0 method-concepts=0 ---
+首先, 먼, 以下是, 先在, 先把, 先将, 先, 먼저, 分析与, 首先需要, first, сначала, arre, {", まず, 首先在, 先用, {\, 先看, 下面是, First, uned, First, erty, Сначала, 勘, 首先是, 所提供的, 收容, zun
+
+--- Layer 57 (90% depth) | result-concepts=0 method-concepts=0 ---
+```, {, {, {", ```, {", {\, {\, json, {', <th, ]{, <?, thought, json, `{, JSON, ({, .json, (json, "{, JSON, ::{, _json, {', }{, ={, ){, >{", Stephan
+
+======================================================================
+SYNTHETIC RESULTS-ONLY
+======================================================================
+Model has 64 layers
+Abstract (first 200 chars): Bilateral hippocampal activation increased significantly during encoding compared to baseline. Left prefrontal cortex showed greater activation for novel than repeated stimuli (p < 0.001)....
+
+--- Layer 12 (20% depth) | result-concepts=0 method-concepts=0 ---
+, , (, ..., ., !, :, …, ,, A, ?, , “, **, —, is, 。, A, , -, <|endoftext|>, [, , [, ', /, I, <think>, _, a
+
+--- Layer 25 (40% depth) | result-concepts=0 method-concepts=0 ---
+, a, is, the, $, ", for, not, “, ex, to, <think>, ari, or, this, rp, ., 不了, `, ,, [, iy, ?, true, from, !, ?, null, :, |
+
+--- Layer 32 (50% depth) | result-concepts=0 method-concepts=1 ---
+, -, :, the, if, !, *, #, (, this, a, analysis, to, one, [, **, ., P, an, -, it, Q, {, <, 分析与, S, for, “, these, /
+    result: []  |  method: ['analysis']
+
+--- Layer 38 (60% depth) | result-concepts=0 method-concepts=0 ---
+:, о, the, 前提, one, ub, 贯, highly, im, om, if, if, omics, !, 满足, 抽取, @, elic, , one, 倍增, ify, Li, 请以, structured, ops, 截, only, �, One
+
+--- Layer 44 (70% depth) | result-concepts=0 method-concepts=0 ---
+:, H, , 如下, {, [, -, JSON, (, TT, 耕耘, 本能, 思考, the, isas, \, [, >, 法, 以下, 首先, 经, **, !, #, A, I, <, following, One
+
+--- Layer 51 (80% depth) | result-concepts=0 method-concepts=0 ---
+首先, ```, {", 먼, 首先需要, {\, まず, 分析与, ("{\", NECT, 勘, uned, ({", [{', .one, 먼저, 秕, {", 烤漆, 先把, arre, 先在, 先将, {, ```, 拇, 所提供的, 国人, 建平, {'
+
+--- Layer 57 (90% depth) | result-concepts=0 method-concepts=0 ---
+```, {, {, {", {", ```, {\, {\, json, JSON, json, .json, ({", ({, `{, >{", }{, {', (json, "{, thought, ::{, ]{, JSON, _json, {', >{, ={, ){, {j
+
+======================================================================
+SYNTHETIC METHODS-ONLY
+======================================================================
+Model has 64 layers
+Abstract (first 200 chars): Fifteen healthy volunteers were recruited. fMRI was performed on a 3T scanner with TR=2000ms. Voxel size was 3x3x3mm....
+
+--- Layer 12 (20% depth) | result-concepts=0 method-concepts=0 ---
+, , (, ., :, ..., !, ,, ?, A, …, , -, A, , is, /, “, **, <|endoftext|>, , 。, [, ', [, a, I, —, _, <think>
+
+--- Layer 25 (40% depth) | result-concepts=0 method-concepts=0 ---
+, $, a, is, the, ex, not, for, “, ", ., 不了, or, rp, ari, `, ,, !, null, to, iy, <think>, [, av, et, this, ite, al, 《, a
+
+--- Layer 32 (50% depth) | result-concepts=0 method-concepts=1 ---
+, -, *, !, the, :, if, Q, -, **, P, a, analysis, one, this, One, (, S, to, I, no, ed, 分析与, it, #, an, ., A, ing, :
+    result: []  |  method: ['analysis']
+
+--- Layer 38 (60% depth) | result-concepts=0 method-concepts=0 ---
+:, im, о, aster, elic, if, the, 贯, 前提, 由于, 抽空, if, 面向, one, ara, ub, om, , JSON, ing, only, no, Li, !, 因为没有, One, 无可, No, ign, 悄悄的
+
+--- Layer 44 (70% depth) | result-concepts=0 method-concepts=0 ---
+:, 认, 如下, 首先, 本能, �, -, {, ：, \, �, elic, [, , isas, A, no, 因为没有, 派, 解析, 善, 心力, 首, #, 本, H, >, 思考, if, 以下
+
+--- Layer 51 (80% depth) | result-concepts=0 method-concepts=1 ---
+{", ```, 婉, 首先, 免, {\, 只因, ({", {, {', 勘, 理由, 分析与, analysis, 烤漆, uned, 秕, 首先需要, {", 所提供的, {%, uerdo, ({', 먼, λει, enced, ```, 壹, ayani, <tool_call>
+    result: []  |  method: ['analysis']
+
+--- Layer 57 (90% depth) | result-concepts=0 method-concepts=0 ---
+{, {", {, {", ```, {\, {\, ```, {', ({", {', {}, `{, ({, json, {}, >{", JSON, {\", ={", json, }{, "{, No, .json, {},, {o, :{, ={, "{\"
+
